@@ -1,0 +1,9 @@
+TO DO
+  # add :status to Contract db model (add :date_completed ?)
+  # add :gdax_buy_order_id & :gdax_sell_order_id to Contract db model?
+  # use background workers
+  # add cron job for updating calculations on contracts
+  # buy orders at multiple amounts (instead of just below current ask) to prepare for market dip
+  # remove some verbosity of API calls
+  # add more rake tasks (fetch single order, etc.)
+  # configure app for Heroku (use postgres, add gems, etc.)
