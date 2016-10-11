@@ -25,7 +25,6 @@ gem 'puma'                                  # server that supports ActionCable (
 
 group :production do
   gem 'rails_12factor'                      # configure app for Heroku
-  gem 'newrelic_rpm'                        # for monitoring app on Heroku
 end
 
 group :development, :test do
