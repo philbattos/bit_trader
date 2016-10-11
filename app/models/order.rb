@@ -50,10 +50,10 @@ class Order < ActiveRecord::Base
     end
     response_body["response-status"] = response.status
     response_body
-  rescue Net::ReadTimeout => timeout_error
+  rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
     puts "Timeout error: #{timeout_error}"
     Rails.logger.error { "#{timeout_error.message}" }
-    retry
+    next
   end
 
   def self.place_buy(bid)
