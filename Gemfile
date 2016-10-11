@@ -23,10 +23,6 @@ gem 'em-http-request'                       # required by coinbase gem for authe
 gem 'pg'                                    # use postgres db (required by Heroku)
 gem 'puma'                                  # server that supports ActionCable (Rails 5)
 
-group :production do
-  gem 'rails_12factor'                      # configure app for Heroku
-end
-
 group :development, :test do
   gem 'byebug'                              # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'dotenv-rails'                        # Set and load environment variables
