@@ -21,6 +21,7 @@ gem 'coinbase-exchange'                     # Client library for Coinbase Exchan
 gem 'faraday'                               # HTTP client
 gem 'em-http-request'                       # required by coinbase gem for authentication
 gem 'pg'                                    # use postgres db (required by Heroku)
+gem 'puma'                                  # server that supports ActionCable (Rails 5)
 
 group :production do
   gem 'rails_12factor'                      # configure app for Heroku
