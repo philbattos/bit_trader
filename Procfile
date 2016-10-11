@@ -1,0 +1,1 @@
+polling: bundle exec rake kickstart
