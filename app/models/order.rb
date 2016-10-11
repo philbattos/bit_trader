@@ -53,7 +53,7 @@ class Order < ActiveRecord::Base
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
     puts "Timeout error: #{timeout_error}"
     Rails.logger.error { "#{timeout_error.message}" }
-    next
+    retry
   end
 
   def self.place_buy(bid)
