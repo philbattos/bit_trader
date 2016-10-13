@@ -4,8 +4,7 @@ class OrdersController < ApplicationController
 
   def index
     @orders = Order.fetch_all
-    @ticker = Order.fetch_ticker
-    @current_price = JSON.parse(@ticker.body)['price']
+    @current_price = Market.fetch_ticker[:price]
     render :index
   end
 

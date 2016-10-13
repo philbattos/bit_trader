@@ -102,14 +102,6 @@ class Order < ActiveRecord::Base
     send_get_request(request_path, request_hash)
   end
 
-  def self.fetch_ticker
-    request_path = "/products/BTC-USD/ticker"
-    request_info = "#{timestamp}GET#{request_path}"
-    request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
-
-    send_get_request(request_path, request_hash)
-  end
-
   def self.check_status(id)
     request_path = "/orders/#{id}"
     request_info = "#{timestamp}GET#{request_path}"

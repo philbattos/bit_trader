@@ -1,37 +1,13 @@
 class Market
 
-  BID_DECREMENT = 0.01
-  ASK_INCREMENT = 0.10
+  MARGIN = 0.01
 
   def self.poll
     while true
       Contract.resolve_open
-      place_buy_order
+      Contract.place_new_buy_order
+      Contract.place_new_sell_order
     end
-  end
-
-  def self.place_buy_order
-    current_bid = fetch_ticker['bid']
-    my_bid      = (current_bid.to_f - BID_DECREMENT).round(7).to_s
-    new_order   = Order.place_buy(my_bid)
-    # puts "NEW BUY ORDER: #{new_order.inspect}"
-
-    if new_order[:response_status] == 200
-      order    = Order.find_by_gdax_id(new_order[:id])
-      contract = Contract.create() # order.create_contract() doesn't correctly associate objects
-      contract.buy_order = order
-    else
-      # check if order was created on GDAX
-      puts "BUY ORDER FAILED: #{new_order[:response_status]}"
-    end
-  end
-
-  def self.place_sell_order(id, price)
-    my_ask      = (price.to_f + ASK_INCREMENT).round(7).to_s
-    new_order   = Order.place_sell(my_ask)
-    puts "NEW SELL ORDER: #{new_order.inspect}"
-    # TODO: save sell order ID in contract
-    new_order
   end
 
   def self.fetch_ticker
@@ -40,62 +16,16 @@ class Market
     request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
 
     response = send_get_request(request_path, request_hash).body
-    JSON.parse(response)
+    JSON.parse(response, symbolize_names: true)
+  end
+
+  def self.current_bid
+    fetch_ticker[:bid].to_f
   end
 
   def self.current_ask
-    fetch_ticker['ask'].to_f.round(7)
+    fetch_ticker[:ask].to_f
   end
-
-  # def self.poll
-  #   retry_attempts = 0
-  #   begin
-  #     # fetch status: open orders? unsold buys? lookup orders in db?
-  #     open_orders = JSON.parse(Order.fetch_all.body)
-  #     unsold_contracts = Contract.need_sell
-  #     # puts "open_orders: #{open_orders.inspect}"
-  #     if open_orders.is_a? Hash
-  #       if open_orders.has_key?('message') # something went wrong
-  #         # create alert
-  #         retry_attempts += 1
-  #         puts "POLLING ERROR: open_orders response: #{open_orders.inspect}"
-  #         next if retry_attempts < 5
-  #       end
-  #     else
-  #       buy_orders, sell_orders = open_orders.partition {|o| o['side'] == 'buy' }
-  #       # puts "buy_orders: #{buy_orders.inspect}"
-
-  #       if buy_orders.empty?
-  #         place_buy_order # record order ID to match it with a sell order
-  #       # elsif orders_paired?
-  #       #   place_buy_order
-  #       else
-  #         # monitor buy orders
-  #         # buy_orders = buy_orders.sort_by {|o| o['price'].to_f }.reverse
-  #         order         = buy_orders.sample
-  #         response      = Order.check_status(order['id'])
-  #         response_body = JSON.parse(response.body)
-
-  #         if response.status == 200
-  #           # puts "\nOrder status response: #{response.status} \n#{response.inspect} \n\n"
-  #           if response_body['status'] == 'done'
-  #             place_sell_order(order['id'], order['price'])
-  #           else # order has a status other than 'done'
-  #             # buy_orders.reject! {|o| o['id'] == order['id'] }
-  #             # next
-  #           end
-  #         elsif response.status == 404 # invalid ID or canceled order
-  #           puts "\nOrder status response: #{response.status} \n#{response.inspect} \n\n"
-  #           buy_orders.reject! {|o| o['id'] == order['id'] }
-  #         else
-  #           puts "\nOrder status response: #{response.status} \n#{response.inspect} \n\n"
-  #           buy_orders.reject! {|o| o['id'] == order['id'] }
-  #         end
-  #       end
-  #     end
-  #     place_buy_order
-  #   end until open_orders.count > 8
-  # end
 
   #=================================================
     private
@@ -131,9 +61,5 @@ class Market
     def self.api_signature(request_hash)
       Base64.strict_encode64(request_hash)
     end
-
-    # def self.buy_order?(orders)
-    #   orders.count < 3
-    # end
 
 end
