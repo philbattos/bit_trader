@@ -1,7 +1,5 @@
 class Market
 
-  MARGIN = 0.01
-
   def self.poll
     while true
       Contract.resolve_open

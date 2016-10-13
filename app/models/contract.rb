@@ -11,6 +11,7 @@ class Contract < ActiveRecord::Base
   scope :with_sell_without_buy, -> { with_sell_order.without_buy_order }
 
   PROFIT = 0.10
+  MARGIN = 0.01
 
   def self.resolve_open
     match_open_buys
