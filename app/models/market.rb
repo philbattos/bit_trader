@@ -4,25 +4,25 @@ class Market
   ASK_INCREMENT = 0.10
 
   def self.poll
-    begin
+    while true
       Contract.resolve_open
       place_buy_order
-    end until 3 < 2
+    end
   end
 
   def self.place_buy_order
     current_bid = fetch_ticker['bid']
     my_bid      = (current_bid.to_f - BID_DECREMENT).round(7).to_s
     new_order   = Order.place_buy(my_bid)
-    puts "NEW BUY ORDER: #{new_order.inspect}"
+    # puts "NEW BUY ORDER: #{new_order.inspect}"
 
-    if new_order['response-status'] == 200
-      order    = Order.find_by_gdax_id(new_order['id'])
+    if new_order[:response_status] == 200
+      order    = Order.find_by_gdax_id(new_order[:id])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.buy_order = order
     else
       # check if order was created on GDAX
-      puts "BUY ORDER FAILED: #{new_order['response-status']}"
+      puts "BUY ORDER FAILED: #{new_order[:response_status]}"
     end
   end
 
@@ -30,6 +30,7 @@ class Market
     my_ask      = (price.to_f + ASK_INCREMENT).round(7).to_s
     new_order   = Order.place_sell(my_ask)
     puts "NEW SELL ORDER: #{new_order.inspect}"
+    # TODO: save sell order ID in contract
     new_order
   end
 
@@ -40,6 +41,10 @@ class Market
 
     response = send_get_request(request_path, request_hash).body
     JSON.parse(response)
+  end
+
+  def self.current_ask
+    fetch_ticker['ask'].to_f.round(7)
   end
 
   # def self.poll

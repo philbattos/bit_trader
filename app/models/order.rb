@@ -16,11 +16,15 @@ class Order < ActiveRecord::Base
   # NOTE: Available product IDs:
   #   BTC-USD, BTC-GBP, BTC-EUR, ETH-USD, ETH-BTC, LTC-USD, LTC-BTC
 
+  def cancel
+    update(status: 'canceled')
+  end
+
   def self.submit(order_type, price) # should this be an instance method??
     type       = 'limit' # default
     side       = order_type
     product_id = 'BTC-USD'
-    price      = price
+    price      = price.to_s
     size       = '0.01'
     post_only  = true
 
@@ -29,30 +33,48 @@ class Order < ActiveRecord::Base
     request_info = "#{timestamp}POST#{request_path}#{request_body}"
     request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
 
-    puts "request_body: #{request_body.inspect}"
-    response = send_post_request(request_path, request_body, request_hash)
-    # puts "response: #{response.inspect}"
-    response_body = JSON.parse(response.body)
-    puts "response_body: #{response_body.inspect}\n\n"
+    # puts "request_body: #{request_body.inspect}"
+    response      = send_post_request(request_path, request_body, request_hash)
+    response_body = JSON.parse(response.body, symbolize_names: true)
+    # puts "response_body: #{response_body.inspect}\n\n"
     if response.status == 200
       Order.create(
-        type:            lookup_class_type[order_type],
-        gdax_id:         response_body['id'],
-        gdax_type:       response_body['type'],
-        gdax_side:       response_body['side'],
-        gdax_product_id: response_body['product_id'],
-        amount:          response_body['price'].to_f.round(7),
-        custom_id:       response_body['oid'],
-        gdax_post_only:  response_body['post_only'],
-        fees:            response_body['fill_fees'].to_f.round(7),
-        # currency:        response_body['currency'],
+        type:                lookup_class_type[order_type],
+        gdax_id:             response_body[:id],
+        gdax_price:          response_body[:price],
+        gdax_size:           response_body[:size],
+        gdax_product_id:     response_body[:product_id],
+        gdax_side:           response_body[:side],
+        gdax_stp:            response_body[:stp],
+        gdax_type:           response_body[:type],
+        gdax_post_only:      response_body[:post_only],
+        gdax_created_at:     response_body[:created_at],
+        gdax_filled_fees:    response_body[:filled_fees],
+        gdax_filled_size:    response_body[:filled_size],
+        gdax_executed_value: response_body[:executed_value],
+        gdax_status:         response_body[:status],
+        gdax_settled:        response_body[:settled],
+        quantity:            response_body[:size].to_f.round(7),
+        price:               response_body[:price].to_f.round(7),
+        fees:                response_body[:fill_fees].to_f.round(7),
+        status:              response_body[:status],
+        # custom_id:           response_body[:oid],
+        # currency:            response_body[:currency],
       )
     end
-    response_body["response-status"] = response.status
+    response_body[:response_status] = response.status
     response_body
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
     puts "Timeout error: #{timeout_error}"
     Rails.logger.error { "#{timeout_error.message}" }
+    retry
+  rescue Faraday::ConnectionFailed => connection_error
+    puts "Connection error: #{connection_error}"
+    Rails.logger.error { "#{connection_error}" }
+    retry
+  rescue JSON::ParserError => json_parser_error
+    puts "JSON ParserError (probably CloudFlare DNS resolution error): #{json_parser_error}"
+    Rails.logger.error { "#{json_parser_error.backtrace}" }
     retry
   end
 

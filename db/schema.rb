@@ -17,31 +17,50 @@ ActiveRecord::Schema.define(version: 20161007222223) do
 
   create_table "accounts", force: :cascade do |t|
     t.string   "gdax_id"
-    t.string   "currency"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.string   "gdax_currency"
+    t.string   "gdax_balance"
+    t.string   "gdax_hold"
+    t.string   "gdax_available"
+    t.string   "gdax_profile_id"
+    t.datetime "created_at",      null: false
+    t.datetime "updated_at",      null: false
   end
 
   create_table "contracts", force: :cascade do |t|
-    t.decimal  "difference", precision: 15, scale: 8
-    t.datetime "created_at",                          null: false
-    t.datetime "updated_at",                          null: false
+    t.string   "gdax_buy_order_id"
+    t.string   "gdax_sell_order_id"
+    t.decimal  "roi",                precision: 15, scale: 8
+    t.string   "status"
+    t.datetime "completion_date"
+    t.datetime "created_at",                                  null: false
+    t.datetime "updated_at",                                  null: false
   end
 
   create_table "orders", force: :cascade do |t|
     t.string   "gdax_id"
-    t.string   "gdax_type"
-    t.string   "gdax_side"
+    t.string   "gdax_price"
+    t.string   "gdax_size"
     t.string   "gdax_product_id"
-    t.decimal  "amount",          precision: 15, scale: 8
+    t.string   "gdax_side"
+    t.string   "gdax_stp"
+    t.string   "gdax_type"
+    t.boolean  "gdax_post_only"
+    t.string   "gdax_created_at"
+    t.string   "gdax_filled_fees"
+    t.string   "gdax_filled_size"
+    t.string   "gdax_executed_value"
+    t.string   "gdax_status"
+    t.string   "gdax_settled"
+    t.decimal  "quantity",            precision: 15, scale: 8
+    t.decimal  "price",               precision: 15, scale: 8
+    t.integer  "contract_id"
     t.string   "custom_id"
     t.string   "currency"
-    t.boolean  "gdax_post_only"
-    t.integer  "contract_id"
-    t.decimal  "fees",            precision: 15, scale: 8
+    t.decimal  "fees",                precision: 15, scale: 8
+    t.string   "status"
     t.string   "type"
-    t.datetime "created_at",                               null: false
-    t.datetime "updated_at",                               null: false
+    t.datetime "created_at",                                   null: false
+    t.datetime "updated_at",                                   null: false
   end
 
   create_table "transfers", force: :cascade do |t|
