@@ -65,7 +65,7 @@ class Contract < ActiveRecord::Base
     end
   end
 
-  def self.place_new_sell_order(id, price)
+  def self.place_new_sell_order
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
     new_order = Order.place_sell(my_ask_price)
 
