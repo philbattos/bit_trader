@@ -122,15 +122,17 @@ class Order < ActiveRecord::Base
 
   def self.update_status
     unresolved_order = Order.unresolved.first # for now, we are only checking the status of one order at a time
-    response         = check_status(unresolved_order.gdax_id)
-    response_body    = JSON.parse(response.body, symbolize_names: true)
+    if unresolved_order
+      response      = check_status(unresolved_order.gdax_id)
+      response_body = JSON.parse(response.body, symbolize_names: true)
 
-    if response.status == 200
-      if response_body[:status] != order.gdax_status
-        order.update(gdax_status: response_body[:status], status: response_body[:status])
+      if response.status == 200
+        if response_body[:status] != order.gdax_status
+          order.update(gdax_status: response_body[:status], status: response_body[:status])
+        end
+      else
+        puts "check status request failed for order #{order.gdax_id}: #{response.inspect}"
       end
-    else
-      puts "check status request failed for order #{order.gdax_id}: #{response.inspect}"
     end
   end
 
