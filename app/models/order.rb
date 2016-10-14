@@ -39,10 +39,11 @@ class Order < ActiveRecord::Base
     request_body = { "type" => "#{type}", "side" => "#{side}", "product_id" => "#{product_id}", "price" => "#{price}", "size" => "#{size}", "post_only" => "#{post_only}" }.to_json
     request_info = "#{timestamp}POST#{request_path}#{request_body}"
     request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
-    response     = send_post_request(request_path, request_body, request_hash)
+
+    response      = send_post_request(request_path, request_body, request_hash)
+    response_body = JSON.parse(response.body, symbolize_names: true)
 
     if response.status == 200
-      response_body = JSON.parse(response.body, symbolize_names: true)
       Order.create(
         type:                lookup_class_type[order_type],
         gdax_id:             response_body[:id],
@@ -66,11 +67,11 @@ class Order < ActiveRecord::Base
         # custom_id:           response_body[:oid],
         # currency:            response_body[:currency],
       )
-      response_body[:response_status] = response.status
-      response_body
     else
-      puts "Unsuccessful request; order not submitted: #{response.inspect}\n"
+      puts "Unsuccessful request; order not created: #{response.inspect}\n"
     end
+    response_body[:response_status] = response.status
+    response_body
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
     puts "Timeout error: #{timeout_error}"
     Rails.logger.error { "#{timeout_error.message}" }

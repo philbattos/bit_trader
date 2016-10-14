@@ -27,7 +27,7 @@ class Contract < ActiveRecord::Base
       sell_price     = [Market.current_ask, min_sell_price].max.round(7)
       sell_order     = Order.place_sell(sell_price)
 
-      if sell_order && sell_order[:response_status] == 200
+      if sell_order[:response_status] == 200
         contract.update(gdax_sell_order_id: sell_order[:id])
         new_order = Order.find_by_gdax_id(sell_order[:id])
         contract.sell_order = new_order
@@ -44,7 +44,7 @@ class Contract < ActiveRecord::Base
 
       if buy_price > 0 # sometimes buy_price is 0; if so, we shouldn't send request to GDAX
         buy_order = Order.place_buy(buy_price)
-        if buy_order && buy_order[:response_status] == 200
+        if buy_order[:response_status] == 200
           contract.update(gdax_buy_order_id: buy_order[:id])
           new_order = Order.find_by_gdax_id(buy_order[:id])
           contract.buy_order = new_order
@@ -59,7 +59,7 @@ class Contract < ActiveRecord::Base
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
     new_order = Order.place_buy(my_buy_price)
 
-    if new_order && new_order[:response_status] == 200
+    if new_order[:response_status] == 200
       order    = Order.find_by_gdax_id(new_order[:id])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_buy_order_id: new_order[:id])
@@ -74,7 +74,7 @@ class Contract < ActiveRecord::Base
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
     new_order = Order.place_sell(my_ask_price)
 
-    if new_order && new_order[:response_status] == 200
+    if new_order[:response_status] == 200
       order    = Order.find_by_gdax_id(new_order[:id])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_sell_order_id: new_order[:id])
