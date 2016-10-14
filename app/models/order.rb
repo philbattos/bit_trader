@@ -78,6 +78,7 @@ class Order < ActiveRecord::Base
       response_body
     else
       puts "Unsuccessful request; order not created: #{response.inspect}"
+      puts "price: #{price}\n\n"
       { response_status: 400, response: response }
     end
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
