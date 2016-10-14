@@ -76,7 +76,7 @@ class Order < ActiveRecord::Base
       response_body
     else
       puts "Unsuccessful request; order not created: #{response.inspect}"
-      { response: "error", response_status: 400 }
+      { response_status: 400, response: response }
     end
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
     puts "Timeout error: #{timeout_error}"
@@ -135,6 +135,9 @@ class Order < ActiveRecord::Base
         if response_body[:status] != order.gdax_status
           order.update(gdax_status: response_body[:status], status: response_body[:status])
         end
+      elsif response.status == 404
+        order.update(gdax_status: 'not found', status: 'not found')
+        puts "Order not found on GDAX (order #{order.gdax_id}): #{response.inspect}"
       else
         puts "check status request failed for order #{order.gdax_id}: #{response.inspect}"
       end

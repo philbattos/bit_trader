@@ -25,7 +25,6 @@ class Contract < ActiveRecord::Base
     with_buy_without_sell.each do |contract|
       min_sell_price = contract.buy_order.price + PROFIT
       sell_price     = [Market.current_ask, min_sell_price].max.round(7)
-      puts "sell price: #{sell_price}"
 
       if sell_price > 0 # sometimes sell_price is 0; if so, we shouldn't send request to GDAX
         sell_order = Order.place_sell(sell_price)
