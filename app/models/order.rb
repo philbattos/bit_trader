@@ -2,8 +2,8 @@ class Order < ActiveRecord::Base
 
   belongs_to :contract
 
-  scope :resolved,   -> { where(status: ['done']) }
-  scope :unresolved, -> { where(status: ['pending']) }
+  scope :resolved,   -> { where(status: ['done', 'rejected', 'not found']) }
+  scope :unresolved, -> { where.not(id: resolved) }
 
   # TODO: add validation for gdax_id (every order should have one)
 
@@ -20,6 +20,8 @@ class Order < ActiveRecord::Base
 
   # NOTE: Available product IDs:
   #   BTC-USD, BTC-GBP, BTC-EUR, ETH-USD, ETH-BTC, LTC-USD, LTC-BTC
+  # NOTE: GDAX order statuses
+  #   pending, done, rejected, open
 
   def cancel
     update(status: 'canceled')
