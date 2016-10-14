@@ -2,11 +2,11 @@ class Market
 
   def self.poll
     while true
-      Order.update_status
-      Contract.update_status
       Contract.resolve_open
       Contract.place_new_buy_order
       Contract.place_new_sell_order
+      Order.update_status
+      Contract.update_status
     end
   end
 

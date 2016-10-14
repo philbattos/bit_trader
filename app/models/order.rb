@@ -3,7 +3,7 @@ class Order < ActiveRecord::Base
   belongs_to :contract
 
   scope :resolved,   -> { where(status: ['done']) }
-  scope :unresolved, -> { where(gdax_status: nil) }
+  scope :unresolved, -> { where(status: nil) }
 
   # TODO: add validation for gdax_id (every order should have one)
 
