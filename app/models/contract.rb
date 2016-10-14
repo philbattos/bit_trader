@@ -59,7 +59,7 @@ class Contract < ActiveRecord::Base
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
     new_order = Order.place_buy(my_buy_price)
 
-    if new_order[:response_status] == 200
+    if new_order && new_order[:response_status] == 200
       order    = Order.find_by_gdax_id(new_order[:id])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_buy_order_id: new_order[:id])
@@ -74,7 +74,7 @@ class Contract < ActiveRecord::Base
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
     new_order = Order.place_sell(my_ask_price)
 
-    if new_order[:response_status] == 200
+    if new_order && new_order[:response_status] == 200
       order    = Order.find_by_gdax_id(new_order[:id])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_sell_order_id: new_order[:id])
