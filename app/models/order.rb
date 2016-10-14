@@ -131,7 +131,7 @@ class Order < ActiveRecord::Base
   end
 
   def self.update_status
-    order = Order.unresolved.first # for now, we are only checking the status of one order at a time
+    order = Order.unresolved.sample # for now, we are checking the status of one randomly selected order at a time
 
     if order
       response      = check_status(order.gdax_id)
