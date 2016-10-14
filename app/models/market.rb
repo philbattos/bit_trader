@@ -19,10 +19,11 @@ class Market
 
     puts "response: #{response.inspect}"
     if response.status == 200
-      JSON.parse(response.body, symbolize_names: true)
+      ticker = JSON.parse(response.body, symbolize_names: true)
     else
-      nil
+      ticker = nil
     end
+    ticker
   end
 
   def self.current_bid
