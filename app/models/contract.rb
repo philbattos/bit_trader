@@ -25,14 +25,16 @@ class Contract < ActiveRecord::Base
     with_buy_without_sell.each do |contract|
       min_sell_price = contract.buy_order.price + PROFIT
       sell_price     = [Market.current_ask, min_sell_price].max.round(7)
-      sell_order     = Order.place_sell(sell_price)
 
-      if sell_order[:response_status] == 200
-        contract.update(gdax_sell_order_id: sell_order[:id])
-        new_order = Order.find_by_gdax_id(sell_order[:id])
-        contract.sell_order = new_order
-      else
-        puts "SELL NOT COMPLETED: #{sell_order.inspect}\n\n"
+      if sell_price > 0 # sometimes sell_price is 0; if so, we shouldn't send request to GDAX
+        sell_order = Order.place_sell(sell_price)
+        if sell_order[:response_status] == 200
+          contract.update(gdax_sell_order_id: sell_order[:id])
+          new_order = Order.find_by_gdax_id(sell_order[:id])
+          contract.sell_order = new_order
+        else
+          puts "SELL NOT COMPLETED: #{sell_order.inspect}\n\n"
+        end
       end
     end
   end
@@ -86,11 +88,11 @@ class Contract < ActiveRecord::Base
   end
 
   def self.my_buy_price # move this into Order class?
-    (Market.current_bid - MARGIN).round(7).to_s
+    (Market.current_bid - MARGIN).round(7)
   end
 
   def self.my_ask_price # move this into Order class?
-    (Market.current_ask + MARGIN).round(7).to_s
+    (Market.current_ask + MARGIN).round(7)
   end
 
   def self.update_status
