@@ -29,21 +29,15 @@ class Market
   end
 
   def self.current_bid
-    puts "fetch_ticker: #{fetch_ticker.inspect}"
-    if fetch_ticker.present?
-      fetch_ticker[:bid].to_f
-    else
-      nil
-    end
+    # puts "fetch_ticker: #{fetch_ticker.inspect}"
+    ticker = fetch_ticker
+    ticker[:bid].to_f if !ticker.nil?
   end
 
   def self.current_ask
-    puts "fetch_ticker: #{fetch_ticker.inspect}"
-    if fetch_ticker.present?
-      fetch_ticker[:ask].to_f
-    else
-      nil
-    end
+    # puts "fetch_ticker: #{fetch_ticker.inspect}"
+    ticker = fetch_ticker
+    ticker[:ask].to_f if !ticker.nil?
   end
 
   #=================================================
