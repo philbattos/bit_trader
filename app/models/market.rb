@@ -16,15 +16,20 @@ class Market
     request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
 
     response = send_get_request(request_path, request_hash).body
-    JSON.parse(response, symbolize_names: true)
+
+    if response.status == 200
+      JSON.parse(response, symbolize_names: true)
+    else
+      nil
+    end
   end
 
   def self.current_bid
-    fetch_ticker[:bid].to_f
+    fetch_ticker[:bid].to_f if fetch_ticker
   end
 
   def self.current_ask
-    fetch_ticker[:ask].to_f
+    fetch_ticker[:ask].to_f if fetch_ticker
   end
 
   #=================================================

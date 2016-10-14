@@ -77,9 +77,12 @@ class Order < ActiveRecord::Base
       end
       response_body[:response_status] = response.status
       response_body
+    elsif response.status == 409
+      puts "Request Conflict (409) \nProbably CloudFlare DNS resolution error"
+      { response_status: 409, response: response }
     else
       puts "Unsuccessful request; order not created: #{response.inspect}"
-      { response_status: 400, response: response }
+      { response_status: response.status, response: response }
     end
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
     puts "Timeout error: #{timeout_error}"
