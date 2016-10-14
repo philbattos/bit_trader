@@ -17,6 +17,7 @@ class Market
 
     response = send_get_request(request_path, request_hash)
 
+    puts "response: #{response.inspect}"
     if response.status == 200
       JSON.parse(response.body, symbolize_names: true)
     else
@@ -25,10 +26,12 @@ class Market
   end
 
   def self.current_bid
+    puts "fetch_ticker: #{fetch_ticker.inspect}"
     fetch_ticker[:bid].to_f if !fetch_ticker.nil?
   end
 
   def self.current_ask
+    puts "fetch_ticker: #{fetch_ticker.inspect}"
     fetch_ticker[:ask].to_f if !fetch_ticker.nil?
   end
 
