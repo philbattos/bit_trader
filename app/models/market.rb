@@ -20,6 +20,8 @@ class Market
     puts "response: #{response.inspect}"
     if response.status == 200
       ticker = JSON.parse(response.body, symbolize_names: true)
+    elsif response.status == 429
+      puts "Rate limit exceeded?"
     else
       ticker = nil
     end
@@ -28,12 +30,20 @@ class Market
 
   def self.current_bid
     puts "fetch_ticker: #{fetch_ticker.inspect}"
-    fetch_ticker[:bid].to_f if !fetch_ticker.nil?
+    if fetch_ticker.present?
+      fetch_ticker[:bid].to_f
+    else
+      nil
+    end
   end
 
   def self.current_ask
     puts "fetch_ticker: #{fetch_ticker.inspect}"
-    fetch_ticker[:ask].to_f if !fetch_ticker.nil?
+    if fetch_ticker.present?
+      fetch_ticker[:ask].to_f
+    else
+      nil
+    end
   end
 
   #=================================================
