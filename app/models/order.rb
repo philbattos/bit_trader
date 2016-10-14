@@ -3,7 +3,7 @@ class Order < ActiveRecord::Base
   belongs_to :contract
 
   scope :resolved,   -> { where(status: ['done']) }
-  scope :unresolved, -> { where(status: nil) }
+  scope :unresolved, -> { where(status: ['pending']) }
 
   # TODO: add validation for gdax_id (every order should have one)
 
@@ -45,7 +45,7 @@ class Order < ActiveRecord::Base
     response      = send_post_request(request_path, request_body, request_hash)
     response_body = JSON.parse(response.body, symbolize_names: true)
 
-    if response.status == 200
+    if response.status == 200 && response_body[:status] != 'rejected'
       Order.create(
         type:                lookup_class_type[order_type],
         gdax_id:             response_body[:id],
@@ -122,6 +122,7 @@ class Order < ActiveRecord::Base
 
   def self.update_status
     unresolved_order = Order.unresolved.first # for now, we are only checking the status of one order at a time
+
     if unresolved_order
       response      = check_status(unresolved_order.gdax_id)
       response_body = JSON.parse(response.body, symbolize_names: true)

@@ -29,7 +29,7 @@ class Contract < ActiveRecord::Base
 
       if sell_price > 0 # sometimes sell_price is 0; if so, we shouldn't send request to GDAX
         sell_order = Order.place_sell(sell_price)
-        if sell_order[:response_status] == 200
+        if sell_order[:response_status] == 200 && sell_order[:status] != 'rejected'
           contract.update(gdax_sell_order_id: sell_order[:id])
           new_order = Order.find_by_gdax_id(sell_order[:id])
           contract.sell_order = new_order
@@ -48,7 +48,7 @@ class Contract < ActiveRecord::Base
 
       if buy_price > 0 # sometimes buy_price is 0; if so, we shouldn't send request to GDAX
         buy_order = Order.place_buy(buy_price)
-        if buy_order[:response_status] == 200
+        if buy_order[:response_status] == 200 && buy_order[:status] != 'rejected'
           contract.update(gdax_buy_order_id: buy_order[:id])
           new_order = Order.find_by_gdax_id(buy_order[:id])
           contract.buy_order = new_order
@@ -64,7 +64,7 @@ class Contract < ActiveRecord::Base
     new_order = Order.place_buy(my_buy_price)
     puts "buying new order"
 
-    if new_order[:response_status] == 200
+    if new_order[:response_status] == 200 && new_order[:status] != 'rejected'
       order    = Order.find_by_gdax_id(new_order[:id])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_buy_order_id: new_order[:id])
@@ -80,7 +80,7 @@ class Contract < ActiveRecord::Base
     new_order = Order.place_sell(my_ask_price)
     puts "selling new order"
 
-    if new_order[:response_status] == 200
+    if new_order[:response_status] == 200 && new_order[:status] != 'rejected'
       order    = Order.find_by_gdax_id(new_order[:id])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_sell_order_id: new_order[:id])
