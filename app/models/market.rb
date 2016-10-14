@@ -25,11 +25,11 @@ class Market
   end
 
   def self.current_bid
-    fetch_ticker[:bid].to_f if fetch_ticker
+    fetch_ticker[:bid].to_f if !fetch_ticker.nil?
   end
 
   def self.current_ask
-    fetch_ticker[:ask].to_f if fetch_ticker
+    fetch_ticker[:ask].to_f if !fetch_ticker.nil?
   end
 
   #=================================================
