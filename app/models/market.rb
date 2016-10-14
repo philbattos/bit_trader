@@ -15,10 +15,10 @@ class Market
     request_info = "#{timestamp}GET#{request_path}"
     request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
 
-    response = send_get_request(request_path, request_hash).body
+    response = send_get_request(request_path, request_hash)
 
     if response.status == 200
-      JSON.parse(response, symbolize_names: true)
+      JSON.parse(response.body, symbolize_names: true)
     else
       nil
     end
