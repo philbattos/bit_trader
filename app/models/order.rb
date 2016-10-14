@@ -32,6 +32,7 @@ class Order < ActiveRecord::Base
   end
 
   def self.submit(order_type, price) # should this be an instance method??
+    return { response_status: 400, response: "invalid price: #{price}" } if price.to_f < 1
     type       = 'limit' # default
     side       = order_type
     product_id = 'BTC-USD'
@@ -78,7 +79,6 @@ class Order < ActiveRecord::Base
       response_body
     else
       puts "Unsuccessful request; order not created: #{response.inspect}"
-      puts "price: #{price}\n\n"
       { response_status: 400, response: response }
     end
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
