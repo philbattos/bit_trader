@@ -2,6 +2,9 @@ class Order < ActiveRecord::Base
 
   belongs_to :contract
 
+  scope :resolved,   -> { where(status: ['done']) }
+  scope :unresolved, -> { where.not(id: resolved) }
+
   # attr_accessor :type, :side, :product_id, :price, :size, :post_only
 
   # def initialize(side, price)
@@ -20,6 +23,10 @@ class Order < ActiveRecord::Base
     update(status: 'canceled')
   end
 
+  def closed?
+    gdax_status == 'done'
+  end
+
   def self.submit(order_type, price) # should this be an instance method??
     type       = 'limit' # default
     side       = order_type
@@ -32,12 +39,10 @@ class Order < ActiveRecord::Base
     request_body = { "type" => "#{type}", "side" => "#{side}", "product_id" => "#{product_id}", "price" => "#{price}", "size" => "#{size}", "post_only" => "#{post_only}" }.to_json
     request_info = "#{timestamp}POST#{request_path}#{request_body}"
     request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
+    response     = send_post_request(request_path, request_body, request_hash)
 
-    # puts "request_body: #{request_body.inspect}"
-    response      = send_post_request(request_path, request_body, request_hash)
-    response_body = JSON.parse(response.body, symbolize_names: true)
-    # puts "response_body: #{response_body.inspect}\n\n"
     if response.status == 200
+      response_body = JSON.parse(response.body, symbolize_names: true)
       Order.create(
         type:                lookup_class_type[order_type],
         gdax_id:             response_body[:id],
@@ -61,9 +66,11 @@ class Order < ActiveRecord::Base
         # custom_id:           response_body[:oid],
         # currency:            response_body[:currency],
       )
+      response_body[:response_status] = response.status
+      response_body
+    else
+      puts "Unsuccessful request; order not submitted: #{response.inspect}\n"
     end
-    response_body[:response_status] = response.status
-    response_body
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
     puts "Timeout error: #{timeout_error}"
     Rails.logger.error { "#{timeout_error.message}" }
@@ -108,7 +115,20 @@ class Order < ActiveRecord::Base
     request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
 
     send_get_request(request_path, request_hash)
-    # JSON.parse(response)
+  end
+
+  def self.update_status
+    order         = unresolved.first # for now, we are only checking the status of one order at a time
+    response      = check_status(order.gdax_id)
+    response_body = JSON.parse(response.body, symbolize_names: true)
+
+    if response.status == 200
+      if response_body[:status] != order.gdax_status
+        order.update(gdax_status: response_body[:status], status: response_body[:status])
+      end
+    else
+      puts "check status request failed for order #{order.gdax_id}: #{response.inspect}"
+    end
   end
 
   #=================================================
