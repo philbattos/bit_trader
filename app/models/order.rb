@@ -41,39 +41,43 @@ class Order < ActiveRecord::Base
     request_body = { "type" => "#{type}", "side" => "#{side}", "product_id" => "#{product_id}", "price" => "#{price}", "size" => "#{size}", "post_only" => "#{post_only}" }.to_json
     request_info = "#{timestamp}POST#{request_path}#{request_body}"
     request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
+    response     = send_post_request(request_path, request_body, request_hash)
 
-    response      = send_post_request(request_path, request_body, request_hash)
-    response_body = JSON.parse(response.body, symbolize_names: true)
-
-    if response.status == 200 && response_body[:status] != 'rejected'
-      Order.create(
-        type:                lookup_class_type[order_type],
-        gdax_id:             response_body[:id],
-        gdax_price:          response_body[:price],
-        gdax_size:           response_body[:size],
-        gdax_product_id:     response_body[:product_id],
-        gdax_side:           response_body[:side],
-        gdax_stp:            response_body[:stp],
-        gdax_type:           response_body[:type],
-        gdax_post_only:      response_body[:post_only],
-        gdax_created_at:     response_body[:created_at],
-        gdax_filled_fees:    response_body[:filled_fees],
-        gdax_filled_size:    response_body[:filled_size],
-        gdax_executed_value: response_body[:executed_value],
-        gdax_status:         response_body[:status],
-        gdax_settled:        response_body[:settled],
-        quantity:            response_body[:size].to_f.round(7),
-        price:               response_body[:price].to_f.round(7),
-        fees:                response_body[:fill_fees].to_f.round(7),
-        status:              response_body[:status],
-        # custom_id:           response_body[:oid],
-        # currency:            response_body[:currency],
-      )
+    if response.status == 200
+      response_body = JSON.parse(response.body, symbolize_names: true)
+      if response_body[:status] != 'rejected'
+        Order.create(
+          type:                lookup_class_type[order_type],
+          gdax_id:             response_body[:id],
+          gdax_price:          response_body[:price],
+          gdax_size:           response_body[:size],
+          gdax_product_id:     response_body[:product_id],
+          gdax_side:           response_body[:side],
+          gdax_stp:            response_body[:stp],
+          gdax_type:           response_body[:type],
+          gdax_post_only:      response_body[:post_only],
+          gdax_created_at:     response_body[:created_at],
+          gdax_filled_fees:    response_body[:filled_fees],
+          gdax_filled_size:    response_body[:filled_size],
+          gdax_executed_value: response_body[:executed_value],
+          gdax_status:         response_body[:status],
+          gdax_settled:        response_body[:settled],
+          quantity:            response_body[:size].to_f.round(7),
+          price:               response_body[:price].to_f.round(7),
+          fees:                response_body[:fill_fees].to_f.round(7),
+          status:              response_body[:status],
+          # custom_id:           response_body[:oid],
+          # currency:            response_body[:currency],
+        )
+      else
+        puts "Request rejected: #{response.inspect}"
+      end
+      response_body[:response_status] = response.status
+      response_body
     else
-      puts "Unsuccessful request; order not created: #{response.inspect}\n"
+      puts "Unsuccessful request; order not created: #{response.inspect}"
+      { response: "error", response_status: 400 }
     end
-    response_body[:response_status] = response.status
-    response_body
   rescue Faraday::TimeoutError, Net::ReadTimeout => timeout_error
     puts "Timeout error: #{timeout_error}"
     Rails.logger.error { "#{timeout_error.message}" }
