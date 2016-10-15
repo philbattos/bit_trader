@@ -24,11 +24,8 @@ class Contract < ActiveRecord::Base
 
   def self.match_open_buys
     with_buy_without_sell.each do |contract|
-      current_ask = Market.current_ask
-      return if current_ask.nil?
-
       min_sell_price = contract.buy_order.price + PROFIT
-      sell_price     = [current_ask, min_sell_price].compact.max.round(7)
+      sell_price     = [Market.current_ask, min_sell_price].compact.max.round(7)
       sell_order     = Order.place_sell(sell_price)
 
       if sell_order[:response_status] == 200 && sell_order[:status] != 'rejected'
@@ -43,11 +40,8 @@ class Contract < ActiveRecord::Base
 
   def self.match_open_sells
     with_sell_without_buy.each do |contract|
-      current_bid = Market.current_bid
-      return if current_bid.nil?
-
       max_buy_price = contract.sell_order.price - PROFIT
-      buy_price     = [current_bid, max_buy_price].min.round(7)
+      buy_price     = [Market.current_bid, max_buy_price].min.round(7)
       buy_order     = Order.place_buy(buy_price)
 
       if buy_order[:response_status] == 200 && buy_order[:status] != 'rejected'
@@ -78,7 +72,6 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_sell_order
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
-    return if my_ask_price.nil?
     new_order = Order.place_sell(my_ask_price)
 
     if new_order[:response_status] == 200 && new_order[:status] != 'rejected'
@@ -93,13 +86,11 @@ class Contract < ActiveRecord::Base
   end
 
   def self.my_buy_price # move this into Order class?
-    current_bid = Market.current_bid
-    current_bid && (current_bid - MARGIN).round(7)
+    (Market.current_bid - MARGIN).round(7)
   end
 
   def self.my_ask_price # move this into Order class?
-    current_ask = Market.current_ask
-    current_ask && (current_ask + MARGIN).round(7)
+    (Market.current_ask + MARGIN).round(7)
   end
 
   def self.update_status

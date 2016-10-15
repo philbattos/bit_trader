@@ -14,32 +14,44 @@ class Market
     end
   end
 
-  def self.fetch_ticker
-    request_path = "/products/BTC-USD/ticker"
-    request_info = "#{timestamp}GET#{request_path}"
-    request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
-
-    response = send_get_request(request_path, request_hash)
-
-    if response.status == 200
-      JSON.parse(response.body, symbolize_names: true)
-    elsif response.status == 429
-      puts "#{response.body}"
-      nil
-    else
-      nil
-    end
+  def self.ticker
+    GDAX.new.client.orderbook
   end
 
   def self.current_bid
-    ticker = fetch_ticker
-    ticker[:bid].to_f if !ticker.nil?
+    ticker.bids.first[0].to_f
   end
 
   def self.current_ask
-    ticker = fetch_ticker
-    ticker[:ask].to_f if !ticker.nil?
+    ticker.asks.first[0].to_f
   end
+
+  # def self.fetch_ticker
+  #   request_path = "/products/BTC-USD/ticker"
+  #   request_info = "#{timestamp}GET#{request_path}"
+  #   request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
+
+  #   response = send_get_request(request_path, request_hash)
+
+  #   if response.status == 200
+  #     JSON.parse(response.body, symbolize_names: true)
+  #   elsif response.status == 429
+  #     puts "#{response.body}"
+  #     nil
+  #   else
+  #     nil
+  #   end
+  # end
+
+  # def self.current_bid
+  #   ticker = fetch_ticker
+  #   ticker[:bid].to_f if !ticker.nil?
+  # end
+
+  # def self.current_ask
+  #   ticker = fetch_ticker
+  #   ticker[:ask].to_f if !ticker.nil?
+  # end
 
   #=================================================
     private
