@@ -31,7 +31,7 @@ class Order < ActiveRecord::Base
   end
 
   def closed?
-    CLOSED_STATUSES.includes? gdax_status
+    CLOSED_STATUSES.include? gdax_status
   end
 
   def self.submit(order_type, price) # should this be an instance method??
