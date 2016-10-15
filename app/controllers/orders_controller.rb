@@ -4,7 +4,7 @@ class OrdersController < ApplicationController
 
   def index
     @orders = Order.fetch_all
-    @current_price = Market.fetch_ticker[:price]
+    @current_price = Market.last_trade.price
     render :index
   end
 

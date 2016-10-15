@@ -32,8 +32,6 @@ class Contract < ActiveRecord::Base
         contract.update(gdax_sell_order_id: sell_order['id'])
         new_order = Order.find_by_gdax_id(sell_order['id'])
         contract.sell_order = new_order
-      else
-        puts "SELL NOT COMPLETED: #{sell_order.inspect}\n\n"
       end
     end
   end
@@ -48,15 +46,12 @@ class Contract < ActiveRecord::Base
         contract.update(gdax_buy_order_id: buy_order['id'])
         new_order = Order.find_by_gdax_id(buy_order['id'])
         contract.buy_order = new_order
-      else
-        puts "BUY NOT COMPLETED: #{buy_order.inspect}"
       end
     end
   end
 
   def self.place_new_buy_order
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
-    return if my_buy_price.nil?
     new_order = Order.place_buy(my_buy_price)
 
     if new_order
@@ -64,9 +59,6 @@ class Contract < ActiveRecord::Base
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_buy_order_id: new_order['id'])
       contract.buy_order = order
-    else
-      # check if order was created on GDAX
-      puts "BUY ORDER FAILED: #{new_order}"
     end
   end
 
@@ -79,9 +71,6 @@ class Contract < ActiveRecord::Base
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_sell_order_id: new_order['id'])
       contract.sell_order = order
-    else
-      # check if order was created on GDAX
-      puts "SELL ORDER FAILED: #{new_order}"
     end
   end
 
