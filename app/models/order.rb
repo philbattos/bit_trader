@@ -2,8 +2,11 @@ class Order < ActiveRecord::Base
 
   belongs_to :contract
 
-  scope :resolved,   -> { where(status: ['done', 'rejected', 'not found']) }
+  scope :resolved,   -> { where(status: CLOSED_STATUSES) }
   scope :unresolved, -> { where.not(id: resolved) }
+  # NOTE: canceled orders are marked with 'done' status
+
+  CLOSED_STATUS = %w[ done rejected not-found ]
 
   # TODO: add validation for gdax_id (every order should have one)
 
@@ -28,7 +31,7 @@ class Order < ActiveRecord::Base
   end
 
   def closed?
-    gdax_status == 'done'
+    CLOSED_STATUSES.includes? gdax_status
   end
 
   def self.submit(order_type, price) # should this be an instance method??
@@ -142,7 +145,7 @@ class Order < ActiveRecord::Base
           order.update(gdax_status: response_body[:status], status: response_body[:status])
         end
       elsif response.status == 404
-        order.update(gdax_status: 'not found', status: 'not found')
+        order.update(gdax_status: 'not-found', status: 'not-found')
         puts "Order not found on GDAX (order #{order.gdax_id}): #{response.inspect}"
       else
         puts "check status request failed for order #{order.gdax_id}: #{response.inspect}"
