@@ -28,9 +28,9 @@ class Contract < ActiveRecord::Base
       sell_price     = [Market.current_ask, min_sell_price].compact.max.round(7)
       sell_order     = Order.place_sell(sell_price)
 
-      if sell_order[:response_status] == 200 && sell_order[:status] != 'rejected'
-        contract.update(gdax_sell_order_id: sell_order[:id])
-        new_order = Order.find_by_gdax_id(sell_order[:id])
+      if sell_order
+        contract.update(gdax_sell_order_id: sell_order['id'])
+        new_order = Order.find_by_gdax_id(sell_order['id'])
         contract.sell_order = new_order
       else
         puts "SELL NOT COMPLETED: #{sell_order.inspect}\n\n"
@@ -44,9 +44,9 @@ class Contract < ActiveRecord::Base
       buy_price     = [Market.current_bid, max_buy_price].min.round(7)
       buy_order     = Order.place_buy(buy_price)
 
-      if buy_order[:response_status] == 200 && buy_order[:status] != 'rejected'
-        contract.update(gdax_buy_order_id: buy_order[:id])
-        new_order = Order.find_by_gdax_id(buy_order[:id])
+      if buy_order
+        contract.update(gdax_buy_order_id: buy_order['id'])
+        new_order = Order.find_by_gdax_id(buy_order['id'])
         contract.buy_order = new_order
       else
         puts "BUY NOT COMPLETED: #{buy_order.inspect}"
@@ -59,14 +59,14 @@ class Contract < ActiveRecord::Base
     return if my_buy_price.nil?
     new_order = Order.place_buy(my_buy_price)
 
-    if new_order[:response_status] == 200 && new_order[:status] != 'rejected'
-      order    = Order.find_by_gdax_id(new_order[:id])
+    if new_order
+      order    = Order.find_by_gdax_id(new_order['id'])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
-      contract.update(gdax_buy_order_id: new_order[:id])
+      contract.update(gdax_buy_order_id: new_order['id'])
       contract.buy_order = order
     else
       # check if order was created on GDAX
-      puts "BUY ORDER FAILED: #{new_order[:response_status]}"
+      puts "BUY ORDER FAILED: #{new_order}"
     end
   end
 
@@ -74,14 +74,14 @@ class Contract < ActiveRecord::Base
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
     new_order = Order.place_sell(my_ask_price)
 
-    if new_order[:response_status] == 200 && new_order[:status] != 'rejected'
-      order    = Order.find_by_gdax_id(new_order[:id])
+    if new_order
+      order    = Order.find_by_gdax_id(new_order['id'])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
-      contract.update(gdax_sell_order_id: new_order[:id])
+      contract.update(gdax_sell_order_id: new_order['id'])
       contract.sell_order = order
     else
       # check if order was created on GDAX
-      puts "SELL ORDER FAILED: #{new_order[:response_status]}"
+      puts "SELL ORDER FAILED: #{new_order}"
     end
   end
 
