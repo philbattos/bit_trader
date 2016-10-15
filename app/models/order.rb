@@ -176,6 +176,7 @@ class Order < ActiveRecord::Base
   rescue Coinbase::Exchange::BadRequestError => request_error
     puts "GDAX couldn't check/update status for order #{order.gdax_id}"
   rescue Coinbase::Exchange::NotFoundError => not_found_error
+    order.update(gdax_status: 'not-found', status: 'not-found')
     puts "GDAX couldn't find order #{order.gdax_id}: #{not_found_error}"
   end
 
