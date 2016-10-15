@@ -6,7 +6,7 @@ class Order < ActiveRecord::Base
   scope :unresolved, -> { where.not(id: resolved) }
   # NOTE: canceled orders are marked with 'done' status
 
-  CLOSED_STATUS = %w[ done rejected not-found ]
+  CLOSED_STATUSES = %w[ done rejected not-found ]
 
   # TODO: add validation for gdax_id (every order should have one)
 
