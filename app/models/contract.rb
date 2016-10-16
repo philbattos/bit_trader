@@ -56,7 +56,11 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_buy_order
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
-    next if my_buy_price == 0.0
+    if my_buy_price == 0.0
+      puts "Buy price $0... Could be rate limit error"
+      return
+    end
+
     new_order = Order.place_buy(my_buy_price)
 
     if new_order
@@ -69,7 +73,11 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_sell_order
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
-    next if my_ask_price == 0.0
+    if my_ask_price == 0.0
+      puts "Ask price $0... Could be rate limit error"
+      return
+    end
+
     new_order = Order.place_sell(my_ask_price)
 
     if new_order
