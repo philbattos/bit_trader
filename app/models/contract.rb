@@ -23,9 +23,11 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_buys
+    current_ask = Market.current_ask
     with_buy_without_sell.each do |contract|
+      next if current_ask == 0.0
       min_sell_price = contract.buy_order.price + PROFIT
-      sell_price     = [Market.current_ask, min_sell_price].compact.max.round(7)
+      sell_price     = [current_ask, min_sell_price].compact.max.round(7)
       sell_order     = Order.place_sell(sell_price)
 
       if sell_order
@@ -37,9 +39,11 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_sells
+    current_bid = Market.current_bid
     with_sell_without_buy.each do |contract|
+      next if current_ask == 0.0
       max_buy_price = contract.sell_order.price - PROFIT
-      buy_price     = [Market.current_bid, max_buy_price].min.round(7)
+      buy_price     = [current_bid, max_buy_price].min.round(7)
       buy_order     = Order.place_buy(buy_price)
 
       if buy_order
@@ -52,6 +56,7 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_buy_order
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
+    next if my_buy_price == 0.0
     new_order = Order.place_buy(my_buy_price)
 
     if new_order
@@ -64,6 +69,7 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_sell_order
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
+    next if my_ask_price == 0.0
     new_order = Order.place_sell(my_ask_price)
 
     if new_order
@@ -75,11 +81,21 @@ class Contract < ActiveRecord::Base
   end
 
   def self.my_buy_price # move this into Order class?
-    (Market.current_bid - MARGIN).round(7)
+    @current_bid ||= Market.current_bid
+    if @current_bid == 0.0
+      return 0.0
+    else
+      (@current_bid - MARGIN).round(7)
+    end
   end
 
   def self.my_ask_price # move this into Order class?
-    (Market.current_ask + MARGIN).round(7)
+    @current_ask ||= Market.current_ask
+    if @current_ask == 0.0
+      return @current_ask
+    else
+      (@current_ask + MARGIN).round(7)
+    end
   end
 
   def self.update_status
