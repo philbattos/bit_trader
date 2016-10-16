@@ -64,6 +64,9 @@ class Order < ActiveRecord::Base
   rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
     puts "GDAX SSL error (order submit): #{ssl_error}"
     nil
+  rescue Coinbase::Exchange::InternalServerError => server_error
+    puts "GDAX server error (order submit): #{server_error}"
+    nil
   end
 
   def self.place_buy(bid)
@@ -99,6 +102,7 @@ class Order < ActiveRecord::Base
     if order
       response = check_status(order.gdax_id)
       if response['status'] != order.gdax_status
+        puts "Updating status of order #{order.id} from #{order.gdax_status} to #{response['status']}"
         order.update(gdax_status: response['status'], status: response['status'])
       end
     end
