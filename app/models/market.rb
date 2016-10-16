@@ -16,10 +16,14 @@ class Market
 
   def self.orderbook
     GDAX.new.client.orderbook
+  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+    puts "GDAX rate limit error (orderbook): #{rate_limit_error}"
   end
 
   def self.last_trade
     GDAX.new.client.last_trade
+  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+    puts "GDAX rate limit error (last-trade): #{rate_limit_error}"
   end
 
   def self.current_bid

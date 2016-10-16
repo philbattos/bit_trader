@@ -56,7 +56,7 @@ class Order < ActiveRecord::Base
     puts "GDAX error: #{gdax_error}"
     nil
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error: #{rate_limit_error}"
+    puts "GDAX rate limit error (order submit): #{rate_limit_error}"
     nil
   end
 
@@ -104,7 +104,7 @@ class Order < ActiveRecord::Base
     puts "GDAX couldn't find order #{order.gdax_id}: #{not_found_error}"
     puts "Updated order #{order.gdax_id} with status 'not-found'"
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error: #{rate_limit_error}"
+    puts "GDAX rate limit error (update order status): #{rate_limit_error}"
   end
 
   #=================================================
