@@ -50,13 +50,19 @@ class Order < ActiveRecord::Base
       response = GDAX.new.client.sell(size, price, post_only: true)
     end
 
-    store_order(response, order_type)
+    store_order(response, order_type) if response
     response
   rescue Coinbase::Exchange::BadRequestError => gdax_error
-    puts "GDAX error: #{gdax_error}"
+    puts "GDAX error (order submit): #{gdax_error}"
     nil
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (order submit): #{rate_limit_error}"
+    nil
+  rescue Net::ReadTimeout => timeout_error
+    puts "GDAX timeout error (order submit): #{timeout_error}"
+    nil
+  rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
+    puts "GDAX SSL error (order submit): #{ssl_error}"
     nil
   end
 
@@ -112,6 +118,7 @@ class Order < ActiveRecord::Base
   #=================================================
 
     def self.store_order(response, order_type)
+      puts "Storing order #{response['id']}"
       Order.create(
         type:                lookup_class_type[order_type],
         gdax_id:             response['id'],
