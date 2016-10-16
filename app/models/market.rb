@@ -3,13 +3,13 @@ class Market
   def self.poll
     while true
       Order.update_status
-      sleep 0.3
+      sleep 0.4
       Contract.update_status
-      sleep 0.3
+      sleep 0.4
       Contract.resolve_open
-      sleep 0.3
+      sleep 0.4
       Contract.place_new_buy_order
-      sleep 0.3
+      sleep 0.4
       Contract.place_new_sell_order
     end
   end
