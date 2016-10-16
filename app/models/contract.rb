@@ -83,20 +83,20 @@ class Contract < ActiveRecord::Base
   end
 
   def self.my_buy_price # move this into Order class?
-    @current_bid ||= Market.current_bid
-    if @current_bid == 0.0
-      return 0.0
+    current_bid = Market.current_bid
+    if current_bid == 0.0
+      return current_bid
     else
-      (@current_bid - MARGIN).round(7)
+      (current_bid - MARGIN).round(7)
     end
   end
 
   def self.my_ask_price # move this into Order class?
-    @current_ask ||= Market.current_ask
-    if @current_ask == 0.0
-      return @current_ask
+    current_ask = Market.current_ask
+    if current_ask == 0.0
+      return current_ask
     else
-      (@current_ask + MARGIN).round(7)
+      (current_ask + MARGIN).round(7)
     end
   end
 
@@ -121,6 +121,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.missing_price(type)
+    puts "GDAX orderbook returned a #{type} price of $0... It could be the result of a rate limit error."
     "GDAX orderbook returned a #{type} price of $0... It could be the result of a rate limit error."
   end
 

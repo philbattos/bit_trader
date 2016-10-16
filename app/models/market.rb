@@ -29,11 +29,11 @@ class Market
   end
 
   def self.current_bid
-    @current_bid ||= orderbook.bids.first[0].to_f
+    orderbook.bids.first[0].to_f
   end
 
   def self.current_ask
-    @current_ask ||= orderbook.asks.first[0].to_f
+    orderbook.asks.first[0].to_f
   end
 
   #=================================================
