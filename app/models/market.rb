@@ -19,12 +19,18 @@ class Market
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (orderbook): #{rate_limit_error}"
     empty_orderbook
+  rescue Coinbase::Exchange::APIError => api_error
+    puts "GDAX API error (orderbook): #{api_error}"
+    empty_orderbook
   end
 
   def self.last_trade
     GDAX.new.client.last_trade
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (last-trade): #{rate_limit_error}"
+    empty_orderbook
+  rescue Coinbase::Exchange::APIError => api_error
+    puts "GDAX API error (last-trade): #{api_error}"
     empty_orderbook
   end
 
