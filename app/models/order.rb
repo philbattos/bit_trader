@@ -44,7 +44,7 @@ class Order < ActiveRecord::Base
     size  = '0.01'
     optional_params = {
       time_in_force: 'GTT',
-      cancel_after: 'min', # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
+      cancel_after: 'hour', # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
       post_only: true
     }
 
