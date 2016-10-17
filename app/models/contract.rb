@@ -107,7 +107,7 @@ class Contract < ActiveRecord::Base
 
   def update_status
     if completed?
-      puts "Updating status of contract #{self.id} from #{self.status} to 'done'"
+      puts "Updating status of contract #{self.id} from #{self.status} to done"
       update(status: 'done')
     end
   end

@@ -42,12 +42,17 @@ class Order < ActiveRecord::Base
     # post_only  = true
     price = price.to_s
     size  = '0.01'
+    optional_params = {
+      time_in_force: 'GTT',
+      cancel_after: 'min', # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
+      post_only: true
+    }
 
     case order_type
     when 'buy'
-      response = GDAX.new.client.buy(size, price, post_only: true)
+      response = GDAX.new.client.buy(size, price, optional_params)
     when 'sell'
-      response = GDAX.new.client.sell(size, price, post_only: true)
+      response = GDAX.new.client.sell(size, price, optional_params)
     end
 
     store_order(response, order_type) if response
