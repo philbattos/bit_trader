@@ -6,6 +6,7 @@ class Order < ActiveRecord::Base
   scope :unresolved, -> { where.not(id: resolved) }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
+  scope :purchased, -> { where(gdax_status: ['done', 'pending', 'open']) }
 
   CLOSED_STATUSES = %w[ done rejected not-found ]
 
@@ -120,6 +121,13 @@ class Order < ActiveRecord::Base
     puts "Updated order #{order.gdax_id} with status 'not-found'"
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (update order status): #{rate_limit_error}"
+  end
+
+  def self.total_profit
+    buy_orders  = BuyOrder.purchased.pluck(:gdax_price).sum {|o| o.to_f }
+    sell_orders = SellOrder.purchased.pluck(:gdax_price).sum {|o| o.to_f }
+    profit = (sell_orders - buy_orders) * 0.0001
+    profit.round(4)
   end
 
   #=================================================
