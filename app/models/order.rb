@@ -7,6 +7,8 @@ class Order < ActiveRecord::Base
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
   scope :purchased, -> { where(gdax_status: ['done', 'pending', 'open']) }
+  scope :done,      -> { where(gdax_status: 'done') }
+  scope :inactive,  -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
 
   CLOSED_STATUSES = %w[ done rejected not-found ]
 
@@ -126,7 +128,16 @@ class Order < ActiveRecord::Base
   def self.total_profit
     buy_orders  = BuyOrder.purchased.pluck(:gdax_price).sum {|o| o.to_f }
     sell_orders = SellOrder.purchased.pluck(:gdax_price).sum {|o| o.to_f }
-    profit = (sell_orders - buy_orders) * 0.0001
+    profit      = (sell_orders - buy_orders) * 0.0001
+
+    profit.round(4)
+  end
+
+  def self.completed_profit
+    buy_orders  = BuyOrder.done.inactive.pluck(:gdax_price).sum {|o| o.to_f }
+    sell_orders = SellOrder.done.inactive.pluck(:gdax_price).sum {|o| o.to_f }
+    profit      = (sell_orders - buy_orders) * 0.0001
+
     profit.round(4)
   end
 
