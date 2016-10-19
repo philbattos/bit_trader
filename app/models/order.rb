@@ -126,16 +126,16 @@ class Order < ActiveRecord::Base
   end
 
   def self.total_profit
-    buy_orders  = BuyOrder.purchased.pluck(:gdax_price).sum {|o| o.to_f }
-    sell_orders = SellOrder.purchased.pluck(:gdax_price).sum {|o| o.to_f }
+    buy_orders  = BuyOrder.purchased.pluck(:gdax_price).sum {|o| o.to_d }
+    sell_orders = SellOrder.purchased.pluck(:gdax_price).sum {|o| o.to_d }
     profit      = (sell_orders - buy_orders) * 0.0001
 
     profit.round(4)
   end
 
   def self.completed_profit
-    buy_orders  = BuyOrder.done.inactive.pluck(:gdax_price).sum {|o| o.to_f }
-    sell_orders = SellOrder.done.inactive.pluck(:gdax_price).sum {|o| o.to_f }
+    buy_orders  = BuyOrder.done.inactive.pluck(:gdax_price).sum {|o| o.to_d }
+    sell_orders = SellOrder.done.inactive.pluck(:gdax_price).sum {|o| o.to_d }
     profit      = (sell_orders - buy_orders) * 0.0001
 
     profit.round(4)
@@ -163,9 +163,9 @@ class Order < ActiveRecord::Base
         gdax_executed_value: response['executed_value'],
         gdax_status:         response['status'],
         gdax_settled:        response['settled'],
-        quantity:            response['size'].to_f.round(7),
-        price:               response['price'].to_f.round(7),
-        fees:                response['fill_fees'].to_f.round(7),
+        quantity:            response['size'].to_d.round(7),
+        price:               response['price'].to_d.round(7),
+        fees:                response['fill_fees'].to_d.round(7),
         status:              response['status'],
         # custom_id:           response['oid'],
         # currency:            response['currency'],

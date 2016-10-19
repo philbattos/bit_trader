@@ -35,14 +35,14 @@ class Market
   end
 
   def self.current_bid
-    orderbook.bids.first[0].to_f
+    orderbook.bids.first[0].to_d
   rescue NoMethodError => no_method_error
     puts "NoMethodError (current_bid): #{no_method_error}"
     retry
   end
 
   def self.current_ask
-    orderbook.asks.first[0].to_f
+    orderbook.asks.first[0].to_d
   rescue NoMethodError => no_method_error
     puts "NoMethodError (current_ask): #{no_method_error}"
     retry
