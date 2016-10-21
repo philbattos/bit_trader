@@ -135,8 +135,8 @@ class Order < ActiveRecord::Base
 
   def self.completed_profit
     count       = [BuyOrder.done.count, SellOrder.done.count].min
-    buy_orders  = BuyOrder.done.inactive.pluck(:gdax_price).first(count).sum {|o| o.to_d }
-    sell_orders = SellOrder.done.inactive.pluck(:gdax_price).first(count).sum {|o| o.to_d }
+    buy_orders  = BuyOrder.done.pluck(:gdax_price).first(count).sum {|o| o.to_d }
+    sell_orders = SellOrder.done.pluck(:gdax_price).first(count).sum {|o| o.to_d }
     profit      = (sell_orders - buy_orders) * 0.0001
 
     profit.round(4)

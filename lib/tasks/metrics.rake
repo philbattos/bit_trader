@@ -3,8 +3,8 @@ task metrics: :environment do
   total_profit     = Order.total_profit
   completed_profit = Order.completed_profit
 
-  completed_buys   = BuyOrder.done.inactive.count
-  completed_sells  = SellOrder.done.inactive.count
+  completed_buys   = BuyOrder.done.count
+  completed_sells  = SellOrder.done.count
   difference       = completed_sells - completed_buys
 
   puts "Current profit: #{total_profit}"
