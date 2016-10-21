@@ -126,7 +126,7 @@ class Order < ActiveRecord::Base
   end
 
   def self.total_profit
-    count       = BuyOrder.purchased.count, SellOrder.purchased.count].min
+    count       = [BuyOrder.purchased.count, SellOrder.purchased.count].min
     buy_orders  = BuyOrder.purchased.pluck(:gdax_price).first(count).sum {|o| o.to_d }
     sell_orders = SellOrder.purchased.pluck(:gdax_price).first(count).sum {|o| o.to_d }
     profit      = (sell_orders - buy_orders) * 0.01
