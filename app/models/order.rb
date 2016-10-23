@@ -109,7 +109,7 @@ class Order < ActiveRecord::Base
     order = Order.unresolved.sample # for now, we are checking the status of one randomly selected order at a time
     if order
       response = check_status(order.gdax_id)
-      if response['status'] != order.gdax_status
+      if response && response['status'] != order.gdax_status
         puts "Updating status of order #{order.id} from #{order.gdax_status} to #{response['status']}"
         order.update(gdax_status: response['status'], status: response['status'])
       end

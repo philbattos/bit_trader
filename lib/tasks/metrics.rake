@@ -7,7 +7,7 @@ task metrics: :environment do
   completed_sells  = SellOrder.done.count
   difference       = completed_sells - completed_buys
 
-  puts "Current profit: #{total_profit}"
-  puts "Completed profit: #{completed_profit}"
+  puts "Current profit: $#{total_profit}"
+  puts "Completed profit: $#{completed_profit}"
   puts "Completed orders: #{completed_buys} buys, #{completed_sells} sells (#{difference} sells difference)"
 end
