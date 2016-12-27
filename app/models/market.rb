@@ -35,7 +35,7 @@ class Market
       # NOTE: response is a Coinbase::Exchange::APIObject
       GDAX::MarketData.save_trade(response)
       if response.trade_id % 100 == 0
-        p "Latest Trade: $ %.2f (seq: #{response.sequence})" % response.price
+        p "Latest Trade: $ %.2f (trade ID: #{response.trade_id})" % response.price
       end
     end
 
