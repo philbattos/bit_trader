@@ -53,9 +53,9 @@ class Order < ActiveRecord::Base
 
     case order_type
     when 'buy'
-      response = GDAX.new.client.buy(size, price, optional_params)
+      response = GDAX::Connection.new.async_client.buy(size, price, optional_params)
     when 'sell'
-      response = GDAX.new.client.sell(size, price, optional_params)
+      response = GDAX::Connection.new.async_client.sell(size, price, optional_params)
     end
 
     store_order(response, order_type) if response
@@ -102,7 +102,7 @@ class Order < ActiveRecord::Base
   # end
 
   def self.check_status(id)
-    GDAX.new.client.order(id)
+    GDAX::Connection.new.async_client.order(id)
   end
 
   def self.update_status

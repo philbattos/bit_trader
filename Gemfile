@@ -17,14 +17,15 @@ gem 'sdoc',         '~> 0.4.0', group: :doc # bundle exec rake doc:rails generat
 #    Added gems
 #-------------------------------------------------
 gem 'coinbase'                              # Ruby wrapper for the Coinbase API
-gem 'coinbase-exchange'                     # Client library for Coinbase Exchange
+# gem 'coinbase-exchange'                     # Client library for Coinbase Exchange
+gem 'coinbase-exchange', github: "philbattos/coinbase-exchange-ruby" # using forked version since some updates were necessary
 gem 'faraday'                               # HTTP client
 gem 'em-http-request'                       # required by coinbase gem for authentication
 gem 'pg'                                    # use postgres db (required by Heroku)
 gem 'puma'                                  # server that supports ActionCable (Rails 5)
 
 group :development, :test do
-  gem 'byebug'                              # Call 'byebug' anywhere in the code to stop execution and get a debugger console
+  gem 'pry'                                 # Call 'byebug' anywhere in the code to stop execution and get a debugger console
   gem 'dotenv-rails'                        # Set and load environment variables
 end
 
@@ -33,4 +34,4 @@ group :development do
   gem 'spring'                              # Spring speeds up development by keeping your application running in the background. Read more: https://github.com/rails/spring
 end
 
-ruby "2.2.2"                                # used by Heroku to specify Ruby version
+ruby "2.3.0"                                # used by Heroku to specify Ruby version
