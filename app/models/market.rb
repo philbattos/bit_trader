@@ -34,8 +34,8 @@ class Market
     websocket.match do |response|
       # NOTE: response is a Coinbase::Exchange::APIObject
       GDAX::MarketData.save_trade(response)
-      if response.sequence % 1000 == 0
-        p "Latest Trade: $ %.2f (seq: #{response.sequence})\n" % response.price
+      if response.trade_id % 100 == 0
+        p "Latest Trade: $ %.2f (seq: #{response.sequence})" % response.price
       end
     end
 

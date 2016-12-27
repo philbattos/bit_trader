@@ -2,6 +2,8 @@ module GDAX
   class MarketData < ActiveRecord::Base
     set_table_name = 'market_data'
 
+    scope :trades_since, -> (date) { where(gdax_time: date..Time.now) }
+
     def self.save_trade(trade_data)
       trade_data  = trade_data.to_hash.symbolize_keys
       core_fields = unchanged_names(trade_data)
@@ -24,6 +26,15 @@ module GDAX
         :product_id,
         :sequence
       )
+    end
+
+    def self.calculate_average(date)
+      trades = trades_since(date)
+      if trades.present?
+        (trades.pluck(:price).sum / trades.count).round(2)
+      else
+        0
+      end
     end
   end
 end
