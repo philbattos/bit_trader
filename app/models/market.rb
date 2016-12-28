@@ -70,9 +70,9 @@ class Market
                   end
                 end
               end
-            rescue StandardError => error
-              puts "cancellation error: #{error.inspect}"
-            end
+            # rescue StandardError => error
+            #   puts "cancellation error: #{error.inspect}"
+            # end
           end
         elsif current_price < floor
           puts "PRICE DROP"
