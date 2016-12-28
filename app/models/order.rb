@@ -46,9 +46,9 @@ class Order < ActiveRecord::Base
     price = price.to_s
     size  = '0.01'
     optional_params = {
-      time_in_force: 'GTT',
-      post_only: true
-      # cancel_after: 'hour', # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
+      post_only: true,
+      # time_in_force: 'GTT',
+      # cancel_after: 'hour' # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
     }
 
     case order_type
