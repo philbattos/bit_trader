@@ -30,7 +30,7 @@ class Contract < ActiveRecord::Base
 
     with_buy_without_sell.each do |contract|
       min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
-      sell_price     = [current_ask, min_sell_price].compact.max.round(5)
+      sell_price     = [current_ask, min_sell_price].compact.max.round(3)
       sell_order     = Order.place_sell(sell_price)
 
       if sell_order
@@ -47,7 +47,7 @@ class Contract < ActiveRecord::Base
 
     with_sell_without_buy.each do |contract|
       max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
-      buy_price     = [current_bid, max_buy_price].min.round(5)
+      buy_price     = [current_bid, max_buy_price].min.round(3)
       buy_order     = Order.place_buy(buy_price)
 
       if buy_order
@@ -91,7 +91,7 @@ class Contract < ActiveRecord::Base
     if current_bid == 0.0
       return current_bid
     else
-      (current_bid - MARGIN).round(5)
+      (current_bid - MARGIN).round(3)
     end
   end
 
@@ -100,7 +100,7 @@ class Contract < ActiveRecord::Base
     if current_ask == 0.0
       return current_ask
     else
-      (current_ask + MARGIN).round(5)
+      (current_ask + MARGIN).round(3)
     end
   end
 
