@@ -62,6 +62,7 @@ class Market
                   # cancellation returns empty hash {}
                   if cancellation # or cancellation.empty?
                     market_order = GDAX::Connection.new.rest_client.buy(0.01, nil, type: 'market')
+                    puts "market_order: #{market_order.inspect}"
                     # confirm market_order completed; rescue errors
                     if ['pending', 'done'].include?(market_order['status'])
                       contract      = Order.find_by(gdax_id: order_id).contract
