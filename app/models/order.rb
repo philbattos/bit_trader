@@ -156,6 +156,7 @@ class Order < ActiveRecord::Base
 
     def self.store_order(response, order_type)
       puts "Storing order #{response['id']}"
+      puts "response: #{response.inspect}"
       Order.create(
         type:                lookup_class_type[order_type],
         gdax_id:             response['id'],
