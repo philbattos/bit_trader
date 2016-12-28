@@ -191,7 +191,12 @@ class Order < ActiveRecord::Base
     end
 
     def self.find_price(price)
-      price.nil? ? nil : price.to_d.round(7)
+      puts "find_price: #{price.inspect}"
+      if price.nil? || price.is_a?(Hash)
+        nil
+      else
+        price.to_d.round(7)
+      end
     end
 
     def self.find_fill_fees(fees)
