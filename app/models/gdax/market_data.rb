@@ -4,6 +4,10 @@ module GDAX
 
     scope :trades_since, -> (date) { where(gdax_time: date..Time.now) }
 
+    def self.last_trade
+      order(:trade_id).last
+    end
+
     def self.save_trade(trade_data)
       trade_data  = trade_data.to_hash.symbolize_keys
       core_fields = unchanged_names(trade_data)
@@ -33,7 +37,7 @@ module GDAX
       if trades.present?
         (trades.pluck(:price).sum / trades.count).round(2)
       else
-        0
+        nil
       end
     end
   end

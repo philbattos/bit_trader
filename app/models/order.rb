@@ -47,15 +47,15 @@ class Order < ActiveRecord::Base
     size  = '0.01'
     optional_params = {
       time_in_force: 'GTT',
-      cancel_after: 'hour', # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
       post_only: true
+      # cancel_after: 'hour', # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
     }
 
     case order_type
     when 'buy'
-      response = GDAX::Connection.new.async_client.buy(size, price, optional_params)
+      response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
     when 'sell'
-      response = GDAX::Connection.new.async_client.sell(size, price, optional_params)
+      response = GDAX::Connection.new.rest_client.sell(size, price, optional_params)
     end
 
     store_order(response, order_type) if response
@@ -102,7 +102,7 @@ class Order < ActiveRecord::Base
   # end
 
   def self.check_status(id)
-    GDAX::Connection.new.async_client.order(id)
+    GDAX::Connection.new.rest_client.order(id)
   end
 
   def self.update_status

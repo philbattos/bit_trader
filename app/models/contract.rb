@@ -14,8 +14,10 @@ class Contract < ActiveRecord::Base
 
   # TODO: add validation to prevent orders with 'rejected' status (and other statuses?) from being associated with a contract
 
-  PROFIT = 0.10
+  # PROFIT = 0.10
+  PROFIT_PERCENT = 0.0002
   MARGIN = 0.01
+  MAX_OPEN_ORDERS = 3
 
   def self.resolve_open
     match_open_buys
@@ -27,7 +29,7 @@ class Contract < ActiveRecord::Base
     return missing_price('ask') if current_ask == 0.0
 
     with_buy_without_sell.each do |contract|
-      min_sell_price = contract.buy_order.price + PROFIT
+      min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
       sell_price     = [current_ask, min_sell_price].compact.max.round(7)
       sell_order     = Order.place_sell(sell_price)
 
@@ -44,7 +46,7 @@ class Contract < ActiveRecord::Base
     return missing_price('bid') if current_bid == 0.0
 
     with_sell_without_buy.each do |contract|
-      max_buy_price = contract.sell_order.price - PROFIT
+      max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
       buy_price     = [current_bid, max_buy_price].min.round(7)
       buy_order     = Order.place_buy(buy_price)
 
@@ -58,6 +60,7 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_buy_order
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
+    return if BuyOrder.unresolved.count > MAX_OPEN_ORDERS
     return missing_price('buy') if my_buy_price == 0.0
     new_order = Order.place_buy(my_buy_price)
 
@@ -71,6 +74,7 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_sell_order
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
+    return if SellOrder.unresolved.count > MAX_OPEN_ORDERS
     return missing_price('sell') if my_ask_price == 0.0
     new_order = Order.place_sell(my_ask_price)
 

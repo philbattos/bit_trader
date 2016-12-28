@@ -13,22 +13,6 @@ class Market
     #   # Contract.place_new_sell_order
     # end
 
-    # client = GDAX::Connection.new.async_client
-
-    # EM.run {
-    #   EM.add_periodic_timer(1) {
-    #     # rest_api.last_trade(product_id: "BTC-GBP") do |resp|
-    #     #   p "Spot Rate: £ %.2f" % resp.price
-    #     # end
-    #     # Order.update_status
-    #     # Contract.update_status
-    #     # Contract.resolve_open
-    #     # Contract.place_new_buy_order
-    #     # Contract.place_new_sell_order
-    #     client.orderbook {|response| p response['asks'] }
-    #   }
-    # }
-
     websocket = GDAX::Connection.new.websocket
 
     websocket.match do |response|
@@ -42,7 +26,40 @@ class Market
     EM.run do
       websocket.start!
       EM.add_periodic_timer(1) {
-        # websocket.ping { p "Websocket is alive" }
+        Order.update_status
+        Contract.update_status
+
+        ma_15mins = GDAX::MarketData.calculate_average(15.minutes.ago)
+        # mins30 = GDAX::MarketData.calculate_average(30.minutes.ago)
+        # hours1 = GDAX::MarketData.calculate_average(1.hour.ago)
+        # hours3 = GDAX::MarketData.calculate_average(3.hours.ago)
+        current_price = GDAX::MarketData.last_trade.price
+        puts current_price
+
+        next if ma_15mins.nil? || current_price.nil?
+
+        ceiling = ma_15mins * 1.002
+        floor   = ma_15mins * 0.998
+
+        puts "trading range: #{floor..ceiling}"
+
+        if (floor..ceiling).include? current_price
+          Contract.resolve_open
+          Contract.place_new_buy_order
+          Contract.place_new_sell_order
+        elsif current_price > ceiling
+          puts "PRICE JUMP"
+          puts "ceiling: #{ceiling}"
+          puts "current_price: #{current_price}"
+          # retry a couple times to ensure that price increase is not a temporary fluke
+          # sell current buy orders
+        elsif current_price < floor
+          puts "PRICE DROP"
+          puts "floor: #{floor}"
+          puts "current_price: #{current_price}"
+          # retry a couple times to ensure that price decrease is not a temporary fluke
+          # sell current sell orders
+        end
       }
       EM.error_handler { |e|
         p "Websocket Error: #{e.message}"
@@ -51,7 +68,7 @@ class Market
   end
 
   def self.orderbook
-    GDAX::Connection.new.async_client.orderbook
+    GDAX::Connection.new.rest_client.orderbook
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (orderbook): #{rate_limit_error}"
     empty_orderbook
@@ -61,7 +78,7 @@ class Market
   end
 
   def self.last_trade
-    GDAX::Connection.new.async_client.last_trade
+    GDAX::Connection.new.rest_client.last_trade
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (last-trade): #{rate_limit_error}"
     empty_orderbook
