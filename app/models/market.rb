@@ -85,9 +85,9 @@ class Market
           # sell current sell orders
           begin
             sleep 1
-            if last_trade.price.to_d > ceiling
+            if last_trade.price.to_d < floor
               sleep 1
-              if last_trade.price.to_d > ceiling
+              if last_trade.price.to_d < floor
                 puts "cancelling all open sell orders"
                 open_sells = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o['side'] == 'sell' }
                 open_sells.each do |open_order|
