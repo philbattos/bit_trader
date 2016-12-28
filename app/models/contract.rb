@@ -106,7 +106,7 @@ class Contract < ActiveRecord::Base
 
   def self.update_status
     contract = unresolved.sample # for now, we are only checking the status of a random contract since we don't know which contracts will complete first
-    contract.update_status
+    contract.update_status unless contract.nil?
   end
 
   def update_status
