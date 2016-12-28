@@ -34,15 +34,11 @@ class Market
         # hours1 = GDAX::MarketData.calculate_average(1.hour.ago)
         # hours3 = GDAX::MarketData.calculate_average(3.hours.ago)
         current_price = GDAX::MarketData.last_trade.price
-        puts "current price: #{current_price}"
 
         next if ma_15mins.nil? || current_price.nil?
 
         ceiling = ma_15mins * 1.002
         floor   = ma_15mins * 0.998
-
-        puts "15-min average: #{ma_15mins}"
-        puts "trading range: #{floor..ceiling}"
 
         if (floor..ceiling).include? current_price
           Contract.resolve_open
