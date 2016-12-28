@@ -48,8 +48,32 @@ class Market
           puts "PRICE JUMP"
           puts "ceiling: #{ceiling}"
           puts "current_price: #{current_price}"
-          # retry a couple times to ensure that price increase is not a temporary fluke
-          # cancel current buy orders; place sell orders
+          sleep 1
+          if last_trade.price.to_d > ceiling
+            sleep 1
+            if last_trade.price.to_d > ceiling
+              puts "cancelling all open buy orders"
+              open_buys = GDAX::Connection.rest_client.orders(status: 'open').select {|o| o['side'] == 'buy' }
+              open_buys.each do |open_order|
+                order_id = open_order['id']
+                cancellation = GDAX::Connection.new.rest_client.cancel(order_id)
+                # confirm cancel completed successfully; rescue errors
+                # cancellation returns empty hash {}
+                if cancellation # or cancellation.empty?
+                  market_order = GDAX::Connection.new.rest_client.buy(0.01, nil, type: 'market')
+                  # confirm market_order completed; rescue errors
+                  if ['pending', 'done'].include?(market_order['status'])
+                    contract      = Order.find_by(gdax_id: order_id).contract
+                    new_buy_order = Order.store_order(market_order, 'buy')
+                    contract.buy_order = new_buy_order
+                    puts "contract #{contract.id} dropped cancelled buy order #{order_id} and picked up market buy order #{new_buy_order.gdax_id}"
+                  end
+                end
+              end
+            rescue StandardError => error
+              puts "cancellation error: #{error.inspect}"
+            end
+          end
         elsif current_price < floor
           puts "PRICE DROP"
           puts "floor: #{floor}"
