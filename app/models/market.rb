@@ -48,11 +48,11 @@ class Market
           puts "PRICE JUMP"
           puts "ceiling: #{ceiling}"
           puts "current_price: #{current_price}"
-          sleep 1
-          if last_trade.price.to_d > ceiling
+          begin
             sleep 1
             if last_trade.price.to_d > ceiling
-              begin
+              sleep 1
+              if last_trade.price.to_d > ceiling
                 puts "cancelling all open buy orders"
                 open_buys = GDAX::Connection.rest_client.orders(status: 'open').select {|o| o['side'] == 'buy' }
                 open_buys.each do |open_order|
@@ -71,10 +71,10 @@ class Market
                     end
                   end
                 end
-              rescue StandardError => error
-                puts "cancellation error: #{error.inspect}"
               end
             end
+          rescue StandardError => error
+            puts "cancellation error: #{error.inspect}"
           end
         elsif current_price < floor
           puts "PRICE DROP"
