@@ -118,7 +118,20 @@ class Order < ActiveRecord::Base
       response = check_status(order.gdax_id)
       if response && response['status'] != order.gdax_status
         puts "Updating status of order #{order.id} from #{order.gdax_status} to #{response['status']}"
-        order.update(gdax_status: response['status'], status: response['status'])
+        if response['type'] == 'market'
+          order.update(
+            gdax_status:      response['status'],
+            status:           response['status'],
+            gdax_filled_fees: response['fill_fees'],
+            gdax_price:       response['executed_value'],
+            price:            response['price'].to_d.round(7)
+          )
+        else
+          order.update(
+            gdax_status: response['status'],
+            status:      response['status']
+          )
+        end
       end
     end
   rescue Coinbase::Exchange::BadRequestError => request_error
@@ -172,9 +185,12 @@ class Order < ActiveRecord::Base
         gdax_executed_value: response['executed_value'],
         gdax_status:         response['status'],
         gdax_settled:        response['settled'],
-        quantity:            find_quantity(response['size']),
-        price:               find_price(response['price']),
-        fees:                find_fill_fees(response['fill_fees']),
+        quantity:            response['size'].to_d.round(7),
+        price:               response['price'].to_d.round(7),
+        fees:                response['fill_fees'].to_d.round(7),
+        # quantity:            find_quantity(response['size']),
+        # price:               find_price(response['price']),
+        # fees:                find_fill_fees(response['fill_fees']),
         status:              response['status'],
         # custom_id:           response['oid'],
         # currency:            response['currency'],
@@ -190,6 +206,7 @@ class Order < ActiveRecord::Base
     end
 
     def self.find_price(price)
+      # price.nil? ? nil : price.to_d.round(7)
       puts "find_price: #{price.inspect}"
       if price.nil? || price.is_a?(Hash)
         nil
