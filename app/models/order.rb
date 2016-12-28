@@ -162,7 +162,7 @@ class Order < ActiveRecord::Base
         gdax_type:           response['type'],
         gdax_post_only:      response['post_only'],
         gdax_created_at:     response['created_at'],
-        gdax_filled_fees:    response['filled_fees'],
+        gdax_filled_fees:    response['fill_fees'],
         gdax_filled_size:    response['filled_size'],
         gdax_executed_value: response['executed_value'],
         gdax_status:         response['status'],

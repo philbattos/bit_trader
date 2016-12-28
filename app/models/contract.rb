@@ -112,7 +112,15 @@ class Contract < ActiveRecord::Base
   def update_status
     if completed?
       puts "Updating status of contract #{self.id} from #{self.status} to done"
-      update(status: 'done')
+      sell_value = sell_order.gdax_price.to_d * sell_order.gdax_size.to_d
+      buy_value  = buy_order.gdax_price.to_d * buy_order.gdax_size.to_d
+      roi        = sell_value - buy_value
+
+      update(
+        status: 'done',
+        roi: roi,
+        completion_date: Time.now
+      )
     end
   end
 
