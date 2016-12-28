@@ -83,6 +83,35 @@ class Market
           puts "current_price: #{current_price}"
           # retry a couple times to ensure that price decrease is not a temporary fluke
           # sell current sell orders
+          begin
+            sleep 1
+            if last_trade.price.to_d > ceiling
+              sleep 1
+              if last_trade.price.to_d > ceiling
+                puts "cancelling all open sell orders"
+                open_sells = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o['side'] == 'sell' }
+                open_sells.each do |open_order|
+                  order_id = open_order['id']
+                  cancellation = GDAX::Connection.new.rest_client.cancel(order_id)
+                  # confirm cancel completed successfully; rescue errors
+                  # cancellation returns empty hash {}
+                  if cancellation # or cancellation.empty?
+                    market_order = GDAX::Connection.new.rest_client.sell(0.01, nil, type: 'market')
+                    puts "market_order: #{market_order.inspect}"
+                    # confirm market_order completed; rescue errors
+                    if ['pending', 'done'].include?(market_order['status'])
+                      contract      = Order.find_by(gdax_id: order_id).contract
+                      new_sell_order = Order.store_order(market_order, 'sell')
+                      contract.sell_order = new_sell_order
+                      puts "contract #{contract.id} dropped cancelled sell order #{order_id} and picked up market sell order #{new_sell_order.gdax_id}"
+                    end
+                  end
+                end
+              end
+            end
+          rescue StandardError => error
+            puts "cancellation error: #{error.inspect}"
+          end
         end
       }
       EM.error_handler { |e|
