@@ -9,7 +9,7 @@ class Contract < ActiveRecord::Base
   scope :without_sell_order,    -> { where.not(id: SellOrder.select(:contract_id).distinct) }
   scope :with_buy_without_sell, -> { with_buy_order.without_sell_order }
   scope :with_sell_without_buy, -> { with_sell_order.without_buy_order }
-  scope :resolved,              -> { where(status: ['done']) } # statuses: 'done', 'incomplete'
+  scope :resolved,              -> { where(status: ['done', 'incomplete']) }
   scope :unresolved,            -> { where.not(id: resolved) }
 
   # TODO: add validation to prevent orders with 'rejected' status (and other statuses?) from being associated with a contract
