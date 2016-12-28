@@ -124,7 +124,7 @@ class Order < ActiveRecord::Base
             status:           response['status'],
             gdax_filled_fees: response['fill_fees'],
             gdax_price:       response['executed_value'],
-            price:            response['price'].to_d.round(7)
+            price:            response['executed_value'].to_d.round(7)
           )
         else
           order.update(
