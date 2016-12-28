@@ -54,7 +54,7 @@ class Market
               sleep 1
               if last_trade.price.to_d > ceiling
                 puts "cancelling all open buy orders"
-                open_buys = GDAX::Connection.rest_client.orders(status: 'open').select {|o| o['side'] == 'buy' }
+                open_buys = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o['side'] == 'buy' }
                 open_buys.each do |open_order|
                   order_id = open_order['id']
                   cancellation = GDAX::Connection.new.rest_client.cancel(order_id)
