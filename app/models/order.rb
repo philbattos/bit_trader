@@ -53,8 +53,10 @@ class Order < ActiveRecord::Base
 
     case order_type
     when 'buy'
+      puts "buy price: #{price}"
       response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
     when 'sell'
+      puts "sell price: #{price}"
       response = GDAX::Connection.new.rest_client.sell(size, price, optional_params)
     end
 
