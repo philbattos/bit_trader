@@ -53,7 +53,7 @@ class Market
           puts "ceiling: #{ceiling}"
           puts "current_price: #{current_price}"
           # retry a couple times to ensure that price increase is not a temporary fluke
-          # sell current buy orders
+          # cancel current buy orders; place sell orders
         elsif current_price < floor
           puts "PRICE DROP"
           puts "floor: #{floor}"

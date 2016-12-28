@@ -9,7 +9,7 @@ class Contract < ActiveRecord::Base
   scope :without_sell_order,    -> { where.not(id: SellOrder.select(:contract_id).distinct) }
   scope :with_buy_without_sell, -> { with_buy_order.without_sell_order }
   scope :with_sell_without_buy, -> { with_sell_order.without_buy_order }
-  scope :resolved,              -> { where(status: ['done']) }
+  scope :resolved,              -> { where(status: ['done']) } # statuses: 'done', 'incomplete'
   scope :unresolved,            -> { where.not(id: resolved) }
 
   # TODO: add validation to prevent orders with 'rejected' status (and other statuses?) from being associated with a contract
@@ -111,13 +111,20 @@ class Contract < ActiveRecord::Base
 
   def update_status
     if completed?
-      puts "Updating status of contract #{self.id} from #{self.status} to done"
-      sell_value = sell_order.gdax_price.to_d * sell_order.gdax_size.to_d
-      buy_value  = buy_order.gdax_price.to_d * buy_order.gdax_size.to_d
-      roi        = sell_value - buy_value
+      puts "Updating status of contract #{self.id} from #{self.status} to done/incomplete"
+
+      if orders.all? {|o| o.purchased? }
+        sell_value = sell_order.gdax_price.to_d * sell_order.gdax_size.to_d
+        buy_value  = buy_order.gdax_price.to_d * buy_order.gdax_size.to_d
+        roi        = sell_value - buy_value
+        status     = 'done'
+      else # this usually happens when one order has been canceled
+        roi    = 0
+        status = 'incomplete'
+      end
 
       update(
-        status: 'done',
+        status: status,
         roi: roi,
         completion_date: Time.now
       )

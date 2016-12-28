@@ -6,11 +6,12 @@ class Order < ActiveRecord::Base
   scope :unresolved, -> { where.not(id: resolved) }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
-  scope :purchased, -> { where(gdax_status: ['done', 'pending', 'open']) }
+  scope :purchased, -> { where(gdax_status: PURCHASED_STATUSES) }
   scope :done,      -> { where(gdax_status: 'done') }
   scope :inactive,  -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
 
-  CLOSED_STATUSES = %w[ done rejected not-found ]
+  CLOSED_STATUSES    = %w[ done rejected not-found ]
+  PURCHASED_STATUSES = %w[ done pending open ]
 
   # TODO: add validation for gdax_id (every order should have one)
 
@@ -36,6 +37,10 @@ class Order < ActiveRecord::Base
 
   def closed?
     CLOSED_STATUSES.include? gdax_status
+  end
+
+  def purchased?
+    PURCHASED_STATUSES.include? gdax_status
   end
 
   def self.submit(order_type, price) # should this be an instance method??
