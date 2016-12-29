@@ -35,6 +35,7 @@ class Market
         # hours3 = GDAX::MarketData.calculate_average(3.hours.ago)
         current_price = GDAX::MarketData.last_trade.price
 
+        puts "ma_15mins: #{ma_15mins}"
         next if ma_15mins.nil? || current_price.nil?
 
         ceiling = ma_15mins * 1.002
