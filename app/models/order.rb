@@ -11,7 +11,7 @@ class Order < ActiveRecord::Base
   scope :inactive,  -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
 
   CLOSED_STATUSES    = %w[ done rejected not-found ]
-  PURCHASED_STATUSES = %w[ done pending open ]
+  PURCHASED_STATUSES = %w[ done open ]
 
   # TODO: add validation for gdax_id (every order should have one)
 
