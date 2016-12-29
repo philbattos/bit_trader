@@ -29,6 +29,7 @@ class Contract < ActiveRecord::Base
     return missing_price('ask') if current_ask == 0.0
 
     with_buy_without_sell.each do |contract|
+      next if contract.buy_order.status == 'pending'
       min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
       sell_price     = [current_ask, min_sell_price].compact.max.round(2)
       sell_order     = Order.place_sell(sell_price)
