@@ -185,12 +185,9 @@ class Order < ActiveRecord::Base
         gdax_executed_value: response['executed_value'],
         gdax_status:         response['status'],
         gdax_settled:        response['settled'],
-        quantity:            response['size'].to_d.round(7),
-        price:               response['price'].to_d.round(7),
-        fees:                response['fill_fees'].to_d.round(7),
-        # quantity:            find_quantity(response['size']),
-        # price:               find_price(response['price']),
-        # fees:                find_fill_fees(response['fill_fees']),
+        quantity:            find_quantity(response['size']),
+        price:               find_price(response['price']),
+        fees:                find_fill_fees(response['fill_fees']),
         status:              response['status'],
         # custom_id:           response['oid'],
         # currency:            response['currency'],
@@ -206,13 +203,7 @@ class Order < ActiveRecord::Base
     end
 
     def self.find_price(price)
-      # price.nil? ? nil : price.to_d.round(7)
-      puts "find_price: #{price.inspect}"
-      if price.nil? || price.is_a?(Hash)
-        nil
-      else
-        price.to_d.round(7)
-      end
+      price.nil? ? nil : price.to_d.round(7)
     end
 
     def self.find_fill_fees(fees)
