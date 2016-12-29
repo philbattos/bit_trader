@@ -117,6 +117,7 @@ class Market
       }
       EM.error_handler { |e|
         p "Websocket Error: #{e.message}"
+        p "Websocket Backtrace: #{e.backtrace}"
       }
     end
   end
