@@ -124,6 +124,8 @@ class Contract < ActiveRecord::Base
         next if contract.sell_order.nil? # NOTE: this is a temporary hack. see above.
         next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
         max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
+        puts "current_bid: #{current_bid}"
+        puts "max_buy_price: #{max_buy_price}"
         buy_price     = [current_bid, max_buy_price].min.round(2)
         buy_order     = Order.place_buy(buy_price)
 
