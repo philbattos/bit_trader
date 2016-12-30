@@ -88,10 +88,10 @@ class Contract < ActiveRecord::Base
     sell_orders.find_by(status: Order::ACTIVE_STATUSES) # NOTE: there should be only one active sell order per contract
   end
 
-  # def self.resolve_open
-  #   match_open_buys
-  #   match_open_sells
-  # end
+  def self.resolve_open
+    # match_open_buys
+    # match_open_sells
+  end
 
   # def self.match_open_buys
   #   open_contracts = with_buy_without_sell
