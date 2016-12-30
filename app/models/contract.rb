@@ -99,6 +99,7 @@ class Contract < ActiveRecord::Base
       return missing_price('ask') if current_ask == 0.0
 
       open_contracts.each do |contract|
+        next unless Order::ACTIVE_STATUSES.includes? contract.buy_order.status # NOTE: this is a temporary hack to avoid statuses that cause contract.buy_order to return nil. One long-term solution is to re-write with_buy_without_sell scope as SQL query
         next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
         min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
         sell_price     = [current_ask, min_sell_price].compact.max.round(2)
@@ -120,6 +121,7 @@ class Contract < ActiveRecord::Base
       return missing_price('bid') if current_bid == 0.0
 
       open_contracts.each do |contract|
+        next unless Order::ACTIVE_STATUSES.includes? contract.sell_order.status # NOTE: this is a temporary hack. see above.
         next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
         max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
         buy_price     = [current_bid, max_buy_price].min.round(2)
