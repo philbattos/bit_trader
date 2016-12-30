@@ -89,53 +89,53 @@ class Contract < ActiveRecord::Base
   end
 
   def self.resolve_open
-    # match_open_buys
-    # match_open_sells
+    match_open_buys
+    match_open_sells
   end
 
-  # def self.match_open_buys
-  #   open_contracts = with_buy_without_sell
-  #   if open_contracts.any?
-  #     current_ask = Trader.current_ask
-  #     return missing_price('ask') if current_ask == 0.0
+  def self.match_open_buys
+    open_contracts = unresolved.with_buy_without_sell
+    if open_contracts.any?
+      current_ask = Trader.current_ask
+      return missing_price('ask') if current_ask == 0.0
 
-  #     open_contracts.each do |contract|
-  #       next if contract.buy_order.nil? # NOTE: this is a temporary hack to avoid statuses that cause contract.buy_order to return nil. One long-term solution is to re-write with_buy_without_sell scope as SQL query
-  #       next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
-  #       min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
-  #       sell_price     = [current_ask, min_sell_price].compact.max.round(2)
-  #       sell_order     = Order.place_sell(sell_price)
+      open_contracts.each do |contract|
+        next if contract.buy_order.nil? # NOTE: this is a temporary hack to avoid statuses that cause contract.buy_order to return nil. One long-term solution is to re-write with_buy_without_sell scope as SQL query
+        next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
+        min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
+        sell_price     = [current_ask, min_sell_price].compact.max.round(2)
+        sell_order     = Order.place_sell(sell_price)
 
-  #       if sell_order
-  #         contract.update(gdax_sell_order_id: sell_order['id'])
-  #         new_order = Order.find_by_gdax_id(sell_order['id'])
-  #         contract.sell_orders << new_order
-  #       end
-  #     end
-  #   end
-  # end
+        if sell_order
+          contract.update(gdax_sell_order_id: sell_order['id'])
+          new_order = Order.find_by_gdax_id(sell_order['id'])
+          contract.sell_orders << new_order
+        end
+      end
+    end
+  end
 
-  # def self.match_open_sells
-  #   open_contracts = with_sell_without_buy
-  #   if open_contracts.any?
-  #     current_bid = Trader.current_bid
-  #     return missing_price('bid') if current_bid == 0.0
+  def self.match_open_sells
+    open_contracts = unresolved.with_sell_without_buy
+    if open_contracts.any?
+      current_bid = Trader.current_bid
+      return missing_price('bid') if current_bid == 0.0
 
-  #     open_contracts.each do |contract|
-  #       next if contract.sell_order.nil? # NOTE: this is a temporary hack. see above.
-  #       next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
-  #       max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
-  #       buy_price     = [current_bid, max_buy_price].min.round(2)
-  #       buy_order     = Order.place_buy(buy_price)
+      open_contracts.each do |contract|
+        next if contract.sell_order.nil? # NOTE: this is a temporary hack. see above.
+        next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
+        max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
+        buy_price     = [current_bid, max_buy_price].min.round(2)
+        buy_order     = Order.place_buy(buy_price)
 
-  #       if buy_order
-  #         contract.update(gdax_buy_order_id: buy_order['id'])
-  #         new_order = Order.find_by_gdax_id(buy_order['id'])
-  #         contract.buy_orders << new_order
-  #       end
-  #     end
-  #   end
-  # end
+        if buy_order
+          contract.update(gdax_buy_order_id: buy_order['id'])
+          new_order = Order.find_by_gdax_id(buy_order['id'])
+          contract.buy_orders << new_order
+        end
+      end
+    end
+  end
 
   def self.place_new_buy_order
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
