@@ -90,8 +90,8 @@ class Trader
         end
       }
       EM.error_handler { |e|
-        p "Websocket Error: #{e.message}"
-        p "Websocket Backtrace: #{e.backtrace}"
+        p "Trader.start Error: #{e.message}"
+        p "Trader.start Backtrace: #{e.backtrace}"
       }
     end
   end

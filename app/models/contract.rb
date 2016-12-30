@@ -101,6 +101,7 @@ class Contract < ActiveRecord::Base
       open_contracts.each do |contract|
         if contract.status == 'debug'
           puts "skipping debug contract #{contract.id} with buy"
+          contract.update(status: 'done')
           next
         end
         next if contract.buy_order.nil? # NOTE: this is a temporary hack to avoid statuses that cause contract.buy_order to return nil. One long-term solution is to re-write with_buy_without_sell scope as SQL query
@@ -127,6 +128,7 @@ class Contract < ActiveRecord::Base
       open_contracts.each do |contract|
         if contract.status == 'debug'
           puts "skipping debug contract #{contract.id} with sell"
+          contract.update(status: 'done')
           next
         end
         next if contract.sell_order.nil? # NOTE: this is a temporary hack. see above.
