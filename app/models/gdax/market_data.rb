@@ -4,6 +4,19 @@ module GDAX
 
     scope :trades_since, -> (date) { where(gdax_time: date..Time.now) }
 
+    def self.poll # opens connection to GDAX firehose, collects all trades, and stores trades in db
+      websocket = GDAX::Connection.new.websocket
+      websocket.match {|matched_trade| save_trade(matched_trade) } # NOTE: matched_trade is a Coinbase::Exchange::APIObject (but looks like json)
+
+      EM.run do
+        websocket.start!
+        EM.error_handler { |e|
+          p "Websocket Error: #{e.message}"
+          p "Websocket Backtrace: #{e.backtrace}"
+        }
+      end
+    end
+
     def self.last_trade
       order(:trade_id).last
     end

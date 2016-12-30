@@ -26,3 +26,14 @@ Things you may want to cover:
 
 Please feel free to use a different markup language if you do not plan to run
 <tt>rake doc:app</tt>.
+
+
+## Contracts
+
+A contract is an association between a buy order and a sell order. It is a way to connect orders and
+store details about their relationship, especially the ROI of the matched buy & sell.
+
+All orders belong to a contract and a contract can have many orders buy each contract should only have
+one active buy order and one active sell order. If an order is rejected or canceled (or inactive for
+any reason), it will be replaced in the contract with a similar order that is fulfilled. This means
+that each contract will have two "matching" fulfilled orders.

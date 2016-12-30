@@ -1,23 +1,53 @@
 class Contract < ActiveRecord::Base
 
-  has_one :buy_order, class_name: 'BuyOrder', foreign_key: 'contract_id'
-  has_one :sell_order, class_name: 'SellOrder', foreign_key: 'contract_id'
+  has_many :buy_orders, class_name: 'BuyOrder', foreign_key: 'contract_id'
+  has_many :sell_orders, class_name: 'SellOrder', foreign_key: 'contract_id'
 
   scope :with_buy_order,        -> { where(id: BuyOrder.select(:contract_id).distinct) }
   scope :with_sell_order,       -> { where(id: SellOrder.select(:contract_id).distinct) }
-  scope :without_buy_order,     -> { where.not(id: BuyOrder.select(:contract_id).distinct) }
-  scope :without_sell_order,    -> { where.not(id: SellOrder.select(:contract_id).distinct) }
+  scope :without_buy_order,     -> { left_outer_joins(:buy_orders).where(orders: {contract_id: nil}) }
+  scope :without_sell_order,    -> { left_outer_joins(:sell_orders).where(orders: {contract_id: nil}) }
   scope :with_buy_without_sell, -> { with_buy_order.without_sell_order }
   scope :with_sell_without_buy, -> { with_sell_order.without_buy_order }
-  scope :resolved,              -> { where(status: ['done', 'incomplete']) }
+  scope :resolved,              -> { where(status: ['done']) }
   scope :unresolved,            -> { where.not(id: resolved) }
 
-  # TODO: add validation to prevent orders with 'rejected' status (and other statuses?) from being associated with a contract
+  # TODO: add validation to ensure that each contract only has one active buy_order and sell_order
+
+  # NOTE: Each contract could have many buy orders and many sell orders but each contract should only
+  #       have one *active* buy order and sell order. The active orders are retrieved with .buy_order
+  #       and .sell_order. The inactive orders are retained to track the contract's history. The active
+  #       orders are the ones used to calculate the contract's ROI so whenever an order is activated
+  #       or deactivated, the contract's ROI should be recalculated.
 
   # PROFIT = 0.10
   PROFIT_PERCENT = 0.0002
   MARGIN = 0.01
   MAX_OPEN_ORDERS = 3
+
+  def matched?
+    buy_order.present? && sell_order.present?
+  end
+
+  def complete?
+    buy_order.done? && sell_order.done?
+  end
+
+  def orders
+    Order.where(contract_id: id)
+  end
+
+  def inactive_orders
+    orders.where(status: Order::INACTIVE_STATUSES) # where.not includes orders with nil status in addition to other inactive statuses
+  end
+
+  def buy_order
+    buy_orders.find_by(status: Order::ACTIVE_STATUSES) # NOTE: there should be only one active buy order per contract
+  end
+
+  def sell_order
+    sell_orders.find_by(status: Order::ACTIVE_STATUSES) # NOTE: there should be only one active sell order per contract
+  end
 
   def self.resolve_open
     match_open_buys
@@ -25,36 +55,43 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_buys
-    current_ask = Market.current_ask
-    return missing_price('ask') if current_ask == 0.0
+    open_contracts = with_buy_without_sell
+    if open_contracts.any?
+      current_ask = Trader.current_ask
+      return missing_price('ask') if current_ask == 0.0
 
-    with_buy_without_sell.each do |contract|
-      next if contract.buy_order.status == 'pending'
-      min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
-      sell_price     = [current_ask, min_sell_price].compact.max.round(2)
-      sell_order     = Order.place_sell(sell_price)
+      open_contracts.each do |contract|
+        next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
+        min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
+        sell_price     = [current_ask, min_sell_price].compact.max.round(2)
+        sell_order     = Order.place_sell(sell_price)
 
-      if sell_order
-        contract.update(gdax_sell_order_id: sell_order['id'])
-        new_order = Order.find_by_gdax_id(sell_order['id'])
-        contract.sell_order = new_order
+        if sell_order
+          contract.update(gdax_sell_order_id: sell_order['id'])
+          new_order = Order.find_by_gdax_id(sell_order['id'])
+          contract.sell_orders << new_order
+        end
       end
     end
   end
 
   def self.match_open_sells
-    current_bid = Market.current_bid
-    return missing_price('bid') if current_bid == 0.0
+    open_contracts = with_sell_without_buy
+    if open_contracts.any?
+      current_bid = Trader.current_bid
+      return missing_price('bid') if current_bid == 0.0
 
-    with_sell_without_buy.each do |contract|
-      max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
-      buy_price     = [current_bid, max_buy_price].min.round(2)
-      buy_order     = Order.place_buy(buy_price)
+      open_contracts.each do |contract|
+        next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
+        max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
+        buy_price     = [current_bid, max_buy_price].min.round(2)
+        buy_order     = Order.place_buy(buy_price)
 
-      if buy_order
-        contract.update(gdax_buy_order_id: buy_order['id'])
-        new_order = Order.find_by_gdax_id(buy_order['id'])
-        contract.buy_order = new_order
+        if buy_order
+          contract.update(gdax_buy_order_id: buy_order['id'])
+          new_order = Order.find_by_gdax_id(buy_order['id'])
+          contract.buy_orders << new_order
+        end
       end
     end
   end
@@ -69,7 +106,7 @@ class Contract < ActiveRecord::Base
       order    = Order.find_by_gdax_id(new_order['id'])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_buy_order_id: new_order['id'])
-      contract.buy_order = order
+      contract.buy_orders << order
     end
   end
 
@@ -83,12 +120,12 @@ class Contract < ActiveRecord::Base
       order    = Order.find_by_gdax_id(new_order['id'])
       contract = Contract.create() # order.create_contract() doesn't correctly associate objects
       contract.update(gdax_sell_order_id: new_order['id'])
-      contract.sell_order = order
+      contract.sell_orders << order
     end
   end
 
   def self.my_buy_price # move this into Order class?
-    current_bid = Market.current_bid
+    current_bid = Trader.current_bid
     if current_bid == 0.0
       return current_bid
     else
@@ -97,7 +134,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.my_ask_price # move this into Order class?
-    current_ask = Market.current_ask
+    current_ask = Trader.current_ask
     if current_ask == 0.0
       return current_ask
     else
@@ -106,38 +143,29 @@ class Contract < ActiveRecord::Base
   end
 
   def self.update_status
-    contract = unresolved.sample # for now, we are only checking the status of a random contract since we don't know which contracts will complete first
-    contract.update_status unless contract.nil?
+    contract = completed_contracts.sample # for now, we are only checking the status of a random contract since we don't know which contracts will complete first
+    contract.mark_as_done if contract
   end
 
-  def update_status
-    if completed?
-      puts "Updating status of contract #{self.id} from #{self.status} to done/incomplete"
+  def mark_as_done
+    puts "Updating status of contract #{self.id} from #{self.status} to 'done'"
 
-      if orders.all? {|o| o.purchased? }
-        sell_value = sell_order.gdax_price.to_d * sell_order.gdax_size.to_d
-        buy_value  = buy_order.gdax_price.to_d * buy_order.gdax_size.to_d
-        roi        = sell_value - buy_value
-        status     = 'done'
-      else # this usually happens when one order has been canceled
-        roi    = 0
-        status = 'incomplete'
-      end
-
-      update(
-        status: status,
-        roi: roi,
-        completion_date: Time.now
-      )
-    end
+    update(
+      status: 'done',
+      roi: calculate_roi,
+      completion_date: Time.now
+    )
   end
 
-  def completed?
-    orders.all? {|o| o.present? && o.closed? }
+  def calculate_roi
+    sell_value = sell_order.price * sell_order.quantity
+    buy_value  = buy_order.price * buy_order.quantity
+
+    sell_value - buy_value
   end
 
-  def orders
-    [ buy_order, sell_order ]
+  def self.completed_contracts
+    unresolved.select {|contract| contract.matched? && contract.complete? }
   end
 
   def self.missing_price(type)

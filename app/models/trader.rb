@@ -1,30 +1,7 @@
-class Market
+class Trader
 
-  def self.poll
-    # while true
-    #   Order.update_status
-    #   sleep 0.4
-    #   Contract.update_status
-    #   sleep 0.4
-    #   Contract.resolve_open
-    #   # sleep 0.4
-    #   # Contract.place_new_buy_order
-    #   # sleep 0.4
-    #   # Contract.place_new_sell_order
-    # end
-
-    websocket = GDAX::Connection.new.websocket
-
-    websocket.match do |response|
-      # NOTE: response is a Coinbase::Exchange::APIObject
-      GDAX::MarketData.save_trade(response)
-      if response.trade_id % 100 == 0
-        p "Latest Trade: $ %.2f (trade ID: #{response.trade_id})" % response.price
-      end
-    end
-
+  def self.start
     EM.run do
-      websocket.start!
       EM.add_periodic_timer(1) {
         Order.update_status
         Contract.update_status
@@ -49,29 +26,28 @@ class Market
           puts "ceiling: #{ceiling}"
           puts "current_price: #{current_price}"
           begin
-            sleep 1
             if last_trade.price.to_d > ceiling
-              sleep 1
+              sleep 3
               if last_trade.price.to_d > ceiling
                 puts "cancelling all open buy orders"
-                open_buys = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o['side'] == 'buy' }
-                open_buys.each do |open_order|
-                  order_id = open_order['id']
-                  cancellation = GDAX::Connection.new.rest_client.cancel(order_id)
-                  # confirm cancel completed successfully; rescue errors
-                  # cancellation returns empty hash {}
-                  if cancellation # or cancellation.empty?
-                    market_order = GDAX::Connection.new.rest_client.buy(0.01, nil, type: 'market')
-                    market_order = JSON.parse(market_order.to_json)
-                    # confirm market_order completed; rescue errors
-                    if ['pending', 'done'].include?(market_order['status'])
-                      contract      = Order.find_by(gdax_id: order_id).contract
-                      new_buy_order = Order.store_order(market_order, 'buy')
-                      contract.buy_order = new_buy_order
-                      puts "contract #{contract.id} dropped cancelled buy order #{order_id} and picked up market buy order #{new_buy_order.gdax_id}"
-                    end
-                  end
-                end
+                # open_buys = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o['side'] == 'buy' }
+                # open_buys.each do |open_order|
+                #   order_id = open_order['id']
+                #   cancellation = GDAX::Connection.new.rest_client.cancel(order_id)
+                #   # confirm cancel completed successfully; rescue errors
+                #   # cancellation returns empty hash {}
+                #   if cancellation # or cancellation.empty?
+                #     market_order = GDAX::Connection.new.rest_client.buy(0.01, nil, type: 'market')
+                #     market_order = JSON.parse(market_order.to_json)
+                #     # confirm market_order completed; rescue errors
+                #     if ['pending', 'done'].include?(market_order['status'])
+                #       contract      = Order.find_by(gdax_id: order_id).contract
+                #       new_buy_order = Order.store_order(market_order, 'buy')
+                #       contract.buy_order = new_buy_order
+                #       puts "contract #{contract.id} dropped cancelled buy order #{order_id} and picked up market buy order #{new_buy_order.gdax_id}"
+                #     end
+                #   end
+                # end
               end
             end
           rescue StandardError => error
@@ -84,29 +60,28 @@ class Market
           # retry a couple times to ensure that price decrease is not a temporary fluke
           # sell current sell orders
           begin
-            sleep 1
             if last_trade.price.to_d < floor
-              sleep 1
+              sleep 3
               if last_trade.price.to_d < floor
                 puts "cancelling all open sell orders"
-                open_sells = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o['side'] == 'sell' }
-                open_sells.each do |open_order|
-                  order_id = open_order['id']
-                  cancellation = GDAX::Connection.new.rest_client.cancel(order_id)
-                  # confirm cancel completed successfully; rescue errors
-                  # cancellation returns empty hash {}
-                  if cancellation # or cancellation.empty?
-                    market_order = GDAX::Connection.new.rest_client.sell(0.01, nil, type: 'market')
-                    market_order = JSON.parse(market_order.to_json)
-                    # confirm market_order completed; rescue errors
-                    if ['pending', 'done'].include?(market_order['status'])
-                      contract      = Order.find_by(gdax_id: order_id).contract
-                      new_sell_order = Order.store_order(market_order, 'sell')
-                      contract.sell_order = new_sell_order
-                      puts "contract #{contract.id} dropped cancelled sell order #{order_id} and picked up market sell order #{new_sell_order.gdax_id}"
-                    end
-                  end
-                end
+                # open_sells = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o['side'] == 'sell' }
+                # open_sells.each do |open_order|
+                #   order_id = open_order['id']
+                #   cancellation = GDAX::Connection.new.rest_client.cancel(order_id)
+                #   # confirm cancel completed successfully; rescue errors
+                #   # cancellation returns empty hash {}
+                #   if cancellation # or cancellation.empty?
+                #     market_order = GDAX::Connection.new.rest_client.sell(0.01, nil, type: 'market')
+                #     market_order = JSON.parse(market_order.to_json)
+                #     # confirm market_order completed; rescue errors
+                #     if ['pending', 'done'].include?(market_order['status'])
+                #       contract      = Order.find_by(gdax_id: order_id).contract
+                #       new_sell_order = Order.store_order(market_order, 'sell')
+                #       contract.sell_order = new_sell_order
+                #       puts "contract #{contract.id} dropped cancelled sell order #{order_id} and picked up market sell order #{new_sell_order.gdax_id}"
+                #     end
+                #   end
+                # end
               end
             end
           rescue StandardError => error
@@ -120,6 +95,8 @@ class Market
       }
     end
   end
+
+  # TODO: move these methods to another class (GDAX::MarketData ?)
 
   def self.orderbook
     GDAX::Connection.new.rest_client.orderbook

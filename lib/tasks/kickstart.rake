@@ -1,4 +1,4 @@
-desc "Start running bot: poll exchange for account and order info."
+desc "Start running bot: update orders & contracts; make new trades"
 task kickstart: :environment do
-  Market.poll
+  Trader.start
 end

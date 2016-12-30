@@ -12,8 +12,13 @@ class Order < ActiveRecord::Base
 
   CLOSED_STATUSES    = %w[ done rejected not-found ]
   PURCHASED_STATUSES = %w[ done open ]
+  ACTIVE_STATUSES    = %w[ done open pending ]
+  INACTIVE_STATUSES  = %w[ rejected not-found ] << nil # nil should be considered an "inactive" status
 
   # TODO: add validation for gdax_id (every order should have one)
+  # TODO: currently, we can create an order without an associated contract but it would be better if
+  #       every order had an associated contract. find a way to build orders and contracts together
+  #       and then add validations to prevent orphaned orders and contracts
 
   # attr_accessor :type, :side, :product_id, :price, :size, :post_only
 
@@ -41,6 +46,10 @@ class Order < ActiveRecord::Base
 
   def purchased?
     PURCHASED_STATUSES.include? gdax_status
+  end
+
+  def done?
+    status == 'done'
   end
 
   def self.submit(order_type, price) # should this be an instance method??
