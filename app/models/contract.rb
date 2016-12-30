@@ -9,8 +9,46 @@ class Contract < ActiveRecord::Base
   scope :without_sell_order,    -> { left_outer_joins(:sell_orders).where(orders: {contract_id: nil}) }
   scope :with_buy_without_sell, -> { with_buy_order.without_sell_order }
   scope :with_sell_without_buy, -> { with_sell_order.without_buy_order }
-  scope :resolved,              -> { where(status: ['done']) }
+  scope :resolved,              -> { where(status: ['done', 'debug']) }
   scope :unresolved,            -> { where.not(id: resolved) }
+  scope :matched,               -> { find_by_sql(
+                                       "SELECT \"contracts\".* FROM \"contracts\"
+                                        LEFT JOIN \"orders\" sell_orders
+                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"sell_orders\".\"type\" = 'SellOrder'
+                                        LEFT JOIN \"orders\" buy_orders
+                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
+                                        WHERE \"sell_orders\".\"id\" IS NOT NULL
+                                          AND \"buy_orders\".\"id\" IS NOT NULL"
+                                      ) }
+  scope :unmatched,             -> { where.not(id: matched) }
+  scope :complete,              -> { find_by_sql(
+                                       "SELECT \"contracts\".* FROM \"contracts\"
+                                        LEFT JOIN \"orders\" sell_orders
+                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"sell_orders\".\"type\" = 'SellOrder'
+                                        LEFT JOIN \"orders\" buy_orders
+                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
+                                        WHERE \"sell_orders\".\"status\" = 'done'
+                                          AND \"buy_orders\".\"status\" = 'done'"
+                                      ) }
+  scope :incomplete,            -> { where.not(id: complete) }
+  scope :matched_and_complete,  -> { find_by_sql(
+                                       "SELECT \"contracts\".* FROM \"contracts\"
+                                        LEFT JOIN \"orders\" sell_orders
+                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"sell_orders\".\"type\" = 'SellOrder'
+                                        LEFT JOIN \"orders\" buy_orders
+                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
+                                        WHERE \"sell_orders\".\"id\" IS NOT NULL
+                                          AND \"buy_orders\".\"id\" IS NOT NULL
+                                          AND \"sell_orders\".\"status\" = 'done'
+                                          AND \"buy_orders\".\"status\" = 'done'"
+                                      ) }
+
 
   # TODO: add validation to ensure that each contract only has one active buy_order and sell_order
 
@@ -165,7 +203,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.completed_contracts
-    unresolved.select {|contract| contract.matched? && contract.complete? }
+    resolved.merge(matched_and_complete)
   end
 
   def self.missing_price(type)
