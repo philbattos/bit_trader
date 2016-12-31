@@ -90,13 +90,26 @@ class Trader
       open_sells = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o['side'] == order_type }
       open_sells.each_with_index do |open_order, index|
         if index.even? # let's cancel half of the open orders
-          order_id = open_order['id']
+          order_id     = open_order['id']
           cancellation = GDAX::Connection.new.rest_client.cancel(order_id)
           # confirm cancel completed successfully; rescue errors
           # cancellation returns empty hash {}
           if cancellation # or cancellation.empty?
             order = Order.find_by(gdax_id: order_id)
             order.update(status: 'not-found')
+            if order.contract
+              if order_type == 'buy'
+                if order.contract.gdax_buy_order_id == order.gdax_id
+                  puts "removing gdax_buy_order_id from contract #{order.contract.id}"
+                  order.contract.update(gdax_buy_order_id: nil)
+                end
+              elsif order_type == 'sell'
+                if order.contract.gdax_sell_order_id == order.gdax_id
+                  puts "removing gdax_sell_order_id from contract #{order.contract.id}"
+                  order.contract.update(gdax_sell_order_id: nil)
+                end
+              end
+            end
           end
         end
       end

@@ -3,12 +3,17 @@ class Contract < ActiveRecord::Base
   has_many :buy_orders, class_name: 'BuyOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
   has_many :sell_orders, class_name: 'SellOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
 
-  scope :with_buy_order,        -> { where(id: BuyOrder.select(:contract_id).distinct) }
-  scope :with_sell_order,       -> { where(id: SellOrder.select(:contract_id).distinct) }
-  scope :without_buy_order,     -> { left_outer_joins(:buy_orders).where(orders: {contract_id: nil}) }
-  scope :without_sell_order,    -> { left_outer_joins(:sell_orders).where(orders: {contract_id: nil}) }
-  scope :with_buy_without_sell, -> { with_buy_order.without_sell_order }
-  scope :with_sell_without_buy, -> { with_sell_order.without_buy_order }
+  # NOTE: consider querying contracts based on presence of gdax_order_ids
+  scope :with_buy_orders,       -> { where(id: BuyOrder.select(:contract_id).distinct) }
+  scope :with_sell_orders,      -> { where(id: SellOrder.select(:contract_id).distinct) }
+  scope :with_active_buy,       -> { joins(:buy_orders).where(orders: {status: Order::ACTIVE_STATUSES}) }
+  scope :with_active_sell,      -> { joins(:sell_orders).where(orders: {status: Order::ACTIVE_STATUSES}) }
+  scope :without_buy_order,     -> { joins(:buy_orders).where(orders: {contract_id: nil}) }
+  scope :without_sell_order,    -> { joins(:sell_orders).where(orders: {contract_id: nil}) }
+  scope :without_active_buy,    -> { joins(:buy_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
+  scope :without_active_sell,   -> { joins(:sell_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
+  scope :with_buy_without_sell, -> { with_active_buy_order.without_active_sell_order }
+  scope :with_sell_without_buy, -> { with_active_sell_order.without_active_buy_order }
   scope :resolved,              -> { where(status: ['done']) }
   scope :unresolved,            -> { where.not(id: resolved) }
   scope :resolvable,            -> { unresolved.merge(matched_and_complete) }
@@ -50,6 +55,8 @@ class Contract < ActiveRecord::Base
                                           AND \"buy_orders\".\"status\" = 'done'"
                                       ) }
 
+  # validate :association_ids_must_match
+  # validates_associated :orders
 
   # TODO: add validation to ensure that each contract only has one active buy_order and sell_order
 
@@ -94,7 +101,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_buys
-    open_contracts = with_buy_without_sell
+    open_contracts = with_buy_without_sell # finds contracts with ACTIVE buy and without ACTIVE sell
     if open_contracts.any?
       current_ask = GDAX::MarketData.current_ask
       return missing_price('ask') if current_ask == 0.0
@@ -115,7 +122,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_sells
-    open_contracts = with_sell_without_buy
+    open_contracts = with_sell_without_buy # finds contracts with ACTIVE sell and without ACTIVE buy
     if open_contracts.any?
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
