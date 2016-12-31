@@ -67,10 +67,10 @@ class Order < ActiveRecord::Base
 
     case order_type
     when 'buy'
-      puts "buy price: #{price}"
+      puts "Placing BUY order for: #{price}"
       response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
     when 'sell'
-      puts "sell price: #{price}"
+      puts "Placing SELL order for: #{price}"
       response = GDAX::Connection.new.rest_client.sell(size, price, optional_params)
     end
 
@@ -126,7 +126,7 @@ class Order < ActiveRecord::Base
     if order
       response = check_status(order.gdax_id)
       if response && response['status'] != order.gdax_status
-        puts "Updating status of order #{order.id} from #{order.gdax_status} to #{response['status']}"
+        puts "Updating status of #{order.type} #{order.id} from #{order.gdax_status} to #{response['status']}"
         if response['type'] == 'market'
           order.update(
             gdax_status:      response['status'],
@@ -149,7 +149,7 @@ class Order < ActiveRecord::Base
     # this happens after an order has been canceled so we want to update the order's status
     order.update(gdax_status: 'not-found', status: 'not-found')
     puts "GDAX couldn't find order #{order.gdax_id}: #{not_found_error}"
-    puts "Updated order #{order.gdax_id} with status 'not-found'"
+    puts "Updated order #{order.id} with status 'not-found'"
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (update order status): #{rate_limit_error}"
   end

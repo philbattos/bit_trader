@@ -189,7 +189,7 @@ class Contract < ActiveRecord::Base
   end
 
   def mark_as_done
-    puts "Updating status of contract #{self.id} from #{self.status} to 'done'"
+    puts "Updating status of contract #{self.id} from #{self.status} to done"
 
     update(
       status: 'done',
