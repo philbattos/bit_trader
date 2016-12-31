@@ -12,8 +12,30 @@ class Contract < ActiveRecord::Base
   scope :without_sell_order,    -> { joins(:sell_orders).where(orders: {contract_id: nil}) }
   scope :without_active_buy,    -> { joins(:buy_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
   scope :without_active_sell,   -> { joins(:sell_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
-  scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
-  scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
+  scope :with_buy_without_sell, -> { find_by_sql( # with active buy order and missing/inactive sell order
+                                       "SELECT \"contracts\".* FROM \"contracts\"
+                                        LEFT JOIN \"orders\" sell_orders
+                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"sell_orders\".\"type\" = 'SellOrder'
+                                        LEFT JOIN \"orders\" buy_orders
+                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
+                                        WHERE (\"sell_orders\".\"contract_id\" IS NULL
+                                          OR \"sell_orders\".\"status\" NOT IN ('done', 'open', 'pending'))
+                                          AND \"buy_orders\".\"status\" IN ('done', 'open', 'pending')"
+                                      ) }
+  scope :with_sell_without_buy, -> { find_by_sql( # with active sell order and missing/inactive buy order
+                                       "SELECT \"contracts\".* FROM \"contracts\"
+                                        LEFT JOIN \"orders\" sell_orders
+                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"sell_orders\".\"type\" = 'SellOrder'
+                                        LEFT JOIN \"orders\" buy_orders
+                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
+                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
+                                        WHERE (\"buy_orders\".\"contract_id\" IS NULL
+                                          OR \"buy_orders\".\"status\" NOT IN ('done', 'open', 'pending'))
+                                          AND \"sell_orders\".\"status\" IN ('done', 'open', 'pending')"
+                                      ) }
   scope :resolved,              -> { where(status: ['done']) }
   scope :unresolved,            -> { where.not(id: resolved) }
   scope :resolvable,            -> { unresolved.merge(matched_and_complete) }
