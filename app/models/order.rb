@@ -67,14 +67,15 @@ class Order < ActiveRecord::Base
 
     case order_type
     when 'buy'
-      puts "Placing BUY order for: #{price}"
       response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
     when 'sell'
-      puts "Placing SELL order for: #{price}"
       response = GDAX::Connection.new.rest_client.sell(size, price, optional_params)
     end
 
-    store_order(response, order_type) if response
+    if response
+      puts "Order successful: #{order_type.upcase} @ #{response['price']}"
+      store_order(response, order_type)
+    end
     response
   rescue Coinbase::Exchange::BadRequestError => gdax_error
     puts "GDAX error (order submit): #{gdax_error}"
