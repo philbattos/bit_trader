@@ -6,12 +6,12 @@ class Contract < ActiveRecord::Base
   # NOTE: consider querying contracts based on presence of gdax_order_ids
   scope :with_buy_orders,       -> { where(id: BuyOrder.select(:contract_id).distinct) }
   scope :with_sell_orders,      -> { where(id: SellOrder.select(:contract_id).distinct) }
-  scope :with_active_buy,       -> { joins(:buy_orders).where(orders: {status: Order::ACTIVE_STATUSES}) }
-  scope :with_active_sell,      -> { joins(:sell_orders).where(orders: {status: Order::ACTIVE_STATUSES}) }
-  scope :without_buy_order,     -> { joins(:buy_orders).where(orders: {contract_id: nil}) }
-  scope :without_sell_order,    -> { joins(:sell_orders).where(orders: {contract_id: nil}) }
-  scope :without_active_buy,    -> { joins(:buy_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
-  scope :without_active_sell,   -> { joins(:sell_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
+  # scope :with_active_buy,       -> { joins(:buy_orders).where(orders: {status: Order::ACTIVE_STATUSES}) }
+  # scope :with_active_sell,      -> { joins(:sell_orders).where(orders: {status: Order::ACTIVE_STATUSES}) }
+  # scope :without_buy_order,     -> { joins(:buy_orders).where(orders: {contract_id: nil}) }
+  # scope :without_sell_order,    -> { joins(:sell_orders).where(orders: {contract_id: nil}) }
+  # scope :without_active_buy,    -> { joins(:buy_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
+  # scope :without_active_sell,   -> { joins(:sell_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
   scope :with_buy_without_sell, -> { find_by_sql( # with active buy order and missing/inactive sell order
                                        "SELECT \"contracts\".* FROM \"contracts\"
                                         LEFT JOIN \"orders\" sell_orders
@@ -20,9 +20,9 @@ class Contract < ActiveRecord::Base
                                         LEFT JOIN \"orders\" buy_orders
                                           ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
                                           AND \"buy_orders\".\"type\" = 'BuyOrder'
-                                        WHERE (\"sell_orders\".\"contract_id\" IS NULL
-                                          OR \"sell_orders\".\"status\" NOT IN ('done', 'open', 'pending'))
-                                          AND \"buy_orders\".\"status\" IN ('done', 'open', 'pending')"
+                                        GROUP BY contracts.id
+                                        HAVING (COUNT(sell_orders.status IN ('done', 'open', 'pending')) = 0)
+                                          AND (COUNT(buy_orders.status IN ('done', 'open', 'pending')) = 1)"
                                       ) }
   scope :with_sell_without_buy, -> { find_by_sql( # with active sell order and missing/inactive buy order
                                        "SELECT \"contracts\".* FROM \"contracts\"
@@ -32,9 +32,9 @@ class Contract < ActiveRecord::Base
                                         LEFT JOIN \"orders\" buy_orders
                                           ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
                                           AND \"buy_orders\".\"type\" = 'BuyOrder'
-                                        WHERE (\"buy_orders\".\"contract_id\" IS NULL
-                                          OR \"buy_orders\".\"status\" NOT IN ('done', 'open', 'pending'))
-                                          AND \"sell_orders\".\"status\" IN ('done', 'open', 'pending')"
+                                        GROUP BY contracts.id
+                                        HAVING (COUNT(sell_orders.status IN ('done', 'open', 'pending')) = 1)
+                                          AND (COUNT(buy_orders.status IN ('done', 'open', 'pending')) = 0)"
                                       ) }
   scope :resolved,              -> { where(status: ['done']) }
   scope :unresolved,            -> { where.not(id: resolved) }
