@@ -17,7 +17,7 @@ module GDAX
       end
     end
 
-    def self.last_trade
+    def self.last_saved_trade
       order(:trade_id).last
     end
 
@@ -52,6 +52,44 @@ module GDAX
       else
         nil
       end
+    end
+
+    def self.orderbook
+      GDAX::Connection.new.rest_client.orderbook
+    rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+      puts "GDAX rate limit error (orderbook): #{rate_limit_error}"
+      empty_orderbook
+    rescue Coinbase::Exchange::APIError => api_error
+      puts "GDAX API error (orderbook): #{api_error}"
+      empty_orderbook
+    end
+
+    def self.last_trade
+      GDAX::Connection.new.rest_client.last_trade
+    rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+      puts "GDAX rate limit error (last-trade): #{rate_limit_error}"
+      empty_orderbook
+    rescue Coinbase::Exchange::APIError => api_error
+      puts "GDAX API error (last-trade): #{api_error}"
+      empty_orderbook
+    end
+
+    def self.current_bid
+      orderbook.bids.first[0].to_d
+    rescue NoMethodError => no_method_error
+      puts "NoMethodError (current_bid): #{no_method_error}"
+      retry
+    end
+
+    def self.current_ask
+      orderbook.asks.first[0].to_d
+    rescue NoMethodError => no_method_error
+      puts "NoMethodError (current_ask): #{no_method_error}"
+      retry
+    end
+
+    def self.empty_orderbook
+      OpenStruct.new({ bids: [[]], asks: [[]] })
     end
   end
 end

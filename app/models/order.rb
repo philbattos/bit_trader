@@ -1,6 +1,6 @@
 class Order < ActiveRecord::Base
 
-  belongs_to :contract
+  belongs_to :contract, dependent: :restrict_with_exception
 
   scope :resolved,   -> { where(status: CLOSED_STATUSES) }
   scope :unresolved, -> { where.not(id: resolved) }
@@ -135,6 +135,7 @@ class Order < ActiveRecord::Base
             gdax_status:      response['status'],
             status:           response['status'],
             gdax_filled_fees: response['fill_fees'],
+            fees:             response['fill_fees'].to_d.round(7),
             gdax_price:       response['executed_value'],
             price:            response['executed_value'].to_d.round(7)
           )
@@ -155,24 +156,6 @@ class Order < ActiveRecord::Base
     puts "Updated order #{order.id} with status 'not-found'"
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (update order status): #{rate_limit_error}"
-  end
-
-  def self.total_profit
-    count       = [BuyOrder.purchased.count, SellOrder.purchased.count].min
-    buy_orders  = BuyOrder.purchased.pluck(:gdax_price).first(count).sum {|o| o.to_d }
-    sell_orders = SellOrder.purchased.pluck(:gdax_price).first(count).sum {|o| o.to_d }
-    profit      = (sell_orders - buy_orders) * 0.01
-
-    profit.round(4)
-  end
-
-  def self.completed_profit
-    count       = [BuyOrder.done.count, SellOrder.done.count].min
-    buy_orders  = BuyOrder.done.pluck(:gdax_price).first(count).sum {|o| o.to_d }
-    sell_orders = SellOrder.done.pluck(:gdax_price).first(count).sum {|o| o.to_d }
-    profit      = (sell_orders - buy_orders) * 0.01
-
-    profit.round(4)
   end
 
   #=================================================

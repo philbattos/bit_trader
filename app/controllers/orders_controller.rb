@@ -4,7 +4,7 @@ class OrdersController < ApplicationController
 
   def index
     @orders = Order.fetch_all
-    @current_price = Trader.last_trade.price
+    @current_price = GDAX::MarketData.last_trade.price
     render :index
   end
 

@@ -1,7 +1,7 @@
 class Contract < ActiveRecord::Base
 
-  has_many :buy_orders, class_name: 'BuyOrder', foreign_key: 'contract_id'
-  has_many :sell_orders, class_name: 'SellOrder', foreign_key: 'contract_id'
+  has_many :buy_orders, class_name: 'BuyOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
+  has_many :sell_orders, class_name: 'SellOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
 
   scope :with_buy_order,        -> { where(id: BuyOrder.select(:contract_id).distinct) }
   scope :with_sell_order,       -> { where(id: SellOrder.select(:contract_id).distinct) }
@@ -96,7 +96,7 @@ class Contract < ActiveRecord::Base
   def self.match_open_buys
     open_contracts = unresolved.with_buy_without_sell
     if open_contracts.any?
-      current_ask = Trader.current_ask
+      current_ask = GDAX::MarketData.current_ask
       return missing_price('ask') if current_ask == 0.0
 
       open_contracts.each do |contract|
@@ -118,7 +118,7 @@ class Contract < ActiveRecord::Base
   def self.match_open_sells
     open_contracts = unresolved.with_sell_without_buy
     if open_contracts.any?
-      current_bid = Trader.current_bid
+      current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
 
       open_contracts.each do |contract|
@@ -166,7 +166,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.my_buy_price # move this into Order class?
-    current_bid = Trader.current_bid
+    current_bid = GDAX::MarketData.current_bid
     if current_bid == 0.0
       return current_bid
     else
@@ -175,7 +175,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.my_ask_price # move this into Order class?
-    current_ask = Trader.current_ask
+    current_ask = GDAX::MarketData.current_ask
     if current_ask == 0.0
       return current_ask
     else
@@ -199,10 +199,10 @@ class Contract < ActiveRecord::Base
   end
 
   def calculate_roi
-    sell_value = sell_order.price * sell_order.quantity
-    buy_value  = buy_order.price * buy_order.quantity
+    profit = (sell_order.price * sell_order.quantity) - sell_order.fees
+    cost   = (buy_order.price * buy_order.quantity) + buy_order.fees
 
-    sell_value - buy_value
+    profit - cost
   end
 
   def self.missing_price(type)

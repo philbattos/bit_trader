@@ -25,52 +25,12 @@ class Trader
     end
   end
 
-  # TODO: move these methods to another class (GDAX::MarketData ?)
-
-  def self.orderbook
-    GDAX::Connection.new.rest_client.orderbook
-  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error (orderbook): #{rate_limit_error}"
-    empty_orderbook
-  rescue Coinbase::Exchange::APIError => api_error
-    puts "GDAX API error (orderbook): #{api_error}"
-    empty_orderbook
-  end
-
-  def self.last_trade
-    GDAX::Connection.new.rest_client.last_trade
-  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error (last-trade): #{rate_limit_error}"
-    empty_orderbook
-  rescue Coinbase::Exchange::APIError => api_error
-    puts "GDAX API error (last-trade): #{api_error}"
-    empty_orderbook
-  end
-
-  def self.current_bid
-    orderbook.bids.first[0].to_d
-  rescue NoMethodError => no_method_error
-    puts "NoMethodError (current_bid): #{no_method_error}"
-    retry
-  end
-
-  def self.current_ask
-    orderbook.asks.first[0].to_d
-  rescue NoMethodError => no_method_error
-    puts "NoMethodError (current_ask): #{no_method_error}"
-    retry
-  end
-
-  def self.empty_orderbook
-    OpenStruct.new({ bids: [[]], asks: [[]] })
-  end
-
   #=================================================
     private
   #=================================================
 
     def current_price
-      GDAX::MarketData.last_trade.price
+      GDAX::MarketData.last_saved_trade.price
     end
 
     def update_orders_and_contracts
@@ -95,7 +55,7 @@ class Trader
         sleep 3
         # NOTE: recalculate ceiling because sometimes the number is wrong
         confirmed_ceiling = GDAX::MarketData.calculate_average(15.minutes.ago) * 1.002
-        confirmed_price   = Trader.last_trade.price.to_d
+        confirmed_price   = GDAX::MarketData.last_trade.price.to_d
         if confirmed_price > confirmed_ceiling
           puts "PRICE JUMP"
           puts "ceiling: #{confirmed_ceiling}"
@@ -113,7 +73,7 @@ class Trader
         sleep 3
         # NOTE: recalculate floor because sometimes the number is wrong
         confirmed_floor = GDAX::MarketData.calculate_average(15.minutes.ago) * 0.998
-        confirmed_price = Trader.last_trade.price.to_d
+        confirmed_price = GDAX::MarketData.last_trade.price.to_d
         if confirmed_price < confirmed_floor
           puts "PRICE DROP"
           puts "floor: #{confirmed_floor}"

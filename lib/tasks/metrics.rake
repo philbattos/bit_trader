@@ -1,13 +1,7 @@
 desc "Check current profit amount"
 task metrics: :environment do
-  # total_profit     = Order.total_profit
-  # completed_profit = Order.completed_profit
+  total_contracts = Contract.resolved
+  total_profit    = total_contracts.pluck(:roi).sum
 
-  # completed_buys   = BuyOrder.done.count
-  # completed_sells  = SellOrder.done.count
-  # difference       = completed_sells - completed_buys
-
-  # puts "Current profit: $#{total_profit}"
-  # puts "Completed profit: $#{completed_profit}"
-  # puts "Completed orders: #{completed_buys} buys, #{completed_sells} sells (#{difference} sells difference)"
+  puts "Current profit: $#{total_profit} (#{total_contracts.count} contracts since 12/31/2016)"
 end
