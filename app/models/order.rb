@@ -1,6 +1,6 @@
 class Order < ActiveRecord::Base
 
-  belongs_to :contract, dependent: :restrict_with_exception
+  belongs_to :contract
 
   scope :resolved,   -> { where(status: CLOSED_STATUSES) }
   scope :unresolved, -> { where.not(id: resolved) }
