@@ -65,6 +65,8 @@ class Order < ActiveRecord::Base
       # cancel_after: 'hour' # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
     }
 
+    # TODO: add check of account balance to avoid multitude of "insufficient funds" errors
+
     case order_type
     when 'buy'
       response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
