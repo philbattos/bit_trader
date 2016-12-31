@@ -12,8 +12,8 @@ class Contract < ActiveRecord::Base
   scope :without_sell_order,    -> { joins(:sell_orders).where(orders: {contract_id: nil}) }
   scope :without_active_buy,    -> { joins(:buy_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
   scope :without_active_sell,   -> { joins(:sell_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
-  scope :with_buy_without_sell, -> { with_active_buy_order.without_active_sell_order }
-  scope :with_sell_without_buy, -> { with_active_sell_order.without_active_buy_order }
+  scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
+  scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
   scope :resolved,              -> { where(status: ['done']) }
   scope :unresolved,            -> { where.not(id: resolved) }
   scope :resolvable,            -> { unresolved.merge(matched_and_complete) }
