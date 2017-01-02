@@ -41,6 +41,7 @@ class Contract < ActiveRecord::Base
   PROFIT_PERCENT = 0.0003
   MARGIN = 0.01
   MAX_OPEN_ORDERS = 3
+  MAX_TIME_BETWEEN_ORDERS = 3.minutes.ago
 
   def matched?
     buy_order.present? && sell_order.present?
@@ -161,11 +162,11 @@ class Contract < ActiveRecord::Base
   end
 
   def self.recent_buys?
-    BuyOrder.unresolved.order(:created_at).last.created_at < 3.minutes.ago
+    BuyOrder.unresolved.order(:created_at).last.created_at > MAX_TIME_BETWEEN_ORDERS
   end
 
   def self.recent_sells?
-    SellOrder.unresolved.order(:created_at).last.created_at < 3.minutes.ago
+    SellOrder.unresolved.order(:created_at).last.created_at > MAX_TIME_BETWEEN_ORDERS
   end
 
   def self.full_buys?
