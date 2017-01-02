@@ -38,7 +38,7 @@ class Contract < ActiveRecord::Base
   #       or deactivated, the contract's ROI should be recalculated.
 
   # PROFIT = 0.10
-  PROFIT_PERCENT = 0.0002
+  PROFIT_PERCENT = 0.0003
   MARGIN = 0.01
   MAX_OPEN_ORDERS = 3
 
@@ -87,36 +87,34 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_buys
-    open_contracts = with_buy_without_sell # finds contracts with active buy and without active sell
-    if open_contracts.any?
+    open_contract = with_buy_without_sell.includes(:buy_orders).order("orders.price").first # finds contracts with lowest active buy price and without an active sell
+    if open_contract
       current_ask = GDAX::MarketData.current_ask
       return missing_price('ask') if current_ask == 0.0
 
-      contract = open_contracts.sample
-      return if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
+      return if open_contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
 
-      min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
+      min_sell_price = open_contract.buy_order.price * (1.0 + PROFIT_PERCENT)
       sell_price     = [current_ask, min_sell_price].compact.max.round(2)
-      sell_order     = Order.place_sell(sell_price, contract.id)
+      sell_order     = Order.place_sell(sell_price, open_contract.id)
 
-      contract.update(gdax_sell_order_id: sell_order['id']) if sell_order
+      open_contract.update(gdax_sell_order_id: sell_order['id']) if sell_order
     end
   end
 
   def self.match_open_sells
-    open_contracts = with_sell_without_buy # finds contracts with active sell and without active buy
-    if open_contracts.any?
+    open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.price desc").first # finds contracts with highest active sell price and without an active buy
+    if open_contract
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
 
-      contract = open_contracts.sample
-      return if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
+      return if open_contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
 
-      max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
+      max_buy_price = open_contract.sell_order.price * (1.0 - PROFIT_PERCENT)
       buy_price     = [current_bid, max_buy_price].min.round(2)
-      buy_order     = Order.place_buy(buy_price, contract.id)
+      buy_order     = Order.place_buy(buy_price, open_contract.id)
 
-      contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
+      open_contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
     end
   end
 
