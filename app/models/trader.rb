@@ -52,7 +52,7 @@ class Trader
 
     def price_jump
       begin
-        sleep 3
+        sleep 5
         # NOTE: recalculate ceiling because sometimes the number is wrong
         confirmed_ceiling = GDAX::MarketData.calculate_average(15.minutes.ago) * 1.002
         confirmed_price   = GDAX::MarketData.last_trade.price.to_d
@@ -70,7 +70,7 @@ class Trader
 
     def price_drop
       begin
-        sleep 3
+        sleep 5
         # NOTE: recalculate floor because sometimes the number is wrong
         confirmed_floor = GDAX::MarketData.calculate_average(15.minutes.ago) * 0.998
         confirmed_price = GDAX::MarketData.last_trade.price.to_d
