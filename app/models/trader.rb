@@ -97,17 +97,15 @@ class Trader
           if cancellation # or cancellation.empty?
             order = Order.find_by(gdax_id: order_id)
             order.update(status: 'not-found', gdax_status: 'not-found')
-            if order.contract
-              if order_type == 'buy'
-                if order.contract.gdax_buy_order_id == order.gdax_id
-                  puts "removing gdax_buy_order_id from contract #{order.contract.id}"
-                  order.contract.update(gdax_buy_order_id: nil)
-                end
-              elsif order_type == 'sell'
-                if order.contract.gdax_sell_order_id == order.gdax_id
-                  puts "removing gdax_sell_order_id from contract #{order.contract.id}"
-                  order.contract.update(gdax_sell_order_id: nil)
-                end
+            if order_type == 'buy'
+              if order.contract.gdax_buy_order_id == order.gdax_id
+                puts "removing gdax_buy_order_id from contract #{order.contract.id}"
+                order.contract.update(gdax_buy_order_id: nil)
+              end
+            elsif order_type == 'sell'
+              if order.contract.gdax_sell_order_id == order.gdax_id
+                puts "removing gdax_sell_order_id from contract #{order.contract.id}"
+                order.contract.update(gdax_sell_order_id: nil)
               end
             end
           end
