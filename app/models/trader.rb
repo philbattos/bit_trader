@@ -96,7 +96,7 @@ class Trader
           # cancellation returns empty hash {}
           if cancellation # or cancellation.empty?
             order = Order.find_by(gdax_id: order_id)
-            order.update(status: 'not-found')
+            order.update(status: 'not-found', gdax_status: 'not-found')
             if order.contract
               if order_type == 'buy'
                 if order.contract.gdax_buy_order_id == order.gdax_id

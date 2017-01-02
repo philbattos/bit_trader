@@ -7,6 +7,7 @@ class Order < ActiveRecord::Base
   scope :active,     -> { where(status: ACTIVE_STATUSES) }
   # scope :inactive,   -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
   scope :purchased,  -> { where(status: PURCHASED_STATUSES) }
+  scope :canceled,   -> { where(status: 'not-found') }
   scope :done,       -> { where(status: 'done') }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'

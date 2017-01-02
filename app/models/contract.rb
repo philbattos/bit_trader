@@ -29,9 +29,6 @@ class Contract < ActiveRecord::Base
   # validate :association_ids_must_match
   # validates_associated :orders
 
-  Order.select("date(created_at) as ordered_date, sum(price) as total_price").group("date(created_at)").having("sum(price) > ?", 100)
-
-
   # TODO: add validation to ensure that each contract only has one active buy_order and sell_order
 
   # NOTE: Each contract could have many buy orders and many sell orders but each contract should only
@@ -81,46 +78,45 @@ class Contract < ActiveRecord::Base
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
 
-      open_contracts.first(2).each do |contract|
-        buy_price = current_bid.round(2)
-        buy_order = Order.place_buy(buy_price, contract.id)
+      contract  = open_contracts.sample
+      buy_price = current_bid.round(2)
+      buy_order = Order.place_buy(buy_price, contract.id)
 
-        contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
-      end
+      contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
     end
   end
 
   def self.match_open_buys
-    open_contracts = with_buy_without_sell # finds contracts with ACTIVE buy and without ACTIVE sell
+    open_contracts = with_buy_without_sell # finds contracts with active buy and without active sell
     if open_contracts.any?
       current_ask = GDAX::MarketData.current_ask
       return missing_price('ask') if current_ask == 0.0
 
-      open_contracts.sample(2).each do |contract|
-        next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
-        min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
-        sell_price     = [current_ask, min_sell_price].compact.max.round(2)
-        sell_order     = Order.place_sell(sell_price, contract.id)
+      contract = open_contracts.sample
+      next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
 
-        contract.update(gdax_sell_order_id: sell_order['id']) if sell_order
-      end
+      min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
+      sell_price     = [current_ask, min_sell_price].compact.max.round(2)
+      sell_order     = Order.place_sell(sell_price, contract.id)
+
+      contract.update(gdax_sell_order_id: sell_order['id']) if sell_order
     end
   end
 
   def self.match_open_sells
-    open_contracts = with_sell_without_buy # finds contracts with ACTIVE sell and without ACTIVE buy
+    open_contracts = with_sell_without_buy # finds contracts with active sell and without active buy
     if open_contracts.any?
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
 
-      open_contracts.sample(2).each do |contract|
-        next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
-        max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
-        buy_price     = [current_bid, max_buy_price].min.round(2)
-        buy_order     = Order.place_buy(buy_price, contract.id)
+      contract = open_contracts.sample
+      next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
 
-        contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
-      end
+      max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
+      buy_price     = [current_bid, max_buy_price].min.round(2)
+      buy_order     = Order.place_buy(buy_price, contract.id)
+
+      contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
     end
   end
 
