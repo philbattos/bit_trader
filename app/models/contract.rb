@@ -15,6 +15,7 @@ class Contract < ActiveRecord::Base
   scope :without_active_sell,   -> { where.not(id: with_active_sell) }
   scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
   scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
+  scope :without_active_order,  -> { without_active_buy.without_active_sell } # this happens when an order is created and then canceled before it can be matched with another order
   scope :resolved,              -> { where(status: ['done']) }
   scope :unresolved,            -> { where.not(id: resolved) }
   scope :resolvable,            -> { matched.complete }
@@ -69,19 +70,33 @@ class Contract < ActiveRecord::Base
   end
 
   def self.resolve_open
+    populate_empty_contracts
     match_open_buys
     match_open_sells
   end
 
+  def self.populate_empty_contracts
+    open_contracts = without_active_order
+    if open_contracts.any?
+      current_bid = GDAX::MarketData.current_bid
+      return missing_price('bid') if current_bid == 0.0
+
+      open_contracts.first(2).each do |contract|
+        buy_price = current_bid.round(2)
+        buy_order = Order.place_buy(buy_price, contract.id)
+
+        contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
+      end
+    end
+  end
+
   def self.match_open_buys
-    return if SellOrder.unresolved.count > 6 # temporarily allow more orders until backlog of open contracts are fulfilled
     open_contracts = with_buy_without_sell # finds contracts with ACTIVE buy and without ACTIVE sell
     if open_contracts.any?
       current_ask = GDAX::MarketData.current_ask
       return missing_price('ask') if current_ask == 0.0
 
-      open_contracts.first(3).each do |contract|
-        next if contract.buy_order.nil?
+      open_contracts.first(2).each do |contract|
         next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
         min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
         sell_price     = [current_ask, min_sell_price].compact.max.round(2)
@@ -93,14 +108,12 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_sells
-    return if BuyOrder.unresolved.count > 6 # temporarily allow more orders until backlog of open contracts are fulfilled
     open_contracts = with_sell_without_buy # finds contracts with ACTIVE sell and without ACTIVE buy
     if open_contracts.any?
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
 
-      open_contracts.first(3).each do |contract|
-        next if contract.sell_order.nil?
+      open_contracts.first(2).each do |contract|
         next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
         max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
         buy_price     = [current_bid, max_buy_price].min.round(2)
