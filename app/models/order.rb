@@ -10,6 +10,8 @@ class Order < ActiveRecord::Base
   scope :done,      -> { where(gdax_status: 'done') }
   scope :inactive,  -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
 
+  validates :contract, presence: true # all orders should be associated with a contract
+
   CLOSED_STATUSES    = %w[ done rejected not-found ]
   PURCHASED_STATUSES = %w[ done open ]
   ACTIVE_STATUSES    = %w[ done open pending ]
@@ -52,7 +54,7 @@ class Order < ActiveRecord::Base
     status == 'done'
   end
 
-  def self.submit(order_type, price) # should this be an instance method??
+  def self.submit(order_type, price, contract_id) # should this be an instance method??
     # type       = 'limit' # default
     # side       = order_type
     # product_id = 'BTC-USD'
@@ -76,7 +78,7 @@ class Order < ActiveRecord::Base
 
     if response
       puts "Order successful: #{order_type.upcase} @ #{response['price']}"
-      store_order(response, order_type)
+      store_order(response, order_type, contract_id)
     end
     response
   rescue Coinbase::Exchange::BadRequestError => gdax_error
@@ -96,12 +98,12 @@ class Order < ActiveRecord::Base
     nil
   end
 
-  def self.place_buy(bid)
-    submit('buy', bid)
+  def self.place_buy(bid, contract_id=nil)
+    submit('buy', bid, contract_id)
   end
 
-  def self.place_sell(ask)
-    submit('sell', ask)
+  def self.place_sell(ask, contract_id=nil)
+    submit('sell', ask, contract_id)
   end
 
   # def self.fetch_all
@@ -130,21 +132,10 @@ class Order < ActiveRecord::Base
       response = check_status(order.gdax_id)
       if response && response['status'] != order.gdax_status
         puts "Updating status of #{order.type} #{order.id} from #{order.gdax_status} to #{response['status']}"
-        if response['type'] == 'market'
-          order.update(
-            gdax_status:      response['status'],
-            status:           response['status'],
-            gdax_filled_fees: response['fill_fees'],
-            fees:             response['fill_fees'].to_d.round(7),
-            gdax_price:       response['executed_value'],
-            price:            response['executed_value'].to_d.round(7)
-          )
-        else
-          order.update(
-            gdax_status: response['status'],
-            status:      response['status']
-          )
-        end
+        order.update(
+          gdax_status: response['status'],
+          status:      response['status']
+        )
       end
     end
   rescue Coinbase::Exchange::BadRequestError => request_error
@@ -162,9 +153,10 @@ class Order < ActiveRecord::Base
     private
   #=================================================
 
-    def self.store_order(response, order_type)
+    def self.store_order(response, order_type, contract_id)
       puts "Storing order #{response['id']}"
-      Order.create(
+      contract = Contract.find_or_create(id: contract_id)
+      contract.order.create(
         type:                lookup_class_type[order_type],
         gdax_id:             response['id'],
         gdax_price:          response['price'],

@@ -1,4 +1,5 @@
 class Contract < ActiveRecord::Base
+  before_create { self.status = "new" }
 
   has_many :buy_orders, class_name: 'BuyOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
   has_many :sell_orders, class_name: 'SellOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
@@ -21,8 +22,8 @@ class Contract < ActiveRecord::Base
                                           ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
                                           AND \"buy_orders\".\"type\" = 'BuyOrder'
                                         GROUP BY contracts.id
-                                        HAVING (COUNT(sell_orders.status IN ('done', 'open', 'pending')) = 0)
-                                          AND (COUNT(buy_orders.status IN ('done', 'open', 'pending')) = 1)"
+                                        HAVING COUNT (DISTINCT sell_orders.status IN ('done', 'open', 'pending')) = 0
+                                          AND COUNT (buy_orders.status IN ('done', 'open', 'pending')) = 1"
                                       ) }
   scope :with_sell_without_buy, -> { find_by_sql( # with active sell order and missing/inactive buy order
                                        "SELECT \"contracts\".* FROM \"contracts\"
@@ -76,6 +77,8 @@ class Contract < ActiveRecord::Base
                                           AND \"sell_orders\".\"status\" = 'done'
                                           AND \"buy_orders\".\"status\" = 'done'"
                                       ) }
+
+  # unresolved = with_buy_without_sell + with_sell_without_buy + unresolved.merge(matched)
 
   # validate :association_ids_must_match
   # validates_associated :orders
@@ -133,13 +136,9 @@ class Contract < ActiveRecord::Base
         next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
         min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
         sell_price     = [current_ask, min_sell_price].compact.max.round(2)
-        sell_order     = Order.place_sell(sell_price)
+        sell_order     = Order.place_sell(sell_price, contract.id)
 
-        if sell_order
-          contract.update(gdax_sell_order_id: sell_order['id'])
-          new_order = Order.find_by_gdax_id(sell_order['id'])
-          contract.sell_orders << new_order
-        end
+        contract.update(gdax_sell_order_id: sell_order['id']) if sell_order
       end
     end
   end
@@ -155,13 +154,9 @@ class Contract < ActiveRecord::Base
         next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
         max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
         buy_price     = [current_bid, max_buy_price].min.round(2)
-        buy_order     = Order.place_buy(buy_price)
+        buy_order     = Order.place_buy(buy_price, contract.id)
 
-        if buy_order
-          contract.update(gdax_buy_order_id: buy_order['id'])
-          new_order = Order.find_by_gdax_id(buy_order['id'])
-          contract.buy_orders << new_order
-        end
+        contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
       end
     end
   end
@@ -173,10 +168,8 @@ class Contract < ActiveRecord::Base
     new_order = Order.place_buy(my_buy_price)
 
     if new_order
-      order    = Order.find_by_gdax_id(new_order['id'])
-      contract = Contract.create() # order.create_contract() doesn't correctly associate objects
-      contract.update(gdax_buy_order_id: new_order['id'])
-      contract.buy_orders << order
+      order = Order.find_by_gdax_id(new_order['id'])
+      order.contract.update(gdax_buy_order_id: new_order['id'])
     end
   end
 
@@ -187,10 +180,8 @@ class Contract < ActiveRecord::Base
     new_order = Order.place_sell(my_ask_price)
 
     if new_order
-      order    = Order.find_by_gdax_id(new_order['id'])
-      contract = Contract.create() # order.create_contract() doesn't correctly associate objects
-      contract.update(gdax_sell_order_id: new_order['id'])
-      contract.sell_orders << order
+      order = Order.find_by_gdax_id(new_order['id'])
+      order.contract.update(gdax_sell_order_id: new_order['id'])
     end
   end
 
@@ -238,5 +229,9 @@ class Contract < ActiveRecord::Base
     puts "GDAX orderbook returned a #{type} price of $0... It could be the result of a rate limit error."
     "GDAX orderbook returned a #{type} price of $0... It could be the result of a rate limit error."
   end
+
+  #=================================================
+    private
+  #=================================================
 
 end
