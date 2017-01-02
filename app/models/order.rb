@@ -4,11 +4,12 @@ class Order < ActiveRecord::Base
 
   scope :resolved,   -> { where(status: CLOSED_STATUSES) }
   scope :unresolved, -> { where.not(id: resolved) }
+  scope :active,     -> { where(status: ACTIVE_STATUSES) }
+  # scope :inactive,   -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
+  scope :purchased,  -> { where(status: PURCHASED_STATUSES) }
+  scope :done,       -> { where(status: 'done') }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
-  scope :purchased, -> { where(gdax_status: PURCHASED_STATUSES) }
-  scope :done,      -> { where(gdax_status: 'done') }
-  scope :inactive,  -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
 
   validates :contract, presence: true # all orders should be associated with a contract
 

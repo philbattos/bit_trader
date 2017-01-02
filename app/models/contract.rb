@@ -7,81 +7,29 @@ class Contract < ActiveRecord::Base
   # NOTE: consider querying contracts based on presence of gdax_order_ids
   scope :with_buy_orders,       -> { where(id: BuyOrder.select(:contract_id).distinct) }
   scope :with_sell_orders,      -> { where(id: SellOrder.select(:contract_id).distinct) }
-  # scope :with_active_buy,       -> { joins(:buy_orders).where(orders: {status: Order::ACTIVE_STATUSES}) }
-  # scope :with_active_sell,      -> { joins(:sell_orders).where(orders: {status: Order::ACTIVE_STATUSES}) }
-  # scope :without_buy_order,     -> { joins(:buy_orders).where(orders: {contract_id: nil}) }
-  # scope :without_sell_order,    -> { joins(:sell_orders).where(orders: {contract_id: nil}) }
-  # scope :without_active_buy,    -> { joins(:buy_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
-  # scope :without_active_sell,   -> { joins(:sell_orders).where.not(orders: {status: Order::ACTIVE_STATUSES}) }
-  scope :with_buy_without_sell, -> { find_by_sql( # with active buy order and missing/inactive sell order
-                                       "SELECT \"contracts\".* FROM \"contracts\"
-                                        LEFT JOIN \"orders\" sell_orders
-                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"sell_orders\".\"type\" = 'SellOrder'
-                                        LEFT JOIN \"orders\" buy_orders
-                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
-                                        GROUP BY contracts.id
-                                        HAVING COUNT (DISTINCT sell_orders.status IN ('done', 'open', 'pending')) = 0
-                                          AND COUNT (buy_orders.status IN ('done', 'open', 'pending')) = 1"
-                                      ) }
-  scope :with_sell_without_buy, -> { find_by_sql( # with active sell order and missing/inactive buy order
-                                       "SELECT \"contracts\".* FROM \"contracts\"
-                                        LEFT JOIN \"orders\" sell_orders
-                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"sell_orders\".\"type\" = 'SellOrder'
-                                        LEFT JOIN \"orders\" buy_orders
-                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
-                                        GROUP BY contracts.id
-                                        HAVING (COUNT(sell_orders.status IN ('done', 'open', 'pending')) = 1)
-                                          AND (COUNT(buy_orders.status IN ('done', 'open', 'pending')) = 0)"
-                                      ) }
+  scope :without_buy_orders,    -> { where.not(id: with_buy_orders) }
+  scope :without_sell_orders,   -> { where.not(id: with_sell_orders) }
+  scope :with_active_buy,       -> { where(id: BuyOrder.active.select(:contract_id).distinct) }
+  scope :with_active_sell,      -> { where(id: SellOrder.active.select(:contract_id).distinct) }
+  scope :without_active_buy,    -> { where.not(id: with_active_buy) }
+  scope :without_active_sell,   -> { where.not(id: with_active_sell) }
+  scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
+  scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
   scope :resolved,              -> { where(status: ['done']) }
   scope :unresolved,            -> { where.not(id: resolved) }
-  scope :resolvable,            -> { unresolved.merge(matched_and_complete) }
-  scope :matched,               -> { find_by_sql(
-                                       "SELECT \"contracts\".* FROM \"contracts\"
-                                        LEFT JOIN \"orders\" sell_orders
-                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"sell_orders\".\"type\" = 'SellOrder'
-                                        LEFT JOIN \"orders\" buy_orders
-                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
-                                        WHERE \"sell_orders\".\"id\" IS NOT NULL
-                                          AND \"buy_orders\".\"id\" IS NOT NULL"
-                                      ) }
-  scope :unmatched,             -> { where.not(id: matched) }
-  scope :complete,              -> { find_by_sql(
-                                       "SELECT \"contracts\".* FROM \"contracts\"
-                                        LEFT JOIN \"orders\" sell_orders
-                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"sell_orders\".\"type\" = 'SellOrder'
-                                        LEFT JOIN \"orders\" buy_orders
-                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
-                                        WHERE \"sell_orders\".\"status\" = 'done'
-                                          AND \"buy_orders\".\"status\" = 'done'"
-                                      ) }
+  scope :resolvable,            -> { matched.complete }
+  scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
+  scope :complete,              -> { where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
   scope :incomplete,            -> { where.not(id: complete) }
-  scope :matched_and_complete,  -> { find_by_sql(
-                                       "SELECT \"contracts\".* FROM \"contracts\"
-                                        LEFT JOIN \"orders\" sell_orders
-                                          ON \"sell_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"sell_orders\".\"type\" = 'SellOrder'
-                                        LEFT JOIN \"orders\" buy_orders
-                                          ON \"buy_orders\".\"contract_id\" = \"contracts\".\"id\"
-                                          AND \"buy_orders\".\"type\" = 'BuyOrder'
-                                        WHERE \"sell_orders\".\"id\" IS NOT NULL
-                                          AND \"buy_orders\".\"id\" IS NOT NULL
-                                          AND \"sell_orders\".\"status\" = 'done'
-                                          AND \"buy_orders\".\"status\" = 'done'"
-                                      ) }
+  # scope :matched_and_complete,  -> { matched.complete }
 
-  # unresolved = with_buy_without_sell + with_sell_without_buy + unresolved.merge(matched)
+  # unresolved == with_buy_without_sell + with_sell_without_buy + matched
 
   # validate :association_ids_must_match
   # validates_associated :orders
+
+  Order.select("date(created_at) as ordered_date, sum(price) as total_price").group("date(created_at)").having("sum(price) > ?", 100)
+
 
   # TODO: add validation to ensure that each contract only has one active buy_order and sell_order
 
@@ -126,12 +74,13 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_buys
+    return if SellOrder.unresolved.count > 6 # temporarily allow more orders until backlog of open contracts are fulfilled
     open_contracts = with_buy_without_sell # finds contracts with ACTIVE buy and without ACTIVE sell
     if open_contracts.any?
       current_ask = GDAX::MarketData.current_ask
       return missing_price('ask') if current_ask == 0.0
 
-      open_contracts.each do |contract|
+      open_contracts.first(3).each do |contract|
         next if contract.buy_order.nil?
         next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
         min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
@@ -144,12 +93,13 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_sells
+    return if BuyOrder.unresolved.count > 6 # temporarily allow more orders until backlog of open contracts are fulfilled
     open_contracts = with_sell_without_buy # finds contracts with ACTIVE sell and without ACTIVE buy
     if open_contracts.any?
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
 
-      open_contracts.each do |contract|
+      open_contracts.first(3).each do |contract|
         next if contract.sell_order.nil?
         next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
         max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)

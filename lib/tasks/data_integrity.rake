@@ -15,6 +15,7 @@ task multiple_active_orders: :environment do
   puts "These contracts have more than one active SELL order: #{multiple_active_sells.count}"
 
   # Contract.all.select {|c| c.sell_orders.where(status: ['done', 'open', 'pending']).count > 1}.map(&:id).sort
+  # Contract.where(id: SellOrder.select(:contract_id).where(status: ['done', 'pending', 'open']).distinct).count
 end
 
 task orphaned_orders: :environment do
