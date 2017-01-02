@@ -93,7 +93,7 @@ class Contract < ActiveRecord::Base
       return missing_price('ask') if current_ask == 0.0
 
       contract = open_contracts.sample
-      next if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
+      return if contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
 
       min_sell_price = contract.buy_order.price * (1.0 + PROFIT_PERCENT)
       sell_price     = [current_ask, min_sell_price].compact.max.round(2)
@@ -110,7 +110,7 @@ class Contract < ActiveRecord::Base
       return missing_price('bid') if current_bid == 0.0
 
       contract = open_contracts.sample
-      next if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
+      return if contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
 
       max_buy_price = contract.sell_order.price * (1.0 - PROFIT_PERCENT)
       buy_price     = [current_bid, max_buy_price].min.round(2)

@@ -22,6 +22,3 @@ task data_integrity: :environment do
 
   puts "============================================================="
 end
-
-# THINGS TO ADD
-# -
