@@ -156,7 +156,7 @@ class Order < ActiveRecord::Base
     def self.store_order(response, order_type, contract_id)
       puts "Storing order #{response['id']}"
       contract = Contract.find_or_create_by(id: contract_id)
-      contract.order.create(
+      contract.orders.create(
         type:                lookup_class_type[order_type],
         gdax_id:             response['id'],
         gdax_price:          response['price'],
