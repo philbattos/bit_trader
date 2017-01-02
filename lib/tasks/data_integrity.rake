@@ -17,6 +17,11 @@ task multiple_active_orders: :environment do
   # Contract.all.select {|c| c.sell_orders.where(status: ['done', 'open', 'pending']).count > 1}.map(&:id).sort
 end
 
+task orphaned_orders: :environment do
+  orphaned_orders = Order.where(contract_id: nil)
+  puts "These orders do not have an associated contract: #{orphaned_orders.pluck(:id)}"
+end
+
 # THINGS TO ADD
 # - check if any orders have mis-matched statuses: order.gdax_status differs from order.status
 # -
