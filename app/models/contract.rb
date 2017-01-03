@@ -163,12 +163,12 @@ class Contract < ActiveRecord::Base
 
   def self.recent_buys?
     buys = BuyOrder.unresolved
-    buys.order(:created_at).last.created_at > MAX_TIME_BETWEEN_ORDERS unless buys.empty?
+    buys.order(:created_at).last.created_at < MAX_TIME_BETWEEN_ORDERS unless buys.empty?
   end
 
   def self.recent_sells?
     sells = SellOrder.unresolved
-    sells.order(:created_at).last.created_at > MAX_TIME_BETWEEN_ORDERS unless sells.empty?
+    sells.order(:created_at).last.created_at < MAX_TIME_BETWEEN_ORDERS unless sells.empty?
   end
 
   def self.full_buys?
