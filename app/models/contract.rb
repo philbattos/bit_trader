@@ -126,6 +126,7 @@ class Contract < ActiveRecord::Base
     new_order = Order.place_buy(my_buy_price)
 
     if new_order
+      puts "placed new buy: #{new_order['id']}"
       order = Order.find_by_gdax_id(new_order['id'])
       order.contract.update(gdax_buy_order_id: new_order['id'])
     end
@@ -138,6 +139,7 @@ class Contract < ActiveRecord::Base
     new_order = Order.place_sell(my_ask_price)
 
     if new_order
+      puts "placed new sell: #{new_order['id']}"
       order = Order.find_by_gdax_id(new_order['id'])
       order.contract.update(gdax_sell_order_id: new_order['id'])
     end
@@ -162,13 +164,13 @@ class Contract < ActiveRecord::Base
   end
 
   def self.recent_buys?
-    buys = BuyOrder.unresolved
-    buys.order(:created_at).last.created_at > MAX_TIME_BETWEEN_ORDERS unless buys.empty?
+    open_buys = BuyOrder.unresolved.order(:created_at).last.try(:created_at)
+    open_buys ? (open_buys > MAX_TIME_BETWEEN_ORDERS) : false
   end
 
   def self.recent_sells?
-    sells = SellOrder.unresolved
-    sells.order(:created_at).last.created_at > MAX_TIME_BETWEEN_ORDERS unless sells.empty?
+    open_sells = SellOrder.unresolved.order(:created_at).last.try(:created_at)
+    open_sells ? open_sells > MAX_TIME_BETWEEN_ORDERS : false
   end
 
   def self.full_buys?
