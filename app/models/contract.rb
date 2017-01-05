@@ -95,7 +95,7 @@ class Contract < ActiveRecord::Base
 
       return if open_contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
 
-      min_sell_price = open_contract.buy_order.price * (1.0 + PROFIT_PERCENT)
+      min_sell_price = calculate_sell_price(open_contract.buy_order)
       sell_price     = [current_ask, min_sell_price].compact.max.round(2)
       sell_order     = Order.place_sell(sell_price, open_contract.id)
 
@@ -111,7 +111,7 @@ class Contract < ActiveRecord::Base
 
       return if open_contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
 
-      max_buy_price = open_contract.sell_order.price * (1.0 - PROFIT_PERCENT)
+      max_buy_price = calculate_buy_price(open_contract.sell_order)
       buy_price     = [current_bid, max_buy_price].min.round(2)
       buy_order     = Order.place_buy(buy_price, open_contract.id)
 
@@ -142,6 +142,22 @@ class Contract < ActiveRecord::Base
       puts "placed new sell: #{new_order['id']}"
       order = Order.find_by_gdax_id(new_order['id'])
       order.contract.update(gdax_sell_order_id: new_order['id'])
+    end
+  end
+
+  def self.calculate_sell_price(open_buy)
+    if open_buy.updated_at < 10.hours.ago
+      open_buy.price * (1.0 + PROFIT_PERCENT)
+    else
+      nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
+    end
+  end
+
+  def self.calculate_buy_price(open_sell)
+    if open_sell.updated_at < 10.hours.ago
+      open_sell.price * (1.0 - PROFIT_PERCENT)
+    else
+      nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
     end
   end
 
