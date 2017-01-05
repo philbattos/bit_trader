@@ -44,8 +44,8 @@ class Trader
 
       return if ma_15mins.nil? || current_price.nil?
 
-      ceiling = ma_15mins * 1.002
-      floor   = ma_15mins * 0.998
+      ceiling = ma_15mins * 1.005
+      floor   = ma_15mins * 0.995
 
       [floor, ceiling]
     end

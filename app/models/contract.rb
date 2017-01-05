@@ -166,8 +166,6 @@ class Contract < ActiveRecord::Base
   def self.recent_buys?
     open_buys = BuyOrder.unresolved.order(:created_at).last.try(:created_at)
     open_buys ? (open_buys > 1.minute.ago) : false
-    # done_buys = BuyOrder.done.order(:updated_at).last.try(:created_at)
-    # done_buys ? (done_buys.to_i < MAX_TIME_BETWEEN_ORDERS) : false
   end
 
   def self.recent_sells?
