@@ -146,7 +146,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.calculate_sell_price(open_buy)
-    if open_buy.updated_at < 10.hours.ago
+    if open_buy.updated_at > 10.hours.ago
       open_buy.price * (1.0 + PROFIT_PERCENT)
     else
       nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
@@ -154,7 +154,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.calculate_buy_price(open_sell)
-    if open_sell.updated_at < 10.hours.ago
+    if open_sell.updated_at > 10.hours.ago
       open_sell.price * (1.0 - PROFIT_PERCENT)
     else
       nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
