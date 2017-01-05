@@ -112,7 +112,7 @@ class Contract < ActiveRecord::Base
       return if open_contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
 
       max_buy_price = calculate_buy_price(open_contract.sell_order)
-      buy_price     = [current_bid, max_buy_price].min.round(2)
+      buy_price     = [current_bid, max_buy_price].compact.min.round(2)
       buy_order     = Order.place_buy(buy_price, open_contract.id)
 
       open_contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
