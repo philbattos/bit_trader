@@ -104,7 +104,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_sells
-    open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.price desc").first # finds contracts with highest active sell price and without an active buy
+    open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.price desc").last # finds contracts with highest active sell price and without an active buy
     if open_contract
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
@@ -146,19 +146,21 @@ class Contract < ActiveRecord::Base
   end
 
   def self.calculate_sell_price(open_buy)
-    if open_buy.updated_at > 6.hours.ago
-      open_buy.price * (1.0 + PROFIT_PERCENT)
-    else
-      nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
-    end
+    open_buy.price * (1.0 + PROFIT_PERCENT)
+    # if open_buy.updated_at > 6.hours.ago
+    #   open_buy.price * (1.0 + PROFIT_PERCENT)
+    # else
+    #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
+    # end
   end
 
   def self.calculate_buy_price(open_sell)
-    if open_sell.updated_at > 6.hours.ago
-      open_sell.price * (1.0 - PROFIT_PERCENT)
-    else
-      nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
-    end
+    open_sell.price * (1.0 - PROFIT_PERCENT)
+    # if open_sell.updated_at > 6.hours.ago
+    #   open_sell.price * (1.0 - PROFIT_PERCENT)
+    # else
+    #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
+    # end
   end
 
   def self.my_buy_price # move this into Order class?
