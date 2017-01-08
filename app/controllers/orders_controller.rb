@@ -49,7 +49,7 @@ class OrdersController < ApplicationController
       # f.chart({defaultSeriesType: "column"})
     end
 
-    @resolved_contracts_hourly = Contract.order("date_trunc('day', updated_at)").group("date_trunc('day', updated_at)")
+    @resolved_contracts_hourly = Contract.order("date_trunc('hour', updated_at)").group("date_trunc('hour', updated_at)")
 
     @chart3 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Contracts Profit")
