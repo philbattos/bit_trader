@@ -57,7 +57,7 @@ class OrdersController < ApplicationController
       f.yAxis(type: "datetime", categories: @resolved_contracts_hourly.count.keys.last(30).map {|c| c.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip })
       # f.labels(items: [html:"Contracts Metrics", style: {left: "40px", top: "8px", color: "black"}])
       # f.series(type: 'column', name: 'Total Contracts', yAxis: 0, data: @resolved_contracts_hourly.count.values)
-      f.series(type: 'column', name: 'ROI', yAxis: 1, data: @resolved_contracts_hourly.sum(:roi).values.map {|c| c.to_f})
+      f.series(type: 'column', name: 'ROI', yAxis: 1, data: @resolved_contracts_hourly.sum(:roi).values.last(30).map(&:to_f))
       # f.series(:type=> 'column', :name=> 'John',:data=> [2, 3, 5, 7, 6])
       # f.series(:type=> 'column', :name=> 'Joe',:data=> [4, 3, 3, 9, 0])
 
