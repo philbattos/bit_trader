@@ -19,11 +19,11 @@ gem 'sdoc',         '~> 0.4.0', group: :doc # bundle exec rake doc:rails generat
 gem 'coinbase'                              # Ruby wrapper for the Coinbase API
 # gem 'coinbase-exchange'                     # Client library for Coinbase Exchange
 gem 'coinbase-exchange', github: "philbattos/coinbase-exchange-ruby" # using forked version since some updates were necessary
-# gem 'coinbase-exchange', path: "/Users/philbattos/.rbenv/versions/2.3.0/lib/ruby/gems/2.3.0/gems/coinbase-exchange-0.1.2"
 gem 'faraday'                               # HTTP client
 gem 'em-http-request'                       # required by coinbase gem for authentication
 gem 'pg'                                    # use postgres db (required by Heroku)
 gem 'puma'                                  # server that supports ActionCable (Rails 5)
+gem 'lazy_high_charts'                      # use HighCharts in Rails
 
 group :development, :test do
   gem 'pry'                                 # Call 'byebug' anywhere in the code to stop execution and get a debugger console
