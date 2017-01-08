@@ -38,7 +38,7 @@ class Contract < ActiveRecord::Base
   #       or deactivated, the contract's ROI should be recalculated.
 
   # PROFIT = 0.10
-  PROFIT_PERCENT = 0.0003
+  PROFIT_PERCENT = [0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.0010, 0.0015, 0.0020]
   MARGIN = 0.01
   MAX_OPEN_ORDERS = 3
   # MAX_TIME_BETWEEN_ORDERS = 1.minute.ago.to_i
@@ -104,7 +104,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_sells
-    open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.price desc").last # finds contracts with highest active sell price and without an active buy
+    open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.price desc").first # finds contracts with highest active sell price and without an active buy
     if open_contract
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
@@ -146,18 +146,18 @@ class Contract < ActiveRecord::Base
   end
 
   def self.calculate_sell_price(open_buy)
-    open_buy.price * (1.0 + PROFIT_PERCENT)
+    open_buy.price * (1.0 + PROFIT_PERCENT.sample)
     # if open_buy.updated_at > 6.hours.ago
-    #   open_buy.price * (1.0 + PROFIT_PERCENT)
+    #   open_buy.price * (1.0 + PROFIT_PERCENT.sample)
     # else
     #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
     # end
   end
 
   def self.calculate_buy_price(open_sell)
-    open_sell.price * (1.0 - PROFIT_PERCENT)
+    open_sell.price * (1.0 - PROFIT_PERCENT.sample)
     # if open_sell.updated_at > 6.hours.ago
-    #   open_sell.price * (1.0 - PROFIT_PERCENT)
+    #   open_sell.price * (1.0 - PROFIT_PERCENT.sample)
     # else
     #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
     # end
