@@ -1,3 +1,3 @@
-json.orders @orders.body
+json.orders @orders
 
 json.price @current_price

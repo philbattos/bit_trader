@@ -3,13 +3,13 @@ class OrdersController < ApplicationController
   # respond_to :json
 
   def index
-    @orders = Order.fetch_all
+    @orders = Order.pluck(:id, :type, :price, :status).last(100)
     @current_price = GDAX::MarketData.last_trade.price
     render :index
   end
 
   def show
-    @order = Order.fetch_single(params[:id])
+    @order = Order.find(params[:id])
     render :show
   end
 
