@@ -153,8 +153,11 @@ class Order < ActiveRecord::Base
 
   def self.cancel_stale_orders
     open_orders = GDAX::Connection.new.rest_client.orders(status: 'open').sort_by(&:price).group_by(&:side) # { 'buy' => [], 'sell' => [] }
-    oldest_buy  = open_orders['buy'].first if open_orders['buy'].count > 15
-    oldest_sell = open_orders['sell'].last if open_orders['sell'].count > 15
+    open_buys   = open_orders['buy']
+    open_sells  = open_orders['sell']
+
+    oldest_buy  = open_buys.first if open_buys  && open_buys.count > 15
+    oldest_sell = open_sells.last if open_sells && open_sells.count > 15
 
     cancel_order(oldest_buy.id)  if oldest_buy  && oldest_buy.created_at  < 1.minute.ago
     cancel_order(oldest_sell.id) if oldest_sell && oldest_sell.created_at < 1.minute.ago
