@@ -37,6 +37,7 @@ class Trader
       Order.update_status
       Contract.update_status
       Contract.resolve_open
+      Order.cancel_stale_orders
     end
 
     def trading_range

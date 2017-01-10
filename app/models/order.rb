@@ -151,6 +151,26 @@ class Order < ActiveRecord::Base
     puts "GDAX rate limit error (update order status): #{rate_limit_error}"
   end
 
+  def self.cancel_stale_orders
+    open_orders = GDAX::Connection.new.rest_client.orders(status: 'open').sort_by(&:price).group_by(&:side) # { 'buy' => [], 'sell' => [] }
+    oldest_buy  = open_orders['buy'].first if open_orders['buy'].count > 10
+    oldest_sell = open_orders['sell'].last if open_orders['sell'].count > 10
+
+    cancel_order(oldest_buy.id) if oldest_buy
+    cancel_order(oldest_sell.id) if oldest_sell
+  end
+
+  def self.cancel_order(gdax_id)
+    GDAX::Connection.new.rest_client.cancel(gdax_id)
+  rescue Coinbase::Exchange::BadRequestError => request_error
+    puts "GDAX couldn't cancel order #{request_error}"
+  rescue Coinbase::Exchange::NotFoundError => not_found_error
+    # order.update(gdax_status: 'not-found', status: 'not-found')
+    puts "GDAX couldn't find/cancel order: #{not_found_error}"
+  rescue StandardError => error
+    puts "Order cancellation error: #{error.inspect}"
+  end
+
   #=================================================
     private
   #=================================================
