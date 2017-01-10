@@ -10,8 +10,8 @@ class Trader
         next if floor.nil? || ceiling.nil?
 
         if (floor..ceiling).include? current_price
-          Contract.place_new_buy_order
-          Contract.place_new_sell_order
+          # Contract.place_new_buy_order
+          # Contract.place_new_sell_order
         elsif current_price > ceiling
           price_jump
         elsif current_price < floor
