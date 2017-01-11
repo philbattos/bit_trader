@@ -48,7 +48,7 @@ module GDAX
     def self.calculate_average(date)
       trades = trades_since(date)
       if trades.present?
-        (trades.pluck(:price).sum / trades.count).round(2)
+        (trades.sum(:price) / trades.count).round(2)
       else
         nil
       end

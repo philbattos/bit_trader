@@ -87,12 +87,10 @@ class OrdersController < ApplicationController
         {title: {text: "ROI"}, opposite: true},
       ]
 
-      f.series(type: 'scatter', name: 'Unresolved Contracts (Buys)', data: BuyOrder.where(contract_id: @unresolved_contracts.with_active_buy.order(:created_at).select(:id)).pluck(:price))
-      # f.series(type: 'scatter', name: 'Unresolved Contracts (Sells)', data: SellOrder.where(contract_id: @unresolved_contracts.with_active_sell.order(:created_at).select(:id)).pluck(:price))
-      # f.series(type: 'scatter', name: 'Unresolved Contracts (Sells)', data: [0.82944e3, 0.90104e3, 0.90124e3, 0.90073e3, 0.87684e3])
+      f.series(type: 'scatter', name: 'Unresolved Contracts (Buys)', data: @unresolved_contracts.joins(:buy_orders).where(orders: {status: 'done'}).order(:created_at).pluck("orders.price").map(&:to_f))
+      f.series(type: 'scatter', name: 'Unresolved Contracts (Sells)', data: @unresolved_contracts.joins(:sell_orders).where(orders: {status: 'done'}).order(:created_at).pluck("orders.price").map(&:to_f))
 
       f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
-      # f.chart({defaultSeriesType: "column"})
     end
 
     @chart_globals = LazyHighCharts::HighChartGlobals.new do |f|
