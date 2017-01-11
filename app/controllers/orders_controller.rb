@@ -92,29 +92,29 @@ class OrdersController < ApplicationController
 
       f.xAxis(
         title: { text: "Date", margin: 30 },
-        # type: "datetime",
+        type: "datetime",
         # categories: @unresolved_contracts
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
       )
 
       f.yAxis(
         title: { text: "Price", margin: 20 },
-        # type: "linear"
+        type: "linear"
       )
 
       f.series(
         type: 'scatter',
         name: 'Completed Buy',
-        # color: 'rgba(119, 152, 191, .5)',
-        data: @completed_buys.pluck("CAST(date_part('epoch', contracts.created_at) AS NUMERIC), CAST(orders.price AS NUMERIC)").map {|c| c.map(&:to_f) }
+        color: 'rgba(119, 152, 191, .5)',
+        data: @completed_buys.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last] }
         # data: [[1484057781, 1.23], [1484057700, 2.49]]
       )
 
       f.series(
         type: 'scatter',
         name: 'Completed Sell',
-        # color: 'rgba(223, 83, 83, .5)',
-        data: @completed_sells.pluck("CAST(date_part('epoch', contracts.created_at) AS NUMERIC), CAST(orders.price AS NUMERIC)").map {|c| c.map(&:to_f) }
+        color: 'rgba(223, 83, 83, .5)',
+        data: @completed_sells.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last] }
       )
 
       f.plotOptions(
