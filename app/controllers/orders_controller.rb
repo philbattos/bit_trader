@@ -107,7 +107,6 @@ class OrdersController < ApplicationController
         name: 'Completed Buy',
         color: 'rgba(119, 152, 191, .5)',
         data: @completed_buys.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last.to_f] }
-        # data: [[1484057781, 1.23], [1484057700, 2.49]]
       )
 
       f.series(
@@ -121,10 +120,10 @@ class OrdersController < ApplicationController
         scatter: {
           marker: {},
           states: {},
-          # tooltip: {
-          #   headerFormat: '<b>{series.name}</b><br>',
-          #   pointFormat: '{point.x}, {point.y}'
-          # }
+          tooltip: {
+            headerFormat: '<b>{series.name}</b><br>',
+            pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
+          }
         }
       )
 
