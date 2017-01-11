@@ -73,24 +73,68 @@ class OrdersController < ApplicationController
     end
 
     @unresolved_contracts = Contract.unresolved
+    @completed_buys       = @unresolved_contracts.joins(:buy_orders).where(orders: {status: 'done'}).order(:created_at)
+    @completed_sells      = @unresolved_contracts.joins(:sell_orders).where(orders: {status: 'done'}).order(:created_at)
 
     @chart4 = LazyHighCharts::HighChart.new('graph') do |f|
-      f.title(text: "Unresolved Contracts")
-      f.xAxis(categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq)
-      f.yAxis(type: "datetime", categories: @unresolved_contracts)
-      f.labels(items: [html:"Unresolved Contracts", style: {left: "40px", top: "8px", color: "black"}])
-      # f.series(type: 'column', name: 'Unresolved Contracts', yAxis: 0, data: @unresolved_contracts)
-      # f.series(type: 'column', name: 'ROI', yAxis: 1, data: @unresolved_contracts)
+      f.title(text: "Open Contracts")
 
-      f.yAxis [
-        {title: {text: "Total Unresolved Contracts", margin: 70} },
-        {title: {text: "ROI"}, opposite: true},
-      ]
+      # f.labels(
+      #   items: [
+      #     html:"Unresolved Contracts",
+      #     style: {
+      #       left: "40px",
+      #       top: "8px",
+      #       color: "black"
+      #     }
+      #   ]
+      # )
 
-      f.series(type: 'scatter', name: 'Unresolved Contracts (Buys)', data: @unresolved_contracts.joins(:buy_orders).where(orders: {status: 'done'}).order(:created_at).pluck("orders.price").map(&:to_f))
-      f.series(type: 'scatter', name: 'Unresolved Contracts (Sells)', data: @unresolved_contracts.joins(:sell_orders).where(orders: {status: 'done'}).order(:created_at).pluck("orders.price").map(&:to_f))
+      f.xAxis(
+        title: { text: "Date", margin: 30 },
+        type: "datetime",
+        # categories: @unresolved_contracts
+        # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
+      )
 
-      f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
+      f.yAxis(
+        title: { text: "Price", margin: 20 },
+        type: "number"
+      )
+
+      f.series(
+        type: 'scatter',
+        name: 'Completed Buy',
+        color: 'rgba(119, 152, 191, .5)',
+        data: @completed_buys.pluck("contracts.created_at, orders.price")
+      )
+
+      f.series(
+        type: 'scatter',
+        name: 'Completed Sell',
+        color: 'rgba(223, 83, 83, .5)',
+        data: @completed_sells.pluck("contracts.created_at, orders.price")
+      )
+
+      f.plotOptions(
+        scatter: {
+          marker: {},
+          states: {},
+          tooltip: {
+            headerFormat: '<b>{series.name}</b><br>',
+            pointFormat: '{point.x}, {point.y}'
+          }
+        }
+      )
+
+      f.legend(
+        align: 'right',
+        verticalAlign: 'top',
+        y: 75,
+        x: -50,
+        layout: 'vertical',
+        floating: true
+      )
     end
 
     @chart_globals = LazyHighCharts::HighChartGlobals.new do |f|
