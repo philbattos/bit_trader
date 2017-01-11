@@ -106,15 +106,15 @@ class OrdersController < ApplicationController
         type: 'scatter',
         name: 'Completed Buy',
         color: 'rgba(119, 152, 191, .5)',
-        # data: @completed_buys.pluck("date_part('epoch', contracts.created_at), CAST(orders.price AS DECIMAL)")
-        data: [[1484057781, 1.23], [1484057700, 2.49]]
+        data: @completed_buys.pluck("CAST(date_part('epoch', contracts.created_at) AS NUMERIC), CAST(orders.price AS NUMERIC)")
+        # data: [[1484057781, 1.23], [1484057700, 2.49]]
       )
 
       f.series(
         type: 'scatter',
         name: 'Completed Sell',
         color: 'rgba(223, 83, 83, .5)',
-        data: @completed_sells.pluck("date_part('epoch', contracts.created_at), CAST(orders.price AS DECIMAL)")
+        data: @completed_sells.pluck("CAST(date_part('epoch', contracts.created_at) AS NUMERIC), CAST(orders.price AS NUMERIC)")
       )
 
       f.plotOptions(
