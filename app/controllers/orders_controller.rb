@@ -76,7 +76,7 @@ class OrdersController < ApplicationController
 
     @chart4 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Unresolved Contracts")
-      f.xAxis(categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip })
+      f.xAxis(categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq)
       f.yAxis(type: "datetime", categories: @unresolved_contracts)
       f.labels(items: [html:"Unresolved Contracts", style: {left: "40px", top: "8px", color: "black"}])
       # f.series(type: 'column', name: 'Unresolved Contracts', yAxis: 0, data: @unresolved_contracts)
@@ -88,7 +88,8 @@ class OrdersController < ApplicationController
       ]
 
       f.series(type: 'scatter', name: 'Unresolved Contracts (Buys)', data: BuyOrder.where(contract_id: @unresolved_contracts.with_active_buy.order(:created_at).select(:id)).pluck(:price))
-      f.series(type: 'scatter', name: 'Unresolved Contracts (Sells)', data: SellOrder.where(contract_id: @unresolved_contracts.with_active_sell.order(:created_at).select(:id)).pluck(:price))
+      # f.series(type: 'scatter', name: 'Unresolved Contracts (Sells)', data: SellOrder.where(contract_id: @unresolved_contracts.with_active_sell.order(:created_at).select(:id)).pluck(:price))
+      # f.series(type: 'scatter', name: 'Unresolved Contracts (Sells)', data: [0.82944e3, 0.90104e3, 0.90124e3, 0.90073e3, 0.87684e3])
 
       f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
       # f.chart({defaultSeriesType: "column"})
