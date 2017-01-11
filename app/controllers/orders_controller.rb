@@ -106,14 +106,14 @@ class OrdersController < ApplicationController
         type: 'scatter',
         name: 'Completed Buy',
         color: 'rgba(119, 152, 191, .5)',
-        data: @completed_buys.pluck("contracts.created_at, orders.price")
+        data: @completed_buys.pluck("contracts.created_at, CAST(orders.price AS DECIMAL)")
       )
 
       f.series(
         type: 'scatter',
         name: 'Completed Sell',
         color: 'rgba(223, 83, 83, .5)',
-        data: @completed_sells.pluck("contracts.created_at, orders.price")
+        data: @completed_sells.pluck("contracts.created_at, CAST(orders.price AS DECIMAL)")
       )
 
       f.plotOptions(
