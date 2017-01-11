@@ -93,8 +93,7 @@ class OrdersController < ApplicationController
       f.xAxis(
         title: { text: "Date", margin: 30 },
         type: "datetime",
-        # categories: @unresolved_contracts
-        # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
+        categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
       )
 
       f.yAxis(
