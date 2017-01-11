@@ -122,7 +122,8 @@ class OrdersController < ApplicationController
           states: {},
           tooltip: {
             headerFormat: '<b>{series.name}</b><br>',
-            pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
+            pointFormat: '{point.x}, {point.y}'
+            # pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
           }
         }
       )
