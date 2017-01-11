@@ -106,7 +106,7 @@ class OrdersController < ApplicationController
         type: 'scatter',
         name: 'Completed Buy',
         color: 'rgba(119, 152, 191, .5)',
-        data: @completed_buys.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last] }
+        data: @completed_buys.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last.to_d] }
         # data: [[1484057781, 1.23], [1484057700, 2.49]]
       )
 
@@ -114,7 +114,7 @@ class OrdersController < ApplicationController
         type: 'scatter',
         name: 'Completed Sell',
         color: 'rgba(223, 83, 83, .5)',
-        data: @completed_sells.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last] }
+        data: @completed_sells.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last.to_d] }
       )
 
       f.plotOptions(
