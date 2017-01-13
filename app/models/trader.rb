@@ -21,6 +21,10 @@ class Trader
       EM.error_handler { |e|
         p "Trader.start Error: #{e.message}"
         p "Trader.start Backtrace: #{e.backtrace}"
+
+        # send alert to frontend; or send email/text
+        p "Restarting Trader.... \n\n"
+        Trader.start
       }
     end
   end

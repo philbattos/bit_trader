@@ -143,7 +143,57 @@ class OrdersController < ApplicationController
       )
     end
 
+    @unresolved_countracts_hourly = 70.downto(0).map do |x|
+      time = x.hours.ago
+      contracts_at_time = Contract.where("created_at < ?", time).distinct.count
+      completed_at_time = Contract.resolved.where("completion_date < ?", time).distinct.count
+      [time.to_i * 1000, contracts_at_time - completed_at_time]
+    end
+
+    @chart5 = LazyHighCharts::HighChart.new('graph') do |f|
+      f.title(text: "Unresolved Contracts")
+      f.chart(zoomType: 'x')
+      f.subtitle(text: "Contracts Without A Completed Buy & Sell")
+
+      f.xAxis(
+        type: 'datetime',
+        # tickInterval: 3600 * 1000,
+        # min: 4.days.ago.to_i * 1000,
+        # max: Time.now.to_i * 1000
+      )
+
+      f.yAxis(
+        title: { text: "Contracts", margin: 70 },
+        plotLines: [{
+          value: 0,
+          width: 1,
+          color: '#808080'
+        }]
+      )
+
+      f.series(
+        # type: 'spline',
+        type: 'area',
+        name: 'Open Contracts',
+        data: @unresolved_countracts_hourly,
+        # pointStart: 2.weeks.ago.to_i,
+        # pointInterval: 24 * 3600 * 1000, # one day
+        # pointRange: 24 * 3600 * 1000 # one day
+      )
+
+      f.legend(
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'top',
+        y: 75,
+        x: -50,
+        floating: true
+      )
+    end
+
     @chart_globals = LazyHighCharts::HighChartGlobals.new do |f|
+      # NOTE: for high-charts times, use milliseconds:
+      #       find the Rails date/time, convert to epoch time with .to_i, and then multiply by 1000
       f.global(useUTC: false)
       f.chart(
         backgroundColor: {
