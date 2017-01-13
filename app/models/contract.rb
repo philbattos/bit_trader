@@ -40,7 +40,7 @@ class Contract < ActiveRecord::Base
   # PROFIT = 0.10
   PROFIT_PERCENT = [0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.0010, 0.0015, 0.0020]
   MARGIN = 0.01
-  MAX_OPEN_ORDERS = 3
+  # MAX_OPEN_ORDERS = 3
   # MAX_TIME_BETWEEN_ORDERS = 1.minute.ago.to_i
 
   def matched?
@@ -193,13 +193,13 @@ class Contract < ActiveRecord::Base
     open_sells ? (open_sells.to_i > 1.minute.ago.to_i) : false
   end
 
-  def self.full_buys?
-    BuyOrder.unresolved.count > MAX_OPEN_ORDERS
-  end
+  # def self.full_buys?
+  #   BuyOrder.unresolved.count > MAX_OPEN_ORDERS
+  # end
 
-  def self.full_sells?
-    SellOrder.unresolved.count > MAX_OPEN_ORDERS
-  end
+  # def self.full_sells?
+  #   SellOrder.unresolved.count > MAX_OPEN_ORDERS
+  # end
 
   def self.update_status
     contract = resolvable.sample # for now, we are only checking the status of a random contract since we don't know which contracts will complete first
