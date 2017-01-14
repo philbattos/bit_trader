@@ -79,41 +79,30 @@ class OrdersController < ApplicationController
     @chart4 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Open Contracts")
 
-      # f.labels(
-      #   items: [
-      #     html:"Unresolved Contracts",
-      #     style: {
-      #       left: "40px",
-      #       top: "8px",
-      #       color: "black"
-      #     }
-      #   ]
-      # )
-
       f.xAxis(
-        title: { text: "Date", margin: 30 },
-        type: "datetime",
+        title: { text: "Price", margin: 30 },
+        # type: "linear",
         # tickPositions: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
       )
 
       f.yAxis(
-        title: { text: "Price", margin: 20 },
-        type: "linear"
+        type: "datetime",
+        title: { text: "Date", margin: 20 }
       )
 
       f.series(
         type: 'scatter',
         name: 'Completed Buy',
         color: 'rgba(119, 152, 191, .5)',
-        data: @completed_buys.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last.to_f] }
+        data: @completed_buys.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i * 1000, c.last.to_f] }
       )
 
       f.series(
         type: 'scatter',
         name: 'Completed Sell',
         color: 'rgba(223, 83, 83, .5)',
-        data: @completed_sells.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i, c.last.to_f] }
+        data: @completed_sells.pluck("contracts.created_at, orders.price").map {|c| [c.first.to_i * 1000, c.last.to_f] }
         # pointStart: @unresolved_contracts.order(:created_at).first
       )
 
