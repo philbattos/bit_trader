@@ -200,13 +200,11 @@ class Contract < ActiveRecord::Base
   end
 
   def self.buys_backlog?
-    BuyOrder.where(status: ['open', 'pending']).count > 5
-    # with_sell_without_buy.count > 5
+    with_sell_without_buy.count > 5
   end
 
   def self.sells_backlog?
-    SellOrder.where(status: ['open', 'pending']).count > 5
-    # with_buy_without_sell.count > 5
+    with_buy_without_sell.count > 5
   end
 
   def self.update_status
