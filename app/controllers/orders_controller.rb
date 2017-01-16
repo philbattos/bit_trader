@@ -80,7 +80,7 @@ class OrdersController < ApplicationController
       f.title(text: "Open Contracts")
 
       f.xAxis(
-        title: { text: "Price", margin: 30 },
+        # title: { text: "Price" },
         # type: "linear",
         # tickPositions: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
@@ -116,19 +116,24 @@ class OrdersController < ApplicationController
           },
           tooltip: {
             headerFormat: '<b>{series.name}</b><br>',
-            pointFormat: '{point.x}, {point.y}'
+            pointFormat: '${point.x}, { DateTime.strptime(point.y, "%s").in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip }'
             # pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
           }
         }
       )
 
+      f.tooltip(
+        borderWidth: 3,
+        # dateTimeLabelFormats:
+      )
+
       f.legend(
         align: 'right',
         verticalAlign: 'top',
-        y: 75,
-        x: -50,
         layout: 'vertical',
-        floating: true
+        y: 75,
+        x: -50
+        # floating: true
       )
     end
 
