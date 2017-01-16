@@ -115,6 +115,7 @@ class OrdersController < ApplicationController
             pointInterval: 24 * 3600 * 1000 # one day
           },
           tooltip: {
+            borderWidth: 3
             headerFormat: '<b>{series.name}</b><br>',
             pointFormat: '${point.x}, { DateTime.strptime(point.y, "%s").in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip }'
             # pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
@@ -122,10 +123,10 @@ class OrdersController < ApplicationController
         }
       )
 
-      f.tooltip(
-        borderWidth: 3,
-        # dateTimeLabelFormats:
-      )
+      # f.tooltip(
+      #   borderWidth: 3
+      #   # dateTimeLabelFormats:
+      # )
 
       f.legend(
         align: 'right',
