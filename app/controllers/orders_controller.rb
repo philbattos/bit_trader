@@ -134,8 +134,8 @@ class OrdersController < ApplicationController
 
     @unresolved_countracts_hourly = 70.downto(0).map do |x|
       time = x.hours.ago
-      contracts_at_time = Contract.where("created_at < ?", time).distinct.count
-      completed_at_time = Contract.resolved.where("completion_date < ?", time).distinct.count
+      contracts_at_time = Contract.active.where("created_at < ?", time).distinct.count
+      completed_at_time = Contract.active.resolved.where("completion_date < ?", time).distinct.count
       [time.to_i * 1000, contracts_at_time - completed_at_time]
     end
 
