@@ -9,12 +9,13 @@ class Order < ActiveRecord::Base
   scope :purchased,  -> { where(status: PURCHASED_STATUSES) }
   scope :canceled,   -> { where(status: 'not-found') }
   scope :done,       -> { where(status: 'done') }
+  scope :retired,    -> { where(status: 'retired') }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
 
   validates :contract, presence: true # all orders should be associated with a contract
 
-  CLOSED_STATUSES    = %w[ done rejected not-found ]
+  CLOSED_STATUSES    = %w[ done rejected not-found retired ]
   PURCHASED_STATUSES = %w[ done open ]
   ACTIVE_STATUSES    = %w[ done open pending ]
   INACTIVE_STATUSES  = %w[ rejected not-found ] << nil # nil should be considered an "inactive" status
@@ -54,6 +55,10 @@ class Order < ActiveRecord::Base
 
   def done?
     status == 'done'
+  end
+
+  def retired?
+    status == 'retired'
   end
 
   def self.submit(order_type, price, contract_id) # should this be an instance method??

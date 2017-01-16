@@ -16,12 +16,13 @@ class Contract < ActiveRecord::Base
   scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
   scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
   scope :without_active_order,  -> { without_active_buy.without_active_sell } # this happens when an order is created and then canceled before it can be matched with another order
-  scope :resolved,              -> { where(status: ['done']) }
+  scope :resolved,              -> { where(status: ['done', 'retired']) }
   scope :unresolved,            -> { where.not(id: resolved) }
   scope :resolvable,            -> { matched.complete }
   scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
   scope :complete,              -> { where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
   scope :incomplete,            -> { where.not(id: complete) }
+  scope :retired,               -> { where(status: 'retired') }
   # scope :matched_and_complete,  -> { matched.complete }
 
   # unresolved == with_buy_without_sell + with_sell_without_buy + matched
@@ -49,6 +50,10 @@ class Contract < ActiveRecord::Base
 
   def complete?
     buy_order.done? && sell_order.done?
+  end
+
+  def retired?
+    status == 'retired'
   end
 
   def orders
