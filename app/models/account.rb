@@ -1,20 +1,16 @@
 class Account < ActiveRecord::Base
 
-  # def self.fetch_all
-  #   request_path = '/accounts'
-  #   request_info = "#{timestamp}GET#{request_path}"
-  #   request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
+  def self.all_accounts
+    GDAX::Connection.new.rest_client.accounts
+  end
 
-  #   send_get_request(request_path, request_hash)
-  # end
+  def self.gdax_usdollar_account
+    GDAX::Connection.new.rest_client.account("969b5dba-d201-43b7-ad3d-02eee4d1cdd8")
+  end
 
-  # def self.fetch_single(account_id)
-  #   request_path = "/accounts/#{account_id}"
-  #   request_info = "#{timestamp}GET#{request_path}"
-  #   request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
-
-  #   send_get_request(request_path, request_hash)
-  # end
+  def self.gdax_bitcoin_account
+    GDAX::Connection.new.rest_client.account("af65a8e8-5e33-4baf-928a-d02155793d43")
+  end
 
   #=================================================
     private

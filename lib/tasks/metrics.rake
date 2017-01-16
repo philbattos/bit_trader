@@ -6,4 +6,7 @@ task metrics: :environment do
 
   unprofitable_contracts = Contract.resolved.where("roi < 0")
   puts "There have been #{unprofitable_contracts.count} unprofitable contracts that have lost a total of $#{unprofitable_contracts.sum(:roi)}"
+
+  puts "Saving metrics to db...."
+  Metric.save_current_data
 end
