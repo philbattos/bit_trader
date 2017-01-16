@@ -5,24 +5,25 @@ class Contract < ActiveRecord::Base
   has_many :sell_orders, class_name: 'SellOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
 
   # NOTE: consider querying contracts based on presence of gdax_order_ids
-  scope :with_buy_orders,       -> { where(id: BuyOrder.select(:contract_id).distinct) }
-  scope :with_sell_orders,      -> { where(id: SellOrder.select(:contract_id).distinct) }
-  scope :without_buy_orders,    -> { where.not(id: with_buy_orders) }
-  scope :without_sell_orders,   -> { where.not(id: with_sell_orders) }
-  scope :with_active_buy,       -> { where(id: BuyOrder.active.select(:contract_id).distinct) }
-  scope :with_active_sell,      -> { where(id: SellOrder.active.select(:contract_id).distinct) }
-  scope :without_active_buy,    -> { where.not(id: with_active_buy) }
-  scope :without_active_sell,   -> { where.not(id: with_active_sell) }
+  scope :retired,               -> { where(status: 'retired') }
+  scope :active,                -> { where.not(id: retired) }
+  scope :with_buy_orders,       -> { active.where(id: BuyOrder.select(:contract_id).distinct) }
+  scope :with_sell_orders,      -> { active.where(id: SellOrder.select(:contract_id).distinct) }
+  scope :without_buy_orders,    -> { active.where.not(id: with_buy_orders) }
+  scope :without_sell_orders,   -> { active.where.not(id: with_sell_orders) }
+  scope :with_active_buy,       -> { active.where(id: BuyOrder.active.select(:contract_id).distinct) }
+  scope :with_active_sell,      -> { active.where(id: SellOrder.active.select(:contract_id).distinct) }
+  scope :without_active_buy,    -> { active.where.not(id: with_active_buy) }
+  scope :without_active_sell,   -> { active.where.not(id: with_active_sell) }
   scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
   scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
   scope :without_active_order,  -> { without_active_buy.without_active_sell } # this happens when an order is created and then canceled before it can be matched with another order
-  scope :resolved,              -> { where(status: ['done', 'retired']) }
-  scope :unresolved,            -> { where.not(id: resolved) }
+  scope :resolved,              -> { active.where(status: ['done', 'retired']) }
+  scope :unresolved,            -> { active.where.not(id: resolved) }
   scope :resolvable,            -> { matched.complete }
   scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
-  scope :complete,              -> { where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
-  scope :incomplete,            -> { where.not(id: complete) }
-  scope :retired,               -> { where(status: 'retired') }
+  scope :complete,              -> { active.where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
+  scope :incomplete,            -> { active.where.not(id: complete) }
   # scope :matched_and_complete,  -> { matched.complete }
 
   # unresolved == with_buy_without_sell + with_sell_without_buy + matched
@@ -190,29 +191,23 @@ class Contract < ActiveRecord::Base
 
   def self.recent_buys?
     recent_buy_time = BuyOrder.unresolved.order(:price).last.try(:created_at)
-    recent_buy_time ? (recent_buy_time.to_i > 1.minute.ago.to_i) : false
+    recent_buy_time ? (recent_buy_time.to_i > 2.minutes.ago.to_i) : false
   end
 
   def self.recent_sells?
     recent_sell_time = SellOrder.unresolved.order(:price).first.try(:created_at)
-    recent_sell_time ? (recent_sell_time.to_i > 1.minute.ago.to_i) : false
+    recent_sell_time ? (recent_sell_time.to_i > 2.minutes.ago.to_i) : false
   end
 
   def self.buys_backlog?
-    with_sell_without_buy.count > 250
+    BuyOrder.where(status: ['open', 'pending']).count > 5
+    # with_sell_without_buy.count > 5
   end
 
   def self.sells_backlog?
-    with_buy_without_sell.count > 250
+    SellOrder.where(status: ['open', 'pending']).count > 5
+    # with_buy_without_sell.count > 5
   end
-
-  # def self.full_buys?
-  #   BuyOrder.unresolved.count > MAX_OPEN_ORDERS
-  # end
-
-  # def self.full_sells?
-  #   SellOrder.unresolved.count > MAX_OPEN_ORDERS
-  # end
 
   def self.update_status
     contract = resolvable.sample # for now, we are only checking the status of a random contract since we don't know which contracts will complete first
