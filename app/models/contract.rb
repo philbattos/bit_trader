@@ -200,11 +200,11 @@ class Contract < ActiveRecord::Base
   end
 
   def self.buys_backlog?
-    with_sell_without_buy.count > 5
+    (matched.count + with_sell_without_buy.count) > 5
   end
 
   def self.sells_backlog?
-    with_buy_without_sell.count > 5
+    (matched.count + with_buy_without_sell.count) > 5
   end
 
   def self.update_status
