@@ -114,19 +114,18 @@ class OrdersController < ApplicationController
             pointStart: @unresolved_contracts.order(:created_at).first.try(:created_at),
             pointInterval: 24 * 3600 * 1000 # one day
           },
-          tooltip: {
-            borderWidth: 3,
-            headerFormat: '<b>{series.name}</b><br>',
-            pointFormat: '${point.x}, {point.y}'
-            # pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
-          }
+          # tooltip: {
+          #   # borderWidth: 3,
+          #   headerFormat: '<b>{series.name}</b><br>',
+          #   pointFormat: '${point.x}, {point.y}'
+          #   # pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
+          # }
         }
       )
 
-      # f.tooltip(
-      #   borderWidth: 3
-      #   # dateTimeLabelFormats:
-      # )
+      f.tooltip(
+        borderWidth: 3
+      )
 
       f.legend(
         align: 'right',
@@ -174,6 +173,45 @@ class OrdersController < ApplicationController
         # pointStart: 2.weeks.ago.to_i,
         # pointInterval: 24 * 3600 * 1000, # one day
         # pointRange: 24 * 3600 * 1000 # one day
+      )
+
+      f.legend(
+        layout: 'vertical',
+        align: 'right',
+        verticalAlign: 'top',
+        y: 75,
+        x: -50,
+        floating: true
+      )
+    end
+
+    @chart6 = LazyHighCharts::HighChart.new('graph') do |f|
+      f.title(text: "Account Value")
+      f.chart(zoomType: 'x')
+
+      f.xAxis(
+        type: 'datetime'
+      )
+
+      f.yAxis(
+        title: { text: "US Dollars", margin: 70 },
+        plotLines: [{
+          value: 0,
+          width: 1
+        }]
+      )
+
+      f.series(
+        # type: 'spline',
+        # type: 'area',
+        name: 'Account Value',
+        data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last] }
+        # pointStart: 2.weeks.ago.to_i
+      )
+
+      f.series(
+        name: 'Bitcoin Price',
+        data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last] }
       )
 
       f.legend(
