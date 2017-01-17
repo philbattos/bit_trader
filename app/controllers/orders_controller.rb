@@ -229,8 +229,6 @@ class OrdersController < ApplicationController
         layout: 'vertical',
         align: 'left',
         verticalAlign: 'top',
-        y: 75,
-        x: -50,
         floating: true
       )
     end
