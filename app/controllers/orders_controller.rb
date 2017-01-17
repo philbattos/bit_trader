@@ -205,13 +205,13 @@ class OrdersController < ApplicationController
         # type: 'spline',
         # type: 'area',
         name: 'Account Value',
-        data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last] }
+        data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last.to_f] }
         # pointStart: 2.weeks.ago.to_i
       )
 
       f.series(
         name: 'Bitcoin Price',
-        data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last] }
+        data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last.to_f] }
       )
 
       f.legend(
