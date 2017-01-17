@@ -219,9 +219,15 @@ class OrdersController < ApplicationController
         yAxis: 1
       )
 
+      f.series(
+        name: 'Hold Value',
+        data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, ((m.last * 0.29808036) + 250).to_f] },
+        yAxis: 0
+      )
+
       f.legend(
         layout: 'vertical',
-        align: 'right',
+        align: 'left',
         verticalAlign: 'top',
         y: 75,
         x: -50,
