@@ -190,13 +190,15 @@ class Contract < ActiveRecord::Base
   end
 
   def self.recent_buys?
-    recent_buy_time = BuyOrder.unresolved.order(:price).last.try(:created_at)
-    recent_buy_time ? (recent_buy_time.to_i > 2.minutes.ago.to_i) : false
+    recent_buy_time = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'buy' }.sort_by(&:price).last.try(:created_at)
+    # recent_buy_time = BuyOrder.unresolved.order(:price).last.try(:created_at)
+    recent_buy_time ? (recent_buy_time > 2.minutes.ago) : false
   end
 
   def self.recent_sells?
-    recent_sell_time = SellOrder.unresolved.order(:price).first.try(:created_at)
-    recent_sell_time ? (recent_sell_time.to_i > 2.minutes.ago.to_i) : false
+    recent_sell_time = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'sell' }.sort_by(&:price).last.try(:created_at)
+    # recent_sell_time = SellOrder.unresolved.order(:price).first.try(:created_at)
+    recent_sell_time ? (recent_sell_time > 2.minutes.ago) : false
   end
 
   def self.buys_backlog?

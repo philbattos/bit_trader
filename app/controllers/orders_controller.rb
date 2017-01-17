@@ -3,51 +3,51 @@ class OrdersController < ApplicationController
   # respond_to :json
 
   def index
-    @orders            = Order.pluck(:id, :type, :price, :status).last(100)
-    @current_price     = GDAX::MarketData.last_trade.price
-    @sell_orders_count = SellOrder.done.count
-    @buy_orders_count  = BuyOrder.done.count
-    @open_buys         = BuyOrder.where(status: ['open', 'pending']).count
-    @open_sells        = SellOrder.where(status: ['open', 'pending']).count
+    # @orders            = Order.pluck(:id, :type, :price, :status).last(100)
+    # @current_price     = GDAX::MarketData.last_trade.price
+    # @sell_orders_count = SellOrder.done.count
+    # @buy_orders_count  = BuyOrder.done.count
+    # @open_buys         = BuyOrder.where(status: ['open', 'pending']).count
+    # @open_sells        = SellOrder.where(status: ['open', 'pending']).count
 
-    @chart1 = LazyHighCharts::HighChart.new('graph') do |f|
-      f.title(text: "Buy and Sell Orders")
-      f.xAxis(categories: ["Sell Orders", "Buy Orders"])
-      f.series(name: "Completed Orders", yAxis: 0, data: [@sell_orders_count, @buy_orders_count])
-      f.series(name: "Open Orders", yAxis: 1, data: [@open_sells, @open_buys])
+    # @chart1 = LazyHighCharts::HighChart.new('graph') do |f|
+    #   f.title(text: "Buy and Sell Orders")
+    #   f.xAxis(categories: ["Sell Orders", "Buy Orders"])
+    #   f.series(name: "Completed Orders", yAxis: 0, data: [@sell_orders_count, @buy_orders_count])
+    #   f.series(name: "Open Orders", yAxis: 1, data: [@open_sells, @open_buys])
 
-      f.yAxis [
-        {title: {text: "Complete Orders", margin: 70} },
-        {title: {text: "Open Orders"}, opposite: true},
-      ]
+    #   f.yAxis [
+    #     {title: {text: "Complete Orders", margin: 70} },
+    #     {title: {text: "Open Orders"}, opposite: true},
+    #   ]
 
-      f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
-      f.chart({defaultSeriesType: "column"})
-    end
+    #   f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
+    #   f.chart({defaultSeriesType: "column"})
+    # end
 
-    @unresolved_contracts = Contract.unresolved
-    @resolved_contracts_daily = Contract.resolved.order("date_trunc('day', updated_at)").group("date_trunc('day', updated_at)")
+    # @unresolved_contracts = Contract.unresolved
+    # @resolved_contracts_daily = Contract.resolved.order("date_trunc('day', updated_at)").group("date_trunc('day', updated_at)")
 
-    @chart2 = LazyHighCharts::HighChart.new('graph') do |f|
-      f.title(text: "Contracts")
-      f.xAxis(categories: @resolved_contracts_daily.count.keys.map {|c| c.in_time_zone("Mountain Time (US & Canada)").strftime("%-m/%d").strip })
-      f.yAxis(type: "datetime", categories: @resolved_contracts_daily.count.keys.map {|c| c.in_time_zone("Mountain Time (US & Canada)").strftime("%-m/%y").strip })
-      f.labels(items: [html:"Contracts (Daily)", style: {left: "40px", top: "8px", color: "black"}])
-      f.series(type: 'column', name: 'Total Contracts', yAxis: 0, data: @resolved_contracts_daily.count.values)
-      f.series(type: 'column', name: 'ROI', yAxis: 1, data: @resolved_contracts_daily.sum(:roi).values.map(&:to_f))
-      # f.series(:type=> 'column', :name=> 'John',:data=> [2, 3, 5, 7, 6])
-      # f.series(:type=> 'column', :name=> 'Joe',:data=> [4, 3, 3, 9, 0])
+    # @chart2 = LazyHighCharts::HighChart.new('graph') do |f|
+    #   f.title(text: "Contracts")
+    #   f.xAxis(categories: @resolved_contracts_daily.count.keys.map {|c| c.in_time_zone("Mountain Time (US & Canada)").strftime("%-m/%d").strip })
+    #   f.yAxis(type: "datetime", categories: @resolved_contracts_daily.count.keys.map {|c| c.in_time_zone("Mountain Time (US & Canada)").strftime("%-m/%y").strip })
+    #   f.labels(items: [html:"Contracts (Daily)", style: {left: "40px", top: "8px", color: "black"}])
+    #   f.series(type: 'column', name: 'Total Contracts', yAxis: 0, data: @resolved_contracts_daily.count.values)
+    #   f.series(type: 'column', name: 'ROI', yAxis: 1, data: @resolved_contracts_daily.sum(:roi).values.map(&:to_f))
+    #   # f.series(:type=> 'column', :name=> 'John',:data=> [2, 3, 5, 7, 6])
+    #   # f.series(:type=> 'column', :name=> 'Joe',:data=> [4, 3, 3, 9, 0])
 
-      f.yAxis [
-        {title: {text: "Total Contracts", margin: 70} },
-        {title: {text: "ROI"}, opposite: true},
-      ]
+    #   f.yAxis [
+    #     {title: {text: "Total Contracts", margin: 70} },
+    #     {title: {text: "ROI"}, opposite: true},
+    #   ]
 
-      f.series(type: 'spline', name: 'Resolved Contracts', data: @resolved_contracts_daily.count.to_a)
+    #   f.series(type: 'spline', name: 'Resolved Contracts', data: @resolved_contracts_daily.count.to_a)
 
-      f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
-      # f.chart({defaultSeriesType: "column"})
-    end
+    #   f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
+    #   # f.chart({defaultSeriesType: "column"})
+    # end
 
     @resolved_contracts_hourly = Contract.resolved.order("date_trunc('hour', updated_at)").group("date_trunc('hour', updated_at)")
 
@@ -220,6 +220,7 @@ class OrdersController < ApplicationController
       )
 
       f.series(
+        type: 'spline',
         name: 'Hold Value',
         data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, ((m.last * 0.29808036) + 250).to_f] },
         yAxis: 0
