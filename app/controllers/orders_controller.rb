@@ -193,13 +193,16 @@ class OrdersController < ApplicationController
         type: 'datetime'
       )
 
-      f.yAxis(
-        title: { text: "US Dollars", margin: 70 },
+      f.yAxis([{
+        title: { text: "Account Value", margin: 70 },
         plotLines: [{
           value: 0,
           width: 1
         }]
-      )
+      }, {
+        title: { text: "Bitcoin Price"},
+        opposite: true
+      }])
 
       f.series(
         # type: 'spline',
