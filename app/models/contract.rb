@@ -94,7 +94,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_buys
-    return if with_buy_without_sell > 5
+    return if with_buy_without_sell.count > 5
     open_contract = with_buy_without_sell.includes(:buy_orders).order("orders.price").first # finds contracts with lowest active buy price and without an active sell
     # open_contract = with_buy_without_sell.includes(:buy_orders).sample
     if open_contract
