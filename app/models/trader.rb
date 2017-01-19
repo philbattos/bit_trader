@@ -24,7 +24,7 @@ class Trader
 
         # send alert to frontend; or send email/text
         p "Restarting Trader.... \n\n"
-        Trader.start
+        Trader.new.start
       }
     end
   end
