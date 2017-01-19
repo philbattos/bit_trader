@@ -161,11 +161,11 @@ class Order < ActiveRecord::Base
     open_buys   = open_orders['buy']
     open_sells  = open_orders['sell']
 
-    oldest_buy  = open_buys.first if open_buys  # && open_buys.count > 10
-    oldest_sell = open_sells.last if open_sells # && open_sells.count > 10
+    lowest_buy   = open_buys.first if open_buys  # && open_buys.count > 10
+    highest_sell = open_sells.last if open_sells # && open_sells.count > 10
 
-    cancel_order(oldest_buy.id)  if oldest_buy  && (oldest_buy.created_at  < 5.minutes.ago) && !Contract.recent_buys?
-    cancel_order(oldest_sell.id) if oldest_sell && (oldest_sell.created_at < 5.minutes.ago) && !Contract.recent_sells?
+    cancel_order(lowest_buy.id)   if lowest_buy   && (lowest_buy.created_at   < 5.minutes.ago) && !Contract.recent_buys?
+    cancel_order(highest_sell.id) if highest_sell && (highest_sell.created_at < 5.minutes.ago) && !Contract.recent_sells?
   end
 
   def self.cancel_order(gdax_id)
