@@ -131,7 +131,8 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_buy_order # move to Order class?
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
-    return if buys_backlog? || recent_buys?
+    # return if buys_backlog? || recent_buys?
+    return unless buy_order_gap?
     return missing_price('buy') if my_buy_price == 0.0
     new_order = Order.place_buy(my_buy_price)
 
@@ -144,7 +145,8 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_sell_order # move to Order class?
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
-    return if sells_backlog? || recent_sells?
+    # return if sells_backlog? || recent_sells?
+    return unless sell_order_gap?
     return missing_price('sell') if my_ask_price == 0.0
     new_order = Order.place_sell(my_ask_price)
 
@@ -153,6 +155,18 @@ class Contract < ActiveRecord::Base
       order = Order.find_by_gdax_id(new_order['id'])
       order.contract.update(gdax_sell_order_id: new_order['id'])
     end
+  end
+
+  def self.buy_order_gap?
+    bid         = GDAX::MarketData.current_bid
+    highest_buy = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'buy' }.sort_by(&:price).last
+    (highest_buy.price * 1.0005) < bid
+  end
+
+  def self.sell_order_gap?
+    ask         = GDAX::MarketData.current_ask
+    lowest_sell = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'sell' }.sort_by(&:price).first
+    (lowest_sell.price * 0.9995) > ask
   end
 
   def self.calculate_sell_price(open_buy)
