@@ -94,7 +94,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_buys
-    return if SellOrder.where(status: ['open', 'pending']).count > 5
+    return if SellOrder.where(status: ['open', 'pending']).count > 10
     open_contract = with_buy_without_sell.includes(:buy_orders).order("orders.price").first # finds contracts with lowest active buy price and without an active sell
     # open_contract = with_buy_without_sell.includes(:buy_orders).sample
     if open_contract
@@ -112,7 +112,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_sells
-    return if BuyOrder.where(status: ['open', 'pending']).count > 5
+    return if BuyOrder.where(status: ['open', 'pending']).count > 10
     open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.price desc").first # finds contracts with highest active sell price and without an active buy
     # open_contract = with_sell_without_buy.includes(:sell_orders).sample
     if open_contract
@@ -132,7 +132,7 @@ class Contract < ActiveRecord::Base
   def self.place_new_buy_order # move to Order class?
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
     # return if buys_backlog? || recent_buys?
-    return unless buy_order_gap?
+    return unless buy_order_gap? && !buys_backlog?
     return missing_price('buy') if my_buy_price == 0.0
     new_order = Order.place_buy(my_buy_price)
 
@@ -146,7 +146,7 @@ class Contract < ActiveRecord::Base
   def self.place_new_sell_order # move to Order class?
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
     # return if sells_backlog? || recent_sells?
-    return unless sell_order_gap?
+    return unless sell_order_gap? && !sells_backlog?
     return missing_price('sell') if my_ask_price == 0.0
     new_order = Order.place_sell(my_ask_price)
 
@@ -218,7 +218,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.buys_backlog?
-    Contract.without_active_buy.count > 5
+    Contract.without_active_buy.count > 10
     # open_buy_orders = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'buy' }
     # open_buy_orders.count > 5
     # unresolved.with_active_buy.count > 5
@@ -227,7 +227,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.sells_backlog?
-    Contract.without_active_sell.count > 5
+    Contract.without_active_sell.count > 10
     # open_sell_orders = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'sell' }
     # open_sell_orders.count > 5
     # unresolved.with_active_sell.count > 5
