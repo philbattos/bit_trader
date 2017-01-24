@@ -261,27 +261,27 @@ class OrdersController < ApplicationController
 
       f.series(
         name: 'Bitcoin Price',
-        data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         name: '15-Minute Average',
-        data: Metric.pluck(:created_at, :average_15_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.pluck(:created_at, :average_15_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         # type: 'spline',
         name: '1-Hour Average',
-        data: Metric.pluck(:created_at, :average_1_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.pluck(:created_at, :average_1_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         # type: 'spline',
         name: '4-Hour Average',
-        data: Metric.pluck(:created_at, :average_4_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.pluck(:created_at, :average_4_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
