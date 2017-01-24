@@ -262,7 +262,7 @@ class OrdersController < ApplicationController
       f.series(
         name: 'Bitcoin Price',
         data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 1
+        yAxis: 0
       )
 
       f.series(
@@ -272,16 +272,16 @@ class OrdersController < ApplicationController
       )
 
       f.series(
-        type: 'spline',
+        # type: 'spline',
         name: '1-Hour Average',
         data: Metric.pluck(:created_at, :average_1_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
-        type: 'spline',
-        name: '1-Hour Average',
-        data: Metric.pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        # type: 'spline',
+        name: '4-Hour Average',
+        data: Metric.pluck(:created_at, :average_4_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
