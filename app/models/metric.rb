@@ -10,6 +10,15 @@ class Metric < ActiveRecord::Base
     unresolved_contracts  = Contract.unresolved.count
     matched_contracts     = Contract.matched.count
     open_orders           = Order.unresolved.count
+    average_15_min        = GDAX::MarketData.calculate_average(15.minutes.ago)
+    average_1_hour        = GDAX::MarketData.calculate_average(1.hour.ago)
+    average_4_hour        = GDAX::MarketData.calculate_average(4.hours.ago)
+    average_12_hour       = GDAX::MarketData.calculate_average(12.hours.ago)
+    average_24_hour       = GDAX::MarketData.calculate_average(24.hours.ago)
+    average_3_day         = GDAX::MarketData.calculate_average(3.days.ago)
+    average_7_day         = GDAX::MarketData.calculate_average(7.days.ago)
+    average_15_day        = GDAX::MarketData.calculate_average(15.days.ago)
+    average_30_day        = GDAX::MarketData.calculate_average(30.days.ago)
 
     Metric.create(
       us_dollar_balance:    dollar_balance,
@@ -20,7 +29,16 @@ class Metric < ActiveRecord::Base
       roi_percent:          roi_percent,
       unresolved_contracts: unresolved_contracts,
       matched_contracts:    matched_contracts,
-      open_orders:          open_orders
+      open_orders:          open_orders,
+      average_15_min:       average_15_min,
+      average_1_hour:       average_1_hour,
+      average_4_hour:       average_4_hour,
+      average_12_hour:      average_12_hour,
+      average_24_hour:      average_24_hour,
+      average_3_day:        average_3_day,
+      average_7_day:        average_7_day,
+      average_15_day:       average_15_day,
+      average_30_day:       average_30_day
     )
   end
 

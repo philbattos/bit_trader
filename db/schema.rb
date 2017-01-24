@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170116203204) do
+ActiveRecord::Schema.define(version: 20170124045540) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -62,6 +62,15 @@ ActiveRecord::Schema.define(version: 20170116203204) do
     t.integer  "open_orders"
     t.datetime "created_at",           null: false
     t.datetime "updated_at",           null: false
+    t.decimal  "average_15_min"
+    t.decimal  "average_1_hour"
+    t.decimal  "average_4_hour"
+    t.decimal  "average_12_hour"
+    t.decimal  "average_24_hour"
+    t.decimal  "average_3_day"
+    t.decimal  "average_7_day"
+    t.decimal  "average_15_day"
+    t.decimal  "average_30_day"
   end
 
   create_table "orders", force: :cascade do |t|

@@ -247,6 +247,62 @@ class OrdersController < ApplicationController
       )
     end
 
+    # @chart7 = LazyHighCharts::HighChart.new('graph') do |f|
+    #   f.title(text: "Account Value")
+    #   f.chart(zoomType: 'x')
+
+    #   f.xAxis(
+    #     type: 'datetime'
+    #   )
+
+    #   f.yAxis([
+    #     { title: { text: "Account Value" }},
+    #     {
+    #       title: { text: "Bitcoin Price" },
+    #       opposite: true
+    #     }
+    #   ])
+
+    #   f.series(
+    #     name: 'Bitcoin Price',
+    #     data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+    #     yAxis: 1
+    #   )
+
+    #   f.series(
+    #     # type: 'spline',
+    #     # type: 'area',
+    #     name: '15-Minute Average',
+    #     data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+    #     yAxis: 0
+    #   )
+
+    #   f.series(
+    #     type: 'spline',
+    #     name: '1-Hour Average',
+    #     data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, ((m.last * 0.29808036) + 250).to_f.round(2)] },
+    #     yAxis: 0
+    #   )
+
+    #   f.plotOptions(
+    #     series: {
+    #       marker: { enabled: false },
+    #       lineWidth: 1
+    #     }
+    #   )
+
+    #   f.tooltip(
+    #     valuePrefix: '$'
+    #   )
+
+    #   f.legend(
+    #     layout: 'vertical',
+    #     align: 'left',
+    #     verticalAlign: 'top',
+    #     floating: true
+    #   )
+    # end
+
     @chart_globals = LazyHighCharts::HighChartGlobals.new do |f|
       # NOTE: for high-charts times, use milliseconds:
       #       find the Rails date/time, convert to epoch time with .to_i, and then multiply by 1000
