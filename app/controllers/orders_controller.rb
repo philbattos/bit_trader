@@ -285,6 +285,13 @@ class OrdersController < ApplicationController
         yAxis: 0
       )
 
+      f.series(
+        # type: 'spline',
+        name: '24-Hour Average',
+        data: Metric.with_averages.order(:id).pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
       f.plotOptions(
         series: {
           marker: { enabled: false },
