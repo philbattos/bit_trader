@@ -212,17 +212,13 @@ class OrdersController < ApplicationController
         # type: 'area',
         name: 'Account Value',
         data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0,
-        marker: { enabled: false },
-        lineWidth: 1
+        yAxis: 0
       )
 
       f.series(
         name: 'Bitcoin Price',
         data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 1,
-        marker: { enabled: nil },
-        lineWidth: 1
+        yAxis: 1
       )
 
       f.series(
@@ -232,12 +228,12 @@ class OrdersController < ApplicationController
         yAxis: 0
       )
 
-      # f.plotOptions(
-      #   series: {
-      #     marker: { enabled: false },
-      #     lineWidth: 1
-      #   }
-      # )
+      f.plotOptions(
+        series: {
+          marker: { enabled: false },
+          lineWidth: 1
+        }
+      )
 
       f.tooltip(
         valuePrefix: '$'
