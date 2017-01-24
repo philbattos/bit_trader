@@ -84,6 +84,12 @@ class OrdersController < ApplicationController
         # type: "linear",
         # tickPositions: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
+        plotLines: [{
+          value: Metric.last.bitcoin_price.to_f,
+          width: 1,
+          color: 'red',
+          dashStyle: 'longdashdot'
+        }]
       )
 
       f.yAxis(
@@ -193,36 +199,33 @@ class OrdersController < ApplicationController
         type: 'datetime'
       )
 
-      f.yAxis([{
-        title: { text: "Account Value" },
-        plotLines: [{
-          value: 0,
-          width: 1
-        }]
-      }, {
-        title: { text: "Bitcoin Price" },
-        opposite: true
-      }])
+      f.yAxis([
+        { title: { text: "Account Value" }},
+        {
+          title: { text: "Bitcoin Price" },
+          opposite: true
+        }
+      ])
 
       f.series(
         # type: 'spline',
         # type: 'area',
         name: 'Account Value',
-        data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last.to_f] },
+        data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
         # pointStart: 2.weeks.ago.to_i
       )
 
       f.series(
         name: 'Bitcoin Price',
-        data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f] },
+        data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 1
       )
 
       f.series(
         type: 'spline',
         name: 'Hold Value',
-        data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, ((m.last * 0.29808036) + 250).to_f] },
+        data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, ((m.last * 0.29808036) + 250).to_f.round(2)] },
         yAxis: 0
       )
 
@@ -231,10 +234,14 @@ class OrdersController < ApplicationController
           marker: { radius: 2 },
           lineWidth: 1,
           states: {
-            hover: { lineWidth: 1 }
+            hover: { lineWidth: 3 }
           },
           threshold: nil
         }
+      )
+
+      f.tooltip(
+        valuePrefix: '$'
       )
 
       f.legend(
@@ -259,8 +266,8 @@ class OrdersController < ApplicationController
         },
         borderWidth: 2,
         plotBackgroundColor: "rgba(255, 255, 255, .9)",
-        plotShadow: true,
-        plotBorderWidth: 1
+        # plotShadow: true,
+        # plotBorderWidth: 1
       )
       f.lang(thousandsSep: ",")
       f.colors(["#90ed7d", "#f7a35c", "#8085e9", "#f15c80", "#e4d354"])
