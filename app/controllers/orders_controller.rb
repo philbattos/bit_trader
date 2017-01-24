@@ -85,10 +85,10 @@ class OrdersController < ApplicationController
         # tickPositions: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         plotLines: [{
-          value: Metric.last.bitcoin_price.to_f,
+          value: GDAX::MarketData.last_saved_trade.price.to_f,
           width: 1,
           color: 'red',
-          dashStyle: 'longdashdot'
+          dashStyle: 'dot'
         }]
       )
 
@@ -212,14 +212,16 @@ class OrdersController < ApplicationController
         # type: 'area',
         name: 'Account Value',
         data: Metric.pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
+        yAxis: 0,
+        marker: { enabled: false }
         # pointStart: 2.weeks.ago.to_i
       )
 
       f.series(
         name: 'Bitcoin Price',
         data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 1
+        yAxis: 1,
+        marker: { radius: 5 }
       )
 
       f.series(
@@ -229,16 +231,16 @@ class OrdersController < ApplicationController
         yAxis: 0
       )
 
-      f.plotOptions(
-        area: {
-          marker: { radius: 2 },
-          lineWidth: 1,
-          states: {
-            hover: { lineWidth: 3 }
-          },
-          threshold: nil
-        }
-      )
+      # f.plotOptions(
+      #   area: {
+      #     marker: { radius: 2 },
+      #     lineWidth: 1,
+      #     states: {
+      #       hover: { lineWidth: 3 }
+      #     },
+      #     threshold: nil
+      #   }
+      # )
 
       f.tooltip(
         valuePrefix: '$'
