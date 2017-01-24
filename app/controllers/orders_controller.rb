@@ -233,7 +233,7 @@ class OrdersController < ApplicationController
           states: {
             hover: { lineWidth: 1 }
           },
-          threshold: null
+          threshold: nil
         }
       )
 
