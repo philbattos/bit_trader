@@ -194,13 +194,13 @@ class OrdersController < ApplicationController
       )
 
       f.yAxis([{
-        title: { text: "Account Value", margin: 70 },
+        title: { text: "Account Value" },
         plotLines: [{
           value: 0,
           width: 1
         }]
       }, {
-        title: { text: "Bitcoin Price"},
+        title: { text: "Bitcoin Price" },
         opposite: true
       }])
 
@@ -225,6 +225,17 @@ class OrdersController < ApplicationController
         data: Metric.pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, ((m.last * 0.29808036) + 250).to_f] },
         yAxis: 0
       )
+
+      plotOptions: {
+        area: {
+          marker: { radius: 2 },
+          lineWidth: 1,
+          states: {
+            hover: { lineWidth: 1 }
+          },
+          threshold: null
+        }
+      }
 
       f.legend(
         layout: 'vertical',

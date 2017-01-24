@@ -23,6 +23,7 @@ class Trader
         p "Trader.start Backtrace: #{e.backtrace}"
 
         # send alert to frontend; or send email/text
+
         p "Restarting Trader.... \n\n"
         Trader.new.start
       }
