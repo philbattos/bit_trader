@@ -226,7 +226,7 @@ class OrdersController < ApplicationController
         yAxis: 0
       )
 
-      plotOptions: {
+      f.plotOptions(
         area: {
           marker: { radius: 2 },
           lineWidth: 1,
@@ -235,7 +235,7 @@ class OrdersController < ApplicationController
           },
           threshold: null
         }
-      }
+      )
 
       f.legend(
         layout: 'vertical',
