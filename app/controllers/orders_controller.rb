@@ -262,14 +262,14 @@ class OrdersController < ApplicationController
       f.series(
         name: 'Bitcoin Price',
         data: Metric.with_averages.order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
+        yAxis: 0,
+        lineWidth: 3
       )
 
       f.series(
         name: '15-Minute Average',
         data: Metric.with_averages.order(:id).pluck(:created_at, :average_15_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0,
-        lineWidth: 3
+        yAxis: 0
       )
 
       f.series(
