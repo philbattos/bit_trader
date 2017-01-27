@@ -73,7 +73,7 @@ class Order < ActiveRecord::Base
     end
 
     if response
-      puts "Order successful: #{order_type.upcase} @ #{response['price']}"
+      puts "Order successful: Market #{order_type.upcase} @ #{response['price']}"
       store_order(response, order_type, contract_id)
     end
     response

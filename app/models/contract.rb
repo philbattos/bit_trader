@@ -1,5 +1,5 @@
 class Contract < ActiveRecord::Base
-  before_create { self.status = "new" }
+  before_create { self.status = "new" unless self.status }
 
   has_many :buy_orders, class_name: 'BuyOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
   has_many :sell_orders, class_name: 'SellOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
