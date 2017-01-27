@@ -253,12 +253,12 @@ class OrdersController < ApplicationController
       f.chart(zoomType: 'x')
 
       f.xAxis(
-        type: 'datetime'
+        type: 'datetime',
+        plotLines: find_trading_points
       )
 
       f.yAxis(
-        title: { text: "Bitcoin Price" },
-        plotLines: find_trading_points
+        title: { text: "Bitcoin Price" }
       )
 
       f.series(
