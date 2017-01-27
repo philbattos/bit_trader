@@ -252,7 +252,8 @@ class OrdersController < ApplicationController
       f.chart(zoomType: 'x')
 
       f.xAxis(
-        type: 'datetime'
+        type: 'datetime',
+        plotLines: find_trading_points
       )
 
       f.yAxis(
@@ -362,6 +363,31 @@ class OrdersController < ApplicationController
 
     def order_params
       params.require(:order).permit(:status)
+    end
+
+    def find_trading_points
+      trending_down = Metric.with_averages.where("average_24_hour > average_4_hour").where("average_4_hour > average_1_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
+      trending_up = Metric.with_averages.where("average_24_hour < average_4_hour").where("average_4_hour < average_1_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
+
+      sell_lines = trending_down.each do |metric|
+        {
+          value: metric.bitcoin_price.to_f,
+          width: 1,
+          color: 'red',
+          dashStyle: 'dot'
+        }
+      end
+
+      buy_lines = trending_up.each do |metric|
+        {
+          value: metric.bitcoin_price.to_f,
+          width: 1,
+          color: 'green',
+          dashStyle: 'dot'
+        }
+      end
+
+      sell_lines + buy_lines
     end
 
 end
