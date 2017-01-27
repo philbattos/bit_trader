@@ -6,6 +6,7 @@ class Contract < ActiveRecord::Base
 
   # NOTE: consider querying contracts based on presence of gdax_order_ids
   scope :retired,               -> { where(status: 'retired') }
+  scope :trendline,             -> { where(status: 'trendline') }
   scope :active,                -> { where.not(id: retired) }
   scope :with_buy_orders,       -> { active.where(id: BuyOrder.select(:contract_id).distinct) }
   scope :with_sell_orders,      -> { active.where(id: SellOrder.select(:contract_id).distinct) }
@@ -18,7 +19,7 @@ class Contract < ActiveRecord::Base
   scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
   scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
   scope :without_active_order,  -> { without_active_buy.without_active_sell } # this happens when an order is created and then canceled before it can be matched with another order
-  scope :resolved,              -> { active.where(status: ['done', 'retired']) }
+  scope :resolved,              -> { active.where(status: ['done', 'trendline']) }
   scope :unresolved,            -> { active.where.not(id: resolved) }
   scope :resolvable,            -> { matched.complete }
   scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
@@ -55,6 +56,10 @@ class Contract < ActiveRecord::Base
 
   def retired?
     status == 'retired'
+  end
+
+  def trendline?
+    status == 'trendline'
   end
 
   def orders

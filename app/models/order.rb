@@ -61,6 +61,39 @@ class Order < ActiveRecord::Base
     status == 'retired'
   end
 
+  def self.submit_market_order(order_type, price, contract_id) # should this be an instance method??
+    price = price.to_s
+    size  = '0.01'
+
+    case order_type
+    when 'buy'
+      response = GDAX::Connection.new.rest_client.buy(size, price)
+    when 'sell'
+      response = GDAX::Connection.new.rest_client.sell(size, price)
+    end
+
+    if response
+      puts "Order successful: #{order_type.upcase} @ #{response['price']}"
+      store_order(response, order_type, contract_id)
+    end
+    response
+  rescue Coinbase::Exchange::BadRequestError => gdax_error
+    puts "GDAX error (order submit): #{gdax_error}"
+    nil
+  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+    puts "GDAX rate limit error (order submit): #{rate_limit_error}"
+    nil
+  rescue Net::ReadTimeout => timeout_error
+    puts "GDAX timeout error (order submit): #{timeout_error}"
+    nil
+  rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
+    puts "GDAX SSL error (order submit): #{ssl_error}"
+    nil
+  rescue Coinbase::Exchange::InternalServerError => server_error
+    puts "GDAX server error (order submit): #{server_error}"
+    nil
+  end
+
   def self.submit(order_type, price, contract_id) # should this be an instance method??
     # type       = 'limit' # default
     # side       = order_type

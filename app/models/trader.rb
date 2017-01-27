@@ -1,8 +1,44 @@
 class Trader
+  attr_reader :current_price, :average_15_min, :average_1_hour, :average_4_hours, :trader_state
+
+  def initialize
+    @trader_state = 'empty'
+  end
 
   def start
     EM.run do
       EM.add_periodic_timer(1) {
+        calculate_averages
+
+        case trader_state
+        when 'empty'
+          if trending_down?
+            contract = Contract.create(status: 'trendline')
+            price    = GDAX::MarketData.last_saved_trade.price - 1.00
+            Order.submit_market_order('sell', price, contract.id)
+            @trader_state = 'holding-sell'
+          elsif trending_up?
+            contract = Contract.create(status: 'trendline')
+            price    = GDAX::MarketData.last_saved_trade.price + 1.00
+            Order.submit_market_order('buy', price, contract.id)
+            @trader_state = 'holding-buy'
+          end
+        when 'holding-buy'
+          if peaked?
+            contract = Contract.create(status: 'trendline')
+            price    = GDAX::MarketData.last_saved_trade.price - 1.00
+            Order.submit_market_order('sell', price, contract.id)
+            @trader_state = 'empty'
+          end
+        when 'holding-sell'
+          if bottomed_out?
+            contract = Contract.create(status: 'trendline')
+            price    = GDAX::MarketData.last_saved_trade.price + 1.00
+            Order.submit_market_order('buy', price, contract.id)
+            @trader_state = 'empty'
+          end
+        end
+
         update_orders_and_contracts
 
         floor, ceiling = trading_range
@@ -43,6 +79,33 @@ class Trader
       Contract.update_status
       Contract.resolve_open
       Order.cancel_stale_orders
+    end
+
+    def calculate_averages
+      @current_price   = GDAX::MarketData.last_saved_trade.price
+      @average_15_min  = GDAX::MarketData.calculate_average(15.minutes.ago)
+      @average_1_hour  = GDAX::MarketData.calculate_average(1.hour.ago)
+      @average_4_hours = GDAX::MarketData.calculate_average(4.hours.ago)
+    end
+
+    def trending_down?
+      (current_price < average_15_min) &&
+      (average_15_min < average_1_hour) &&
+      (average_1_hour < average_4_hours)
+    end
+
+    def trending_up?
+      (current_price > average_15_min) &&
+      (average_15_min > average_1_hour) &&
+      (average_1_hour > average_4_hours)
+    end
+
+    def peaked?
+      (current_price < average_15_min) && (average_15_min < average_1_hour)
+    end
+
+    def bottomed_out?
+      (current_price > average_15_min) && (average_15_min > average_1_hour)
     end
 
     def trading_range
