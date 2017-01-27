@@ -7,7 +7,7 @@ class Contract < ActiveRecord::Base
   # NOTE: consider querying contracts based on presence of gdax_order_ids
   scope :retired,               -> { where(status: 'retired') }
   scope :trendline,             -> { where(status: 'trendline') }
-  scope :active,                -> { where.not(id: retired) }
+  scope :active,                -> { where.not(id: retired).where.not(id: trendline) }
   scope :with_buy_orders,       -> { active.where(id: BuyOrder.select(:contract_id).distinct) }
   scope :with_sell_orders,      -> { active.where(id: SellOrder.select(:contract_id).distinct) }
   scope :without_buy_orders,    -> { active.where.not(id: with_buy_orders) }
