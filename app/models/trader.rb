@@ -10,14 +10,17 @@ class Trader
       EM.add_periodic_timer(1) {
         calculate_averages
 
+        puts "trader_state: #{trader_state}"
         case trader_state
         when 'empty'
           if trending_down?
+            puts "trending down"
             contract = Contract.create(status: 'trendline')
             price    = GDAX::MarketData.last_saved_trade.price - 1.00
             Order.submit_market_order('sell', price, contract.id)
             @trader_state = 'holding-sell'
           elsif trending_up?
+            puts "trending up"
             contract = Contract.create(status: 'trendline')
             price    = GDAX::MarketData.last_saved_trade.price + 1.00
             Order.submit_market_order('buy', price, contract.id)
@@ -25,6 +28,7 @@ class Trader
           end
         when 'holding-buy'
           if peaked?
+            puts "peaked"
             contract = Contract.create(status: 'trendline')
             price    = GDAX::MarketData.last_saved_trade.price - 1.00
             Order.submit_market_order('sell', price, contract.id)
@@ -32,6 +36,7 @@ class Trader
           end
         when 'holding-sell'
           if bottomed_out?
+            puts "bottomed out"
             contract = Contract.create(status: 'trendline')
             price    = GDAX::MarketData.last_saved_trade.price + 1.00
             Order.submit_market_order('buy', price, contract.id)
