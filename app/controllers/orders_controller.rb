@@ -373,10 +373,10 @@ class OrdersController < ApplicationController
     end
 
     def find_trading_points
-      trending_down   = Metric.with_averages.where("average_24_hour > average_12_hour").where("average_12_hour > average_4_hour").where("average_4_hour > average_1_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
-      trending_up     = Metric.with_averages.where("average_24_hour < average_12_hour").where("average_12_hour < average_4_hour").where("average_4_hour < average_1_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
-      down_trend_end  = Metric.with_averages.where("average_24_hour > average_12_hour").where("average_12_hour > average_4_hour").where("average_4_hour < average_1_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
-      up_trend_end    = Metric.with_averages.where("average_24_hour < average_12_hour").where("average_12_hour < average_4_hour").where("average_4_hour > average_1_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
+      trending_down   = Metric.with_averages.where("average_4_hour > average_1_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
+      trending_up     = Metric.with_averages.where("average_4_hour < average_1_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
+      down_trend_end  = Metric.with_averages.where("average_12_hour > average_4_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
+      up_trend_end    = Metric.with_averages.where("average_12_hour < average_4_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
 
       sell_lines = trending_down.map do |metric|
         {
