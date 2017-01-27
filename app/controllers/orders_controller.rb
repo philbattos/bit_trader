@@ -391,8 +391,8 @@ class OrdersController < ApplicationController
       puts "sell_lines: #{sell_lines.count}"
       puts "buy_lines: #{buy_lines.count}"
 
-      # sell_lines + buy_lines
-      [sell_lines.first, buy_lines.first]
+      sell_lines + buy_lines
+      # [sell_lines.first, buy_lines.first]
     end
 
 end
