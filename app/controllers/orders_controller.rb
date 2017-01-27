@@ -247,6 +247,7 @@ class OrdersController < ApplicationController
       )
     end
 
+    puts "find_trading_points: #{find_trading_points.inspect}"
     @chart7 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Moving Averages")
       f.chart(zoomType: 'x')
@@ -390,7 +391,8 @@ class OrdersController < ApplicationController
       puts "sell_lines: #{sell_lines.count}"
       puts "buy_lines: #{buy_lines.count}"
 
-      sell_lines + buy_lines
+      # sell_lines + buy_lines
+      [sell_lines.first, buy_lines.first]
     end
 
 end
