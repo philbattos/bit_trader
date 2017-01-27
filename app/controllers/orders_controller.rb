@@ -252,12 +252,12 @@ class OrdersController < ApplicationController
       f.chart(zoomType: 'x')
 
       f.xAxis(
-        type: 'datetime',
-        plotLines: find_trading_points
+        type: 'datetime'
       )
 
       f.yAxis(
-        title: { text: "Bitcoin Price" }
+        title: { text: "Bitcoin Price" },
+        plotLines: find_trading_points
       )
 
       f.series(
@@ -371,7 +371,7 @@ class OrdersController < ApplicationController
 
       sell_lines = trending_down.map do |metric|
         {
-          value: metric.bitcoin_price.to_f,
+          value: metric.created_at.to_i * 1000,
           width: 1,
           color: 'red',
           dashStyle: 'dot'
@@ -380,12 +380,15 @@ class OrdersController < ApplicationController
 
       buy_lines = trending_up.map do |metric|
         {
-          value: metric.bitcoin_price.to_f,
+          value: metric.created_at.to_i * 1000,
           width: 1,
           color: 'green',
           dashStyle: 'dot'
         }
       end
+
+      puts "sell_lines: #{sell_lines.count}"
+      puts "buy_lines: #{buy_lines.count}"
 
       sell_lines + buy_lines
     end
