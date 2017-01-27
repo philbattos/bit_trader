@@ -17,30 +17,30 @@ class Trader
             puts "trending down"
             contract = Contract.create(status: 'trendline')
             price    = GDAX::MarketData.last_saved_trade.price - 1.00
-            Order.submit_market_order('sell', price, contract.id)
-            @trader_state = 'holding-sell'
+            order    = Order.submit_market_order('sell', price, contract.id)
+            @trader_state = 'holding-sell' if order
           elsif trending_up?
             puts "trending up"
             contract = Contract.create(status: 'trendline')
             price    = GDAX::MarketData.last_saved_trade.price + 1.00
-            Order.submit_market_order('buy', price, contract.id)
-            @trader_state = 'holding-buy'
+            order    = Order.submit_market_order('buy', price, contract.id)
+            @trader_state = 'holding-buy' if order
           end
         when 'holding-buy'
           if peaked?
             puts "peaked"
             contract = Contract.create(status: 'trendline')
             price    = GDAX::MarketData.last_saved_trade.price - 1.00
-            Order.submit_market_order('sell', price, contract.id)
-            @trader_state = 'empty'
+            order    = Order.submit_market_order('sell', price, contract.id)
+            @trader_state = 'empty' if order
           end
         when 'holding-sell'
           if bottomed_out?
             puts "bottomed out"
             contract = Contract.create(status: 'trendline')
             price    = GDAX::MarketData.last_saved_trade.price + 1.00
-            Order.submit_market_order('buy', price, contract.id)
-            @trader_state = 'empty'
+            order    = Order.submit_market_order('buy', price, contract.id)
+            @trader_state = 'empty' if order
           end
         end
 
