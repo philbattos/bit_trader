@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170124045540) do
+ActiveRecord::Schema.define(version: 20170128225430) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -34,6 +34,9 @@ ActiveRecord::Schema.define(version: 20170124045540) do
     t.datetime "completion_date"
     t.datetime "created_at",                                  null: false
     t.datetime "updated_at",                                  null: false
+    t.string   "strategy_type"
+    t.index ["roi"], name: "index_contracts_on_roi", using: :btree
+    t.index ["status"], name: "index_contracts_on_status", using: :btree
   end
 
   create_table "market_data", force: :cascade do |t|
@@ -71,6 +74,17 @@ ActiveRecord::Schema.define(version: 20170124045540) do
     t.decimal  "average_7_day"
     t.decimal  "average_15_day"
     t.decimal  "average_30_day"
+    t.index ["account_value"], name: "index_metrics_on_account_value", using: :btree
+    t.index ["average_12_hour"], name: "index_metrics_on_average_12_hour", using: :btree
+    t.index ["average_15_day"], name: "index_metrics_on_average_15_day", using: :btree
+    t.index ["average_15_min"], name: "index_metrics_on_average_15_min", using: :btree
+    t.index ["average_1_hour"], name: "index_metrics_on_average_1_hour", using: :btree
+    t.index ["average_24_hour"], name: "index_metrics_on_average_24_hour", using: :btree
+    t.index ["average_30_day"], name: "index_metrics_on_average_30_day", using: :btree
+    t.index ["average_3_day"], name: "index_metrics_on_average_3_day", using: :btree
+    t.index ["average_4_hour"], name: "index_metrics_on_average_4_hour", using: :btree
+    t.index ["average_7_day"], name: "index_metrics_on_average_7_day", using: :btree
+    t.index ["bitcoin_price"], name: "index_metrics_on_bitcoin_price", using: :btree
   end
 
   create_table "orders", force: :cascade do |t|
@@ -98,6 +112,12 @@ ActiveRecord::Schema.define(version: 20170124045540) do
     t.string   "type"
     t.datetime "created_at",                                   null: false
     t.datetime "updated_at",                                   null: false
+    t.string   "strategy_type"
+    t.index ["contract_id"], name: "index_orders_on_contract_id", using: :btree
+    t.index ["fees"], name: "index_orders_on_fees", using: :btree
+    t.index ["price"], name: "index_orders_on_price", using: :btree
+    t.index ["quantity"], name: "index_orders_on_quantity", using: :btree
+    t.index ["status"], name: "index_orders_on_status", using: :btree
   end
 
   create_table "transfers", force: :cascade do |t|
