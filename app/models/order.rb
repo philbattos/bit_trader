@@ -176,14 +176,15 @@ class Order < ActiveRecord::Base
       if response && response.status != order.gdax_status
         puts "Updating status of #{order.type} #{order.id} from #{order.gdax_status} to #{response.status}"
         order.update(
-          gdax_status:      response.status,
-          status:           response.status,
-          gdax_price:       response.executed_value,
-          price:            response.executed_value,
-          gdax_filled_size: response.filled_size,
-          quantity:         response.filled_size,
-          gdax_filled_fees: response.fill_fees,
-          fees:             response.fill_fees,
+          gdax_status:         response.status,
+          status:              response.status,
+          gdax_price:          response.executed_value,
+          gdax_executed_value: response.executed_value,
+          price:               response.executed_value,
+          gdax_filled_size:    response.filled_size,
+          quantity:            response.filled_size,
+          gdax_filled_fees:    response.fill_fees,
+          fees:                response.fill_fees,
         )
       end
     end
