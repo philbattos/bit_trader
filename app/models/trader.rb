@@ -24,10 +24,10 @@ class Trader
             order = Order.submit_market_order('sell', price, nil)
             @trader_state = 'holding-buy' if order
           end
-        when 'holding-buy'
+        when 'holding-sell'
           if peaked?
             puts "peaked"
-            contract = Contract.trendline.with_buy_without_sell.first
+            contract = Contract.trendline.with_sell_without_buy.first
             price    = GDAX::MarketData.last_saved_trade.price + 1.00
             order    = Order.submit_market_order('buy', price, contract.try(:id))
             if order
@@ -36,10 +36,10 @@ class Trader
               @trader_state = 'empty'
             end
           end
-        when 'holding-sell'
+        when 'holding-buy'
           if bottomed_out?
             puts "bottomed out"
-            contract = Contract.trendline.with_sell_without_buy.first
+            contract = Contract.trendline.with_buy_without_sell.first
             price    = GDAX::MarketData.last_saved_trade.price - 1.00
             order    = Order.submit_market_order('sell', price, contract.try(:id))
             if order
