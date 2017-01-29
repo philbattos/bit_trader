@@ -1,6 +1,6 @@
 class Metric < ActiveRecord::Base
 
-  scope :with_averages, -> { where.not(average_15_min: nil) }
+  scope :with_averages, -> { where.not(average_15_min: nil).where.not(average_30_min: nil) }
   scope :trending_down, -> { with_averages.where("average_30_min > average_15_min").where("average_15_min > bitcoin_price") }
   scope :trending_up,   -> { with_averages.where("average_30_min < average_15_min").where("average_15_min < bitcoin_price") }
 
@@ -36,7 +36,7 @@ class Metric < ActiveRecord::Base
     metric.update(average_3_day: GDAX::MarketData.calculate_average(3.days.ago))
     metric.update(average_7_day: GDAX::MarketData.calculate_average(7.days.ago))
     metric.update(average_15_day: GDAX::MarketData.calculate_average(15.days.ago))
-    metric.update(average_30_day: GDAX::MarketData.calculate_average(30.days.ago))
+    # metric.update(average_30_day: GDAX::MarketData.calculate_average(30.days.ago))
   end
 
 end
