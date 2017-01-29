@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170129041715) do
+ActiveRecord::Schema.define(version: 20170129202706) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -107,7 +107,7 @@ ActiveRecord::Schema.define(version: 20170129041715) do
     t.string   "gdax_status"
     t.string   "gdax_settled"
     t.decimal  "quantity",            precision: 15, scale: 8
-    t.decimal  "price",               precision: 15, scale: 8
+    t.decimal  "filled_price",        precision: 15, scale: 8
     t.integer  "contract_id"
     t.string   "custom_id"
     t.string   "currency"
@@ -117,10 +117,14 @@ ActiveRecord::Schema.define(version: 20170129041715) do
     t.datetime "created_at",                                   null: false
     t.datetime "updated_at",                                   null: false
     t.string   "strategy_type"
+    t.decimal  "requested_price"
+    t.decimal  "executed_value"
     t.index ["contract_id"], name: "index_orders_on_contract_id", using: :btree
+    t.index ["executed_value"], name: "index_orders_on_executed_value", using: :btree
     t.index ["fees"], name: "index_orders_on_fees", using: :btree
-    t.index ["price"], name: "index_orders_on_price", using: :btree
+    t.index ["filled_price"], name: "index_orders_on_filled_price", using: :btree
     t.index ["quantity"], name: "index_orders_on_quantity", using: :btree
+    t.index ["requested_price"], name: "index_orders_on_requested_price", using: :btree
     t.index ["status"], name: "index_orders_on_status", using: :btree
     t.index ["strategy_type"], name: "index_orders_on_strategy_type", using: :btree
   end

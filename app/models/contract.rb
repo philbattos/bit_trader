@@ -101,7 +101,7 @@ class Contract < ActiveRecord::Base
 
   def self.match_open_buys
     return if SellOrder.where(status: ['open', 'pending']).count > 10
-    open_contract = with_buy_without_sell.includes(:buy_orders).order("orders.price").first # finds contracts with lowest active buy price and without an active sell
+    open_contract = with_buy_without_sell.includes(:buy_orders).order("orders.requested_price").first # finds contracts with lowest active buy price and without an active sell
     # open_contract = with_buy_without_sell.includes(:buy_orders).sample
     if open_contract
       current_ask = GDAX::MarketData.current_ask
@@ -119,7 +119,7 @@ class Contract < ActiveRecord::Base
 
   def self.match_open_sells
     return if BuyOrder.where(status: ['open', 'pending']).count > 10
-    open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.price desc").first # finds contracts with highest active sell price and without an active buy
+    open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.requested_price desc").first # finds contracts with highest active sell price and without an active buy
     # open_contract = with_sell_without_buy.includes(:sell_orders).sample
     if open_contract
       current_bid = GDAX::MarketData.current_bid
@@ -180,18 +180,18 @@ class Contract < ActiveRecord::Base
   end
 
   def self.calculate_sell_price(open_buy)
-    open_buy.price * (1.0 + PROFIT_PERCENT.sample)
+    open_buy.requested_price * (1.0 + PROFIT_PERCENT.sample)
     # if open_buy.updated_at > 6.hours.ago
-    #   open_buy.price * (1.0 + PROFIT_PERCENT.sample)
+    #   open_buy.requested_price * (1.0 + PROFIT_PERCENT.sample)
     # else
     #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
     # end
   end
 
   def self.calculate_buy_price(open_sell)
-    open_sell.price * (1.0 - PROFIT_PERCENT.sample)
+    open_sell.requested_price * (1.0 - PROFIT_PERCENT.sample)
     # if open_sell.updated_at > 6.hours.ago
-    #   open_sell.price * (1.0 - PROFIT_PERCENT.sample)
+    #   open_sell.requested_price * (1.0 - PROFIT_PERCENT.sample)
     # else
     #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
     # end
@@ -261,8 +261,8 @@ class Contract < ActiveRecord::Base
   end
 
   def calculate_roi
-    profit = (sell_order.price * sell_order.quantity) - sell_order.fees
-    cost   = (buy_order.price * buy_order.quantity) + buy_order.fees
+    profit = sell_order.executed_value - sell_order.fees
+    cost   = buy_order.executed_value + buy_order.fees
 
     profit - cost
   end

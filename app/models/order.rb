@@ -175,15 +175,18 @@ class Order < ActiveRecord::Base
       response = check_status(order.gdax_id)
       if response && response.status != order.gdax_status
         puts "Updating status of #{order.type} #{order.id} from #{order.gdax_status} to #{response.status}"
+        # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
         order.update(
           gdax_status:         response.status,
-          status:              response.status,
-          gdax_price:          response.executed_value,
+          gdax_price:          response.price, # price in original request; may not be executed price
           gdax_executed_value: response.executed_value,
-          price:               response.executed_value,
           gdax_filled_size:    response.filled_size,
-          quantity:            response.filled_size,
           gdax_filled_fees:    response.fill_fees,
+          status:              response.status,
+          requested_price:     response.price,
+          filled_price:        calculate_filled_price(response),
+          executed_value:      response.executed_value, # filled_price * quantity; does not include fees
+          quantity:            response.filled_size,
           fees:                response.fill_fees,
         )
       end
@@ -197,6 +200,10 @@ class Order < ActiveRecord::Base
     puts "Updated order #{order.id} with status 'not-found'"
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
     puts "GDAX rate limit error (update order status): #{rate_limit_error}"
+  end
+
+  def self.calculate_filled_price(response)
+    response.executed_value / response.filled_size
   end
 
   def self.cancel_stale_orders
@@ -230,6 +237,7 @@ class Order < ActiveRecord::Base
       puts "Storing order #{response['id']}"
       contract = Contract.create_with(strategy_type: strategy_type).find_or_create_by(id: contract_id)
       contract.orders.create(
+        # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
         type:                lookup_class_type[order_type],
         gdax_id:             response['id'],
         gdax_price:          response['price'],
@@ -245,9 +253,10 @@ class Order < ActiveRecord::Base
         gdax_executed_value: response['executed_value'],
         gdax_status:         response['status'],
         gdax_settled:        response['settled'],
-        quantity:            find_quantity(response['size']),
-        price:               find_price(response['price']),
-        fees:                find_fill_fees(response['fill_fees']),
+        quantity:            response['size'],
+        requested_price:     response['price'],
+        executed_value:      response['executed_value'],
+        fees:                response['fill_fees'],
         status:              response['status'],
         strategy_type:       strategy_type,
         # custom_id:           response['oid'],
@@ -257,18 +266,6 @@ class Order < ActiveRecord::Base
 
     def self.lookup_class_type
       { 'buy' => 'BuyOrder', 'sell' => 'SellOrder' }
-    end
-
-    def self.find_quantity(size)
-      size.nil? ? nil : size.to_d.round(7)
-    end
-
-    def self.find_price(price)
-      price.nil? ? nil : price.to_d.round(7)
-    end
-
-    def self.find_fill_fees(fees)
-      fees.nil? ? nil : fees.to_d.round(7)
     end
 
 end
