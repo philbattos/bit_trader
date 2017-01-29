@@ -32,7 +32,7 @@ class Trader
             order    = Order.submit_market_order('buy', price, contract.try(:id))
             if order
               new_order = Order.find_by(gdax_id: order.id)
-              new_order.contract.update(gdax_sell_order_id: new_order.id)
+              new_order.contract.update(gdax_buy_order_id: new_order.gdax_id)
               @trader_state = 'empty'
             end
           end
@@ -44,7 +44,7 @@ class Trader
             order    = Order.submit_market_order('sell', price, contract.try(:id))
             if order
               new_order = Order.find_by(gdax_id: order.id)
-              new_order.contract.update(gdax_buy_order_id: new_order.id)
+              new_order.contract.update(gdax_sell_order_id: new_order.gdax_id)
               @trader_state = 'empty'
             end
           end
