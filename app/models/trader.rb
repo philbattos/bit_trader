@@ -16,12 +16,12 @@ class Trader
           if trending_down?
             puts "trending down"
             price = GDAX::MarketData.last_saved_trade.price - 1.00
-            order = Order.submit_market_order('sell', price, contract.id)
+            order = Order.submit_market_order('sell', price, nil)
             @trader_state = 'holding-sell' if order
           elsif trending_up?
             puts "trending up"
             price = GDAX::MarketData.last_saved_trade.price + 1.00
-            order = Order.submit_market_order('buy', price, contract.id)
+            order = Order.submit_market_order('buy', price, nil)
             @trader_state = 'holding-buy' if order
           end
         when 'holding-buy'
