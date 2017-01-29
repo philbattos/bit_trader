@@ -15,48 +15,30 @@ class Trader
         when 'empty'
           if trending_down?
             puts "trending down"
-            contract = Contract.create(status: 'trendline')
-            price    = GDAX::MarketData.last_saved_trade.price - 1.00
-            order    = Order.submit_market_order('sell', price, contract.id)
-            if order
-              @trader_state = 'holding-sell'
-            else
-              contract.delete
-            end
+            price = GDAX::MarketData.last_saved_trade.price - 1.00
+            order = Order.submit_market_order('sell', price, contract.id)
+            @trader_state = 'holding-sell' if order
           elsif trending_up?
             puts "trending up"
-            contract = Contract.create(status: 'trendline')
-            price    = GDAX::MarketData.last_saved_trade.price + 1.00
-            order    = Order.submit_market_order('buy', price, contract.id)
-            if order
-              @trader_state = 'holding-buy'
-            else
-              contract.delete
-            end
+            price = GDAX::MarketData.last_saved_trade.price + 1.00
+            order = Order.submit_market_order('buy', price, contract.id)
+            @trader_state = 'holding-buy' if order
           end
         when 'holding-buy'
           if peaked?
             puts "peaked"
-            contract = Contract.create(status: 'trendline')
+            contract = Contract.trendline.with_active_buy.first
             price    = GDAX::MarketData.last_saved_trade.price - 1.00
             order    = Order.submit_market_order('sell', price, contract.id)
-            if order
-              @trader_state = 'empty'
-            else
-              contract.delete
-            end
+            @trader_state = 'empty' if order
           end
         when 'holding-sell'
           if bottomed_out?
             puts "bottomed out"
-            contract = Contract.create(status: 'trendline')
+            contract = Contract.trendline.with_active_sell.first
             price    = GDAX::MarketData.last_saved_trade.price + 1.00
             order    = Order.submit_market_order('buy', price, contract.id)
-            if order
-              @trader_state = 'empty'
-            else
-              contract.delete
-            end
+            @trader_state = 'empty' if order
           end
         end
 
@@ -98,7 +80,7 @@ class Trader
     def update_orders_and_contracts
       Order.update_status
       Contract.update_status
-      Contract.resolve_open
+      Contract.market_maker.resolve_open
       Order.cancel_stale_orders
     end
 

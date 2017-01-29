@@ -2,14 +2,16 @@ class Order < ActiveRecord::Base
 
   belongs_to :contract
 
-  scope :resolved,   -> { where(status: CLOSED_STATUSES) }
-  scope :unresolved, -> { where.not(id: resolved) }
-  scope :active,     -> { where(status: ACTIVE_STATUSES) }
-  # scope :inactive,   -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
-  scope :purchased,  -> { where(status: PURCHASED_STATUSES) }
-  scope :canceled,   -> { where(status: 'not-found') }
-  scope :done,       -> { where(status: 'done') }
-  scope :retired,    -> { where(status: 'retired') }
+  scope :trendline,    -> { where(strategy_type: 'trendline') }
+  scope :market_maker, -> { where(strategy_type: 'market-maker') }
+  scope :resolved,     -> { where(status: CLOSED_STATUSES) }
+  scope :unresolved,   -> { where.not(id: resolved) }
+  scope :active,       -> { where(status: ACTIVE_STATUSES) }
+  # scope :inactive,     -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
+  scope :purchased,    -> { where(status: PURCHASED_STATUSES) }
+  scope :canceled,     -> { where(status: 'not-found') }
+  scope :done,         -> { where(status: 'done') }
+  scope :retired,      -> { where(status: 'retired') }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
 
@@ -74,7 +76,7 @@ class Order < ActiveRecord::Base
 
     if response
       puts "Order successful: Market #{order_type.upcase} @ #{response['price']}"
-      store_order(response, order_type, contract_id)
+      store_order(response, order_type, contract_id, 'trendline')
     end
     response
   rescue Coinbase::Exchange::BadRequestError => gdax_error
@@ -118,7 +120,7 @@ class Order < ActiveRecord::Base
 
     if response
       puts "Order successful: #{order_type.upcase} @ #{response['price']}"
-      store_order(response, order_type, contract_id)
+      store_order(response, order_type, contract_id, 'market-maker')
     end
     response
   rescue Coinbase::Exchange::BadRequestError => gdax_error
@@ -216,7 +218,7 @@ class Order < ActiveRecord::Base
     private
   #=================================================
 
-    def self.store_order(response, order_type, contract_id)
+    def self.store_order(response, order_type, contract_id, strategy_type)
       puts "Storing order #{response['id']}"
       contract = Contract.find_or_create_by(id: contract_id)
       contract.orders.create(
@@ -239,6 +241,7 @@ class Order < ActiveRecord::Base
         price:               find_price(response['price']),
         fees:                find_fill_fees(response['fill_fees']),
         status:              response['status'],
+        strategy_type:       strategy_type,
         # custom_id:           response['oid'],
         # currency:            response['currency'],
       )

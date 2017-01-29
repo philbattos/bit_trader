@@ -6,8 +6,9 @@ class Contract < ActiveRecord::Base
 
   # NOTE: consider querying contracts based on presence of gdax_order_ids
   scope :retired,               -> { where(status: 'retired') }
-  scope :trendline,             -> { where(status: 'trendline') }
-  scope :active,                -> { where.not(id: retired).where.not(id: trendline) }
+  scope :trendline,             -> { where(strategy_type: 'trendline') }
+  scope :market_maker,          -> { where(strategy_type: 'market-maker') }
+  scope :active,                -> { where.not(id: retired) }
   scope :with_buy_orders,       -> { active.where(id: BuyOrder.select(:contract_id).distinct) }
   scope :with_sell_orders,      -> { active.where(id: SellOrder.select(:contract_id).distinct) }
   scope :without_buy_orders,    -> { active.where.not(id: with_buy_orders) }
@@ -19,7 +20,7 @@ class Contract < ActiveRecord::Base
   scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
   scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
   scope :without_active_order,  -> { without_active_buy.without_active_sell } # this happens when an order is created and then canceled before it can be matched with another order
-  scope :resolved,              -> { active.where(status: ['done', 'trendline']) }
+  scope :resolved,              -> { active.where(status: ['done']) }
   scope :unresolved,            -> { active.where.not(id: resolved) }
   scope :resolvable,            -> { matched.complete }
   scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
@@ -249,23 +250,6 @@ class Contract < ActiveRecord::Base
     contract.mark_as_done if contract
   end
 
-  def mark_as_done
-    puts "Updating status of contract #{self.id} from #{self.status} to done"
-
-    update(
-      status: 'done',
-      roi: calculate_roi,
-      completion_date: Time.now
-    )
-  end
-
-  def calculate_roi
-    profit = (sell_order.price * sell_order.quantity) - sell_order.fees
-    cost   = (buy_order.price * buy_order.quantity) + buy_order.fees
-
-    profit - cost
-  end
-
   def self.missing_price(type)
     puts "GDAX orderbook returned a #{type} price of $0... It could be the result of a rate limit error."
     "GDAX orderbook returned a #{type} price of $0... It could be the result of a rate limit error."
@@ -274,5 +258,22 @@ class Contract < ActiveRecord::Base
   #=================================================
     private
   #=================================================
+
+    def mark_as_done
+      puts "Updating status of #{self.strategy_type} contract #{self.id} from #{self.status} to done"
+
+      update(
+        status: 'done',
+        roi: calculate_roi,
+        completion_date: Time.now
+      )
+    end
+
+    def calculate_roi
+      profit = (sell_order.price * sell_order.quantity) - sell_order.fees
+      cost   = (buy_order.price * buy_order.quantity) + buy_order.fees
+
+      profit - cost
+    end
 
 end
