@@ -1,7 +1,8 @@
 class Metric < ActiveRecord::Base
 
   scope :with_averages, -> { where.not(average_15_min: nil) }
-  # scope :trending_down, -> { with_averages.where("average_4_hour > average_1_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
+  scope :trending_down, -> { with_averages.where("average_30_min > average_15_min").where("average_15_min > bitcoin_price") }
+  scope :trending_up,   -> { with_averages.where("average_30_min < average_15_min").where("average_15_min < bitcoin_price") }
 
   def self.save_current_data
     dollar_balance        = Account.gdax_usdollar_account.balance
@@ -27,6 +28,7 @@ class Metric < ActiveRecord::Base
     )
 
     metric.update(average_15_min: GDAX::MarketData.calculate_average(15.minutes.ago))
+    metric.update(average_30_min: GDAX::MarketData.calculate_average(30.minutes.ago))
     metric.update(average_1_hour: GDAX::MarketData.calculate_average(1.hour.ago))
     metric.update(average_4_hour: GDAX::MarketData.calculate_average(4.hours.ago))
     metric.update(average_12_hour: GDAX::MarketData.calculate_average(12.hours.ago))
@@ -34,7 +36,7 @@ class Metric < ActiveRecord::Base
     metric.update(average_3_day: GDAX::MarketData.calculate_average(3.days.ago))
     metric.update(average_7_day: GDAX::MarketData.calculate_average(7.days.ago))
     metric.update(average_15_day: GDAX::MarketData.calculate_average(15.days.ago))
-    # metric.update(average_30_day: GDAX::MarketData.calculate_average(30.days.ago))
+    metric.update(average_30_day: GDAX::MarketData.calculate_average(30.days.ago))
   end
 
 end

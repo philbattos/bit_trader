@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170129002752) do
+ActiveRecord::Schema.define(version: 20170129041715) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -77,6 +77,7 @@ ActiveRecord::Schema.define(version: 20170129002752) do
     t.decimal  "average_7_day"
     t.decimal  "average_15_day"
     t.decimal  "average_30_day"
+    t.decimal  "average_30_min"
     t.index ["account_value"], name: "index_metrics_on_account_value", using: :btree
     t.index ["average_12_hour"], name: "index_metrics_on_average_12_hour", using: :btree
     t.index ["average_15_day"], name: "index_metrics_on_average_15_day", using: :btree

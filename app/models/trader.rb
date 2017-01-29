@@ -1,5 +1,5 @@
 class Trader
-  attr_reader :current_price, :average_15_min, :average_1_hour, :average_4_hours, :trader_state
+  attr_reader :current_price, :average_15_min, :average_30_min, :average_1_hour, :average_4_hours, :trader_state
 
   def initialize
     @trader_state = 'empty'
@@ -95,28 +95,27 @@ class Trader
     def calculate_averages
       @current_price   = GDAX::MarketData.last_saved_trade.price
       @average_15_min  = GDAX::MarketData.calculate_average(15.minutes.ago)
+      @average_30_min  = GDAX::MarketData.calculate_average(30.minutes.ago)
       @average_1_hour  = GDAX::MarketData.calculate_average(1.hour.ago)
       @average_4_hours = GDAX::MarketData.calculate_average(4.hours.ago)
     end
 
     def trending_down?
       (current_price < average_15_min) &&
-      (average_15_min < average_1_hour) &&
-      (average_1_hour < average_4_hours)
+      (average_15_min < average_30_min)
     end
 
     def trending_up?
       (current_price > average_15_min) &&
-      (average_15_min > average_1_hour) &&
-      (average_1_hour > average_4_hours)
+      (average_15_min > average_30_min)
     end
 
     def peaked?
-      (current_price < average_15_min) && (average_15_min < average_1_hour)
+      (current_price < average_15_min) && (current_price < average_30_min)
     end
 
     def bottomed_out?
-      (current_price > average_15_min) && (average_15_min > average_1_hour)
+      (current_price > average_15_min) && (current_price > average_30_min)
     end
 
     def trading_range

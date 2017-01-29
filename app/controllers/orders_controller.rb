@@ -274,6 +274,12 @@ class OrdersController < ApplicationController
       )
 
       f.series(
+        name: '30-Minute Average',
+        data: Metric.with_averages.order(:id).pluck(:created_at, :average_30_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
         # type: 'spline',
         name: '1-Hour Average',
         data: Metric.with_averages.order(:id).pluck(:created_at, :average_1_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
@@ -287,19 +293,19 @@ class OrdersController < ApplicationController
         yAxis: 0
       )
 
-      f.series(
-        # type: 'spline',
-        name: '12-Hour Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_12_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
+      # f.series(
+      #   # type: 'spline',
+      #   name: '12-Hour Average',
+      #   data: Metric.with_averages.order(:id).pluck(:created_at, :average_12_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+      #   yAxis: 0
+      # )
 
-      f.series(
-        # type: 'spline',
-        name: '24-Hour Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
+      # f.series(
+      #   # type: 'spline',
+      #   name: '24-Hour Average',
+      #   data: Metric.with_averages.order(:id).pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+      #   yAxis: 0
+      # )
 
       f.plotOptions(
         series: {
@@ -373,10 +379,10 @@ class OrdersController < ApplicationController
     end
 
     def find_trading_points
-      trending_down   = Metric.with_averages.where("average_4_hour > average_1_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
-      trending_up     = Metric.with_averages.where("average_4_hour < average_1_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
-      down_trend_end  = Metric.with_averages.where("average_12_hour > average_4_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
-      up_trend_end    = Metric.with_averages.where("average_12_hour < average_4_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
+      trending_down   = Metric.trending_down
+      trending_up     = Metric.trending_up
+      # down_trend_end  = Metric.with_averages.where("average_12_hour > average_4_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
+      # up_trend_end    = Metric.with_averages.where("average_12_hour < average_4_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
 
       sell_lines = trending_down.map do |metric|
         {
@@ -387,14 +393,14 @@ class OrdersController < ApplicationController
         }
       end
 
-      stop_selling_lines = down_trend_end.map do |metric|
-        {
-          value: metric.created_at.to_i * 1000,
-          width: 1,
-          color: 'orange',
-          dashStyle: 'dash'
-        }
-      end
+      # stop_selling_lines = down_trend_end.map do |metric|
+      #   {
+      #     value: metric.created_at.to_i * 1000,
+      #     width: 1,
+      #     color: 'orange',
+      #     dashStyle: 'dash'
+      #   }
+      # end
 
       buy_lines = trending_up.map do |metric|
         {
@@ -405,16 +411,17 @@ class OrdersController < ApplicationController
         }
       end
 
-      stop_buying_lines = up_trend_end.map do |metric|
-        {
-          value: metric.created_at.to_i * 1000,
-          width: 1,
-          color: 'green',
-          dashStyle: 'dash'
-        }
-      end
+      # stop_buying_lines = up_trend_end.map do |metric|
+      #   {
+      #     value: metric.created_at.to_i * 1000,
+      #     width: 1,
+      #     color: 'green',
+      #     dashStyle: 'dash'
+      #   }
+      # end
 
-      sell_lines + stop_selling_lines + buy_lines + stop_buying_lines
+      # sell_lines + stop_selling_lines + buy_lines + stop_buying_lines
+      sell_lines + buy_lines
       # [sell_lines.first, buy_lines.first]
     end
 
