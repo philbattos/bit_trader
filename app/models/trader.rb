@@ -8,47 +8,47 @@ class Trader
   def start
     EM.run do
       EM.add_periodic_timer(1) {
-        calculate_averages
+        # calculate_averages
 
-        puts "trader_state: #{trader_state}"
-        case trader_state
-        when 'empty'
-          if trending_down?
-            puts "trending down"
-            price = GDAX::MarketData.last_saved_trade.price + 1.00
-            order = Order.submit_market_order('buy', price, nil)
-            @trader_state = 'holding-buy' if order
-          elsif trending_up?
-            puts "trending up"
-            price = GDAX::MarketData.last_saved_trade.price - 1.00
-            order = Order.submit_market_order('sell', price, nil)
-            @trader_state = 'holding-sell' if order
-          end
-        when 'holding-sell'
-          if peaked?
-            puts "peaked"
-            contract = Contract.trendline.with_sell_without_buy.first
-            price    = GDAX::MarketData.last_saved_trade.price + 1.00
-            order    = Order.submit_market_order('buy', price, contract.try(:id))
-            if order
-              new_order = Order.find_by(gdax_id: order.id)
-              new_order.contract.update(gdax_buy_order_id: new_order.gdax_id)
-              @trader_state = 'empty'
-            end
-          end
-        when 'holding-buy'
-          if bottomed_out?
-            puts "bottomed out"
-            contract = Contract.trendline.with_buy_without_sell.first
-            price    = GDAX::MarketData.last_saved_trade.price - 1.00
-            order    = Order.submit_market_order('sell', price, contract.try(:id))
-            if order
-              new_order = Order.find_by(gdax_id: order.id)
-              new_order.contract.update(gdax_sell_order_id: new_order.gdax_id)
-              @trader_state = 'empty'
-            end
-          end
-        end
+        # puts "trader_state: #{trader_state}"
+        # case trader_state
+        # when 'empty'
+        #   if trending_down?
+        #     puts "trending down"
+        #     price = GDAX::MarketData.last_saved_trade.price + 1.00
+        #     order = Order.submit_market_order('buy', price, nil)
+        #     @trader_state = 'holding-buy' if order
+        #   elsif trending_up?
+        #     puts "trending up"
+        #     price = GDAX::MarketData.last_saved_trade.price - 1.00
+        #     order = Order.submit_market_order('sell', price, nil)
+        #     @trader_state = 'holding-sell' if order
+        #   end
+        # when 'holding-sell'
+        #   if peaked?
+        #     puts "peaked"
+        #     contract = Contract.trendline.with_sell_without_buy.first
+        #     price    = GDAX::MarketData.last_saved_trade.price + 1.00
+        #     order    = Order.submit_market_order('buy', price, contract.try(:id))
+        #     if order
+        #       new_order = Order.find_by(gdax_id: order.id)
+        #       new_order.contract.update(gdax_buy_order_id: new_order.gdax_id)
+        #       @trader_state = 'empty'
+        #     end
+        #   end
+        # when 'holding-buy'
+        #   if bottomed_out?
+        #     puts "bottomed out"
+        #     contract = Contract.trendline.with_buy_without_sell.first
+        #     price    = GDAX::MarketData.last_saved_trade.price - 1.00
+        #     order    = Order.submit_market_order('sell', price, contract.try(:id))
+        #     if order
+        #       new_order = Order.find_by(gdax_id: order.id)
+        #       new_order.contract.update(gdax_sell_order_id: new_order.gdax_id)
+        #       @trader_state = 'empty'
+        #     end
+        #   end
+        # end
 
         update_orders_and_contracts
 
@@ -88,7 +88,8 @@ class Trader
     def update_orders_and_contracts
       Order.update_status
       Contract.update_status
-      Contract.market_maker.resolve_open
+      # Contract.market_maker.resolve_open
+      Contract.resolve_open
       Order.cancel_stale_orders
     end
 
@@ -101,13 +102,11 @@ class Trader
     end
 
     def trending_down?
-      (current_price < average_15_min) &&
-      (average_15_min < average_30_min)
+      (current_price < average_15_min) && (average_15_min < average_30_min)
     end
 
     def trending_up?
-      (current_price > average_15_min) &&
-      (average_15_min > average_30_min)
+      (current_price > average_15_min) && (average_15_min > average_30_min)
     end
 
     def peaked?
