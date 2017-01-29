@@ -29,7 +29,7 @@ class Trader
             puts "peaked"
             contract = Contract.trendline.with_active_buy.first
             price    = GDAX::MarketData.last_saved_trade.price - 1.00
-            order    = Order.submit_market_order('sell', price, contract.id)
+            order    = Order.submit_market_order('sell', price, contract.try(:id))
             @trader_state = 'empty' if order
           end
         when 'holding-sell'
@@ -37,7 +37,7 @@ class Trader
             puts "bottomed out"
             contract = Contract.trendline.with_active_sell.first
             price    = GDAX::MarketData.last_saved_trade.price + 1.00
-            order    = Order.submit_market_order('buy', price, contract.id)
+            order    = Order.submit_market_order('buy', price, contract.try(:id))
             @trader_state = 'empty' if order
           end
         end

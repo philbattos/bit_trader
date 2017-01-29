@@ -15,7 +15,8 @@ class Order < ActiveRecord::Base
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
 
-  validates :contract, presence: true # all orders should be associated with a contract
+  validates :contract,      presence: true # all orders should be associated with a contract
+  validates :strategy_type, presence: true
 
   CLOSED_STATUSES    = %w[ done rejected not-found retired ]
   PURCHASED_STATUSES = %w[ done open ]
@@ -220,7 +221,7 @@ class Order < ActiveRecord::Base
 
     def self.store_order(response, order_type, contract_id, strategy_type)
       puts "Storing order #{response['id']}"
-      contract = Contract.find_or_create_by(id: contract_id)
+      contract = Contract.find_or_create_by(id: contract_id).create_with(strategy_type: strategy_type)
       contract.orders.create(
         type:                lookup_class_type[order_type],
         gdax_id:             response['id'],

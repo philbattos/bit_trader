@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170128235612) do
+ActiveRecord::Schema.define(version: 20170129002752) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -37,6 +37,7 @@ ActiveRecord::Schema.define(version: 20170128235612) do
     t.string   "strategy_type"
     t.index ["roi"], name: "index_contracts_on_roi", using: :btree
     t.index ["status"], name: "index_contracts_on_status", using: :btree
+    t.index ["strategy_type"], name: "index_contracts_on_strategy_type", using: :btree
   end
 
   create_table "market_data", force: :cascade do |t|
@@ -120,6 +121,7 @@ ActiveRecord::Schema.define(version: 20170128235612) do
     t.index ["price"], name: "index_orders_on_price", using: :btree
     t.index ["quantity"], name: "index_orders_on_quantity", using: :btree
     t.index ["status"], name: "index_orders_on_status", using: :btree
+    t.index ["strategy_type"], name: "index_orders_on_strategy_type", using: :btree
   end
 
   create_table "transfers", force: :cascade do |t|
