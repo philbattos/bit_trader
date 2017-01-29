@@ -1,6 +1,7 @@
 class Metric < ActiveRecord::Base
 
   scope :with_averages, -> { where.not(average_15_min: nil) }
+  # scope :trending_down, -> { with_averages.where("average_4_hour > average_1_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
 
   def self.save_current_data
     dollar_balance        = Account.gdax_usdollar_account.balance

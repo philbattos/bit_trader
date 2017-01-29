@@ -250,6 +250,23 @@ class Contract < ActiveRecord::Base
     contract.mark_as_done if contract
   end
 
+  def mark_as_done
+    puts "Updating status of #{self.strategy_type} contract #{self.id} from #{self.status} to done"
+
+    update(
+      status: 'done',
+      roi: calculate_roi,
+      completion_date: Time.now
+    )
+  end
+
+  def calculate_roi
+    profit = (sell_order.price * sell_order.quantity) - sell_order.fees
+    cost   = (buy_order.price * buy_order.quantity) + buy_order.fees
+
+    profit - cost
+  end
+
   def self.missing_price(type)
     puts "GDAX orderbook returned a #{type} price of $0... It could be the result of a rate limit error."
     "GDAX orderbook returned a #{type} price of $0... It could be the result of a rate limit error."
@@ -258,22 +275,5 @@ class Contract < ActiveRecord::Base
   #=================================================
     private
   #=================================================
-
-    def mark_as_done
-      puts "Updating status of #{self.strategy_type} contract #{self.id} from #{self.status} to done"
-
-      update(
-        status: 'done',
-        roi: calculate_roi,
-        completion_date: Time.now
-      )
-    end
-
-    def calculate_roi
-      profit = (sell_order.price * sell_order.quantity) - sell_order.fees
-      cost   = (buy_order.price * buy_order.quantity) + buy_order.fees
-
-      profit - cost
-    end
 
 end
