@@ -111,11 +111,11 @@ class Trader
     end
 
     def peaked?
-      (current_price < average_15_min) && (current_price < average_30_min)
+      (current_price < average_15_min) && (average_15_min < average_30_min)
     end
 
     def bottomed_out?
-      (current_price > average_15_min) && (current_price > average_30_min)
+      (current_price > average_15_min) && (average_15_min > average_30_min)
     end
 
     def trading_range
