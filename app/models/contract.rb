@@ -96,7 +96,7 @@ class Contract < ActiveRecord::Base
     match_open_sells
   end
 
-  def liquidate_old_contracts
+  def self.liquidate_old_contracts
     old_contract = liquidate.sample
 
     if old_contract.lacking_buy?
