@@ -6,6 +6,7 @@ class Contract < ActiveRecord::Base
 
   # NOTE: consider querying contracts based on presence of gdax_order_ids
   scope :retired,               -> { where(status: 'retired') }
+  scope :liquidate,             -> { where(status: 'liquidate') }
   scope :trendline,             -> { where(strategy_type: 'trendline') }
   scope :market_maker,          -> { where(strategy_type: 'market-maker') }
   scope :active,                -> { where.not(id: retired) }
@@ -23,6 +24,13 @@ class Contract < ActiveRecord::Base
   scope :resolved,              -> { active.where(status: ['done']) }
   scope :unresolved,            -> { active.where.not(id: resolved) }
   scope :resolvable,            -> { matched.complete }
+  scope :liquidatable,          -> { unresolved.
+                                        includes(:buy_orders, :sell_orders).
+                                        where("contracts.created_at < ?", 1.day.ago).
+                                        where(orders: {
+                                          status: 'done',
+                                          requested_price: seven_day_range
+                                        }) }
   scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
   scope :complete,              -> { active.where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
   scope :incomplete,            -> { active.where.not(id: complete) }
@@ -80,13 +88,14 @@ class Contract < ActiveRecord::Base
   end
 
   def self.resolve_open
+    # liquidate_old_contracts
     populate_empty_contracts
     match_open_buys
     match_open_sells
   end
 
   def self.populate_empty_contracts
-    open_contracts = without_active_order
+    open_contracts = without_active_order.where.not(id: liquidate)
     if open_contracts.any?
       current_bid = GDAX::MarketData.current_bid
       return missing_price('bid') if current_bid == 0.0
@@ -101,7 +110,7 @@ class Contract < ActiveRecord::Base
 
   def self.match_open_buys
     return if SellOrder.where(status: ['open', 'pending']).count > 10
-    open_contract = with_buy_without_sell.includes(:buy_orders).order("orders.requested_price").first # finds contracts with lowest active buy price and without an active sell
+    open_contract = with_buy_without_sell.where.not(id: liquidate).includes(:buy_orders).order("orders.requested_price").first # finds contracts with lowest active buy price and without an active sell
     # open_contract = with_buy_without_sell.includes(:buy_orders).sample
     if open_contract
       current_ask = GDAX::MarketData.current_ask
@@ -119,7 +128,7 @@ class Contract < ActiveRecord::Base
 
   def self.match_open_sells
     return if BuyOrder.where(status: ['open', 'pending']).count > 10
-    open_contract = with_sell_without_buy.includes(:sell_orders).order("orders.requested_price desc").first # finds contracts with highest active sell price and without an active buy
+    open_contract = with_sell_without_buy.where.not(id: liquidate).includes(:sell_orders).order("orders.requested_price desc").first # finds contracts with highest active sell price and without an active buy
     # open_contract = with_sell_without_buy.includes(:sell_orders).sample
     if open_contract
       current_bid = GDAX::MarketData.current_bid
@@ -245,12 +254,35 @@ class Contract < ActiveRecord::Base
     # open_sell_orders.count > 5
   end
 
-  def self.update_status
-    contract = resolvable.sample # for now, we are only checking the status of a random contract since we don't know which contracts will complete first
-    contract.mark_as_done if contract
+  def self.seven_day_range
+    metric  = Metric.order(:created_at).last
+    return 0..0 if metric.average_7_day.nil?
+
+    floor   = metric.average_7_day * 0.95
+    ceiling = metric.average_7_day * 1.05
+
+    floor..ceiling
   end
 
-  def mark_as_done
+  def self.update_status
+    mark_as_done
+    mark_as_liquidate
+  end
+
+  def self.mark_as_done
+    contract = resolvable.sample # for now, we are only checking the status of a random contract since we don't know which contracts will complete first
+    contract.mark_done if contract
+  end
+
+  def self.mark_as_liquidate
+    contract = liquidatable.sample
+    if contract
+      puts "Updating status of #{self.strategy_type} contract #{self.id} from #{self.status} to liquidate"
+      contract.update(status: 'liquidate')
+    end
+  end
+
+  def mark_done
     puts "Updating status of #{self.strategy_type} contract #{self.id} from #{self.status} to done"
 
     update(
