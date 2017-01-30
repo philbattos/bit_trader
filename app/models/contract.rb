@@ -24,12 +24,7 @@ class Contract < ActiveRecord::Base
   scope :resolved,              -> { active.where(status: ['done']) }
   scope :unresolved,            -> { active.where.not(id: resolved) }
   scope :resolvable,            -> { matched.complete }
-  scope :liquidatable,          -> { unresolved.
-                                        includes(:buy_orders, :sell_orders).
-                                        where.not(id: liquidate).
-                                        where("contracts.created_at < ?", 1.day.ago).
-                                        where(orders: {status: 'done'}).
-                                        where.not(orders: {requested_price: seven_day_range}) }
+  scope :liquidatable,          -> { unresolved.where.not(id: liquidate).where("created_at < ?", 1.day.ago).where(id: Order.liquidatable.select(:contract_id).distinct) }
   scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
   scope :complete,              -> { active.where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
   scope :incomplete,            -> { active.where.not(id: complete) }
