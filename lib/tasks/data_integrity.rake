@@ -4,7 +4,7 @@ task data_integrity: :environment do
   orders = Order.done.where(executed_value: nil)
   puts "Updating executed_value for 100/#{orders.count} orders..."
 
-  Order.transaction.do
+  Order.transaction do
     orders.limit(100).map do |o|
       response = Order.check_status(o.gdax_id)
       o.update(executed_value: response.executed_value) if response
