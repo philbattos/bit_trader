@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170130021207) do
+ActiveRecord::Schema.define(version: 20170130021823) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -48,7 +48,7 @@ ActiveRecord::Schema.define(version: 20170130021207) do
     t.decimal  "quantity",       precision: 15, scale: 8
     t.decimal  "price",          precision: 15, scale: 8
     t.string   "product_id"
-    t.integer  "sequence"
+    t.bigint   "sequence"
     t.datetime "gdax_time"
     t.datetime "created_at",                              null: false
     t.datetime "updated_at",                              null: false
