@@ -65,6 +65,14 @@ class Contract < ActiveRecord::Base
     status == 'trendline'
   end
 
+  def lacking_buy?
+    sell_order && sell_order.done? && buy_order.nil?
+  end
+
+  def lacking_sell?
+    buy_order && buy_order.done? && sell_order.nil?
+  end
+
   def orders
     Order.where(contract_id: id)
   end
@@ -82,10 +90,22 @@ class Contract < ActiveRecord::Base
   end
 
   def self.resolve_open
-    # liquidate_old_contracts
+    liquidate_old_contracts
     populate_empty_contracts
     match_open_buys
     match_open_sells
+  end
+
+  def liquidate_old_contracts
+    old_contract = liquidate.sample
+
+    if old_contract.lacking_buy?
+      current_bid = GDAX::MarketData.current_bid.round(2)
+      Order.submit('buy', current_bid, old_contract.id)
+    elsif old_contract.lacking_sell?
+      current_ask = GDAX::MarketData.current_ask.round(2)
+      Order.submit('sell', current_ask, old_contract.id)
+    end
   end
 
   def self.populate_empty_contracts
