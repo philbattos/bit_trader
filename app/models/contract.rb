@@ -307,6 +307,32 @@ class Contract < ActiveRecord::Base
   end
 
   def calculate_roi
+    if sell_order.executed_value.nil?
+      response = Order.check_status(sell_order.gdax_id)
+      sell_order.update(gdax_status: response.status,
+                        gdax_executed_value: response.executed_value,
+                        gdax_filled_size: response.filled_size,
+                        gdax_filled_fees: response.fill_fees,
+                        status: response.status,
+                        requested_price: response.price,
+                        filled_price: Order.calculate_filled_price(response),
+                        executed_value: response.executed_value,
+                        quantity: response.filled_size,
+                        fees: response.fill_fees)
+    elsif buy_order.executed_value.nil?
+      response = Order.check_status(buy_order.gdax_id)
+      buy_order.update(gdax_status: response.status,
+                       gdax_executed_value: response.executed_value,
+                       gdax_filled_size: response.filled_size,
+                       gdax_filled_fees: response.fill_fees,
+                       status: response.status,
+                       requested_price: response.price,
+                       filled_price: Order.calculate_filled_price(response),
+                       executed_value: response.executed_value,
+                       quantity: response.filled_size,
+                       fees: response.fill_fees)
+    end
+
     profit = sell_order.executed_value - sell_order.fees
     cost   = buy_order.executed_value + buy_order.fees
 
