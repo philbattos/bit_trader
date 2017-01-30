@@ -204,6 +204,7 @@ class Order < ActiveRecord::Base
   end
 
   def self.calculate_filled_price(response)
+    return nil if response.executed_value.nil? || response.filled_size.nil?
     response.executed_value / response.filled_size
   end
 

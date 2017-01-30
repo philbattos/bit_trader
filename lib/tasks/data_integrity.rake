@@ -3,9 +3,12 @@ task data_integrity: :environment do
 
   orders = Order.done.where(executed_value: nil)
   puts "Updating executed_value for 100/#{orders.count} orders..."
-  orders.limit(100).map do |o|
-    response = Order.check_status(o.gdax_id)
-    o.update(executed_value: response.executed_value) if response
+
+  Order.transaction.do
+    orders.limit(100).map do |o|
+      response = Order.check_status(o.gdax_id)
+      o.update(executed_value: response.executed_value) if response
+    end
   end
 
   puts "============================================================="
@@ -29,4 +32,5 @@ task data_integrity: :environment do
   puts "These orders are at least an hour old and have a status mismatch (gdax_status is different from status): #{mismatched_statuses.pluck(:id, :gdax_status, :status)}"
 
   puts "============================================================="
+
 end

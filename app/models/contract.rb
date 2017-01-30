@@ -250,7 +250,7 @@ class Contract < ActiveRecord::Base
 
   def self.seven_day_range
     metric  = Metric.order(:created_at).last
-    return 0..0 if metric.average_7_day.nil?
+    return -2..-1 if metric.average_7_day.nil?
 
     floor   = metric.average_7_day * 0.95
     ceiling = metric.average_7_day * 1.05
@@ -260,7 +260,7 @@ class Contract < ActiveRecord::Base
 
   def self.update_status
     mark_as_done
-    mark_as_liquidate
+    # mark_as_liquidate
   end
 
   def self.mark_as_done
