@@ -238,6 +238,8 @@ class Order < ActiveRecord::Base
     def self.store_order(response, order_type, contract_id, strategy_type)
       puts "Storing order #{response['id']}"
       contract = Contract.create_with(strategy_type: strategy_type).find_or_create_by(id: contract_id)
+      contract.update(gdax_buy_order_id: response.id)  if order_type == 'buy'
+      contract.update(gdax_sell_order_id: response.id) if order_type == 'sell'
       contract.orders.create(
         # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
         type:                lookup_class_type[order_type],

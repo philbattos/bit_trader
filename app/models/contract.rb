@@ -98,10 +98,11 @@ class Contract < ActiveRecord::Base
 
   def self.liquidate_old_contracts
     old_contract = liquidate.sample
+    return if old_contract.nil?
 
     if old_contract.lacking_buy?
       current_bid = GDAX::MarketData.current_bid.round(2)
-      Order.submit('buy', current_bid, old_contract.id)
+      response = Order.submit('buy', current_bid, old_contract.id)
     elsif old_contract.lacking_sell?
       current_ask = GDAX::MarketData.current_ask.round(2)
       Order.submit('sell', current_ask, old_contract.id)
