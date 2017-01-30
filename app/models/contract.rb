@@ -277,7 +277,7 @@ class Contract < ActiveRecord::Base
   def self.mark_as_liquidate
     contract = liquidatable.sample
     if contract
-      puts "Updating status of #{self.strategy_type} contract #{self.id} from #{self.status} to liquidate"
+      puts "Updating status of #{contract.strategy_type} contract #{contract.id} from #{contract.status} to liquidate"
       contract.update(status: 'liquidate')
     end
   end
