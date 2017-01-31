@@ -143,16 +143,9 @@ class OrdersController < ApplicationController
       )
     end
 
-    # @unresolved_countracts_hourly = 70.downto(0).map do |x|
-    #   time = x.hours.ago
-    #   contracts_at_time = Contract.active.where("created_at < ?", time).distinct.count
-    #   completed_at_time = Contract.active.resolved.where("completion_date < ?", time).distinct.count
-    #   [time.to_i * 1000, contracts_at_time - completed_at_time]
-    # end
-
-    @unresolved_contracts = Metric.order(:id).
-                              pluck(:created_at, :unresolved_contracts).
-                              map {|m| [m.first.to_i * 1000, m.last]}
+    recent_metrics        = Metric.order("id desc").limit(450) # 3+ days of metrics
+    @unresolved_contracts = recent_metrics.pluck(:created_at, :unresolved_contracts).map {|m| [m.first.to_i * 1000, m.last]}
+    @active_orders        = recent_metrics.pluck(:created_at, :open_orders).map {|m| [m.first.to_i * 1000, m.last]}
 
     @chart5 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Unresolved Contracts")
@@ -176,6 +169,12 @@ class OrdersController < ApplicationController
         type: 'area',
         name: 'Open Contracts',
         data: @unresolved_contracts
+      )
+
+      f.series(
+        type: 'column',
+        name: 'Active Orders'
+        data: @active_orders
       )
 
       f.legend(
@@ -297,12 +296,19 @@ class OrdersController < ApplicationController
       #   yAxis: 0
       # )
 
-      # f.series(
-      #   # type: 'spline',
-      #   name: '24-Hour Average',
-      #   data: Metric.with_averages.order(:id).pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-      #   yAxis: 0
-      # )
+      f.series(
+        # type: 'spline',
+        name: '24-Hour Average',
+        data: Metric.with_averages.order(:id).pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        type: 'spline',
+        name: '3-Day Average',
+        data: Metric.with_averages.order(:id).pluck(:created_at, :average_3_day).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
 
       f.series(
         type: 'spline',
