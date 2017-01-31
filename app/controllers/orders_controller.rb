@@ -143,12 +143,16 @@ class OrdersController < ApplicationController
       )
     end
 
-    @unresolved_countracts_hourly = 70.downto(0).map do |x|
-      time = x.hours.ago
-      contracts_at_time = Contract.active.where("created_at < ?", time).distinct.count
-      completed_at_time = Contract.active.resolved.where("completion_date < ?", time).distinct.count
-      [time.to_i * 1000, contracts_at_time - completed_at_time]
-    end
+    # @unresolved_countracts_hourly = 70.downto(0).map do |x|
+    #   time = x.hours.ago
+    #   contracts_at_time = Contract.active.where("created_at < ?", time).distinct.count
+    #   completed_at_time = Contract.active.resolved.where("completion_date < ?", time).distinct.count
+    #   [time.to_i * 1000, contracts_at_time - completed_at_time]
+    # end
+
+    @unresolved_contracts = Metric.order(:id).
+                              pluck(:created_at, :unresolved_contracts).
+                              map {|m| [m.first.to_i * 1000, m.last]}
 
     @chart5 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Unresolved Contracts")
@@ -156,29 +160,22 @@ class OrdersController < ApplicationController
       f.subtitle(text: "Contracts Without A Completed Buy & Sell")
 
       f.xAxis(
-        type: 'datetime',
-        # tickInterval: 3600 * 1000,
-        # min: 4.days.ago.to_i * 1000,
-        # max: Time.now.to_i * 1000
+        type: 'datetime'
       )
 
       f.yAxis(
-        title: { text: "Contracts", margin: 70 },
+        title: { text: "Contracts", margin: 20 },
         plotLines: [{
           value: 0,
           width: 1,
-          color: '#808080'
+          color: '#434b8e'
         }]
       )
 
       f.series(
-        # type: 'spline',
         type: 'area',
         name: 'Open Contracts',
-        data: @unresolved_countracts_hourly,
-        # pointStart: 2.weeks.ago.to_i,
-        # pointInterval: 24 * 3600 * 1000, # one day
-        # pointRange: 24 * 3600 * 1000 # one day
+        data: @unresolved_contracts
       )
 
       f.legend(
@@ -351,7 +348,7 @@ class OrdersController < ApplicationController
         # plotBorderWidth: 1
       )
       f.lang(thousandsSep: ",")
-      f.colors(["#90ed7d", "#f7a35c", "#8085e9", "#f15c80", "#e4d354"])
+      # f.colors(["#90ed7d", "#f7a35c", "#8085e9", "#f15c80", "#e4d354"])
     end
 
     render :index
