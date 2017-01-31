@@ -147,7 +147,7 @@ class OrdersController < ApplicationController
       )
     end
 
-    recent_metrics        = Metric.order("id desc").limit(450) # 3+ days of metrics
+    recent_metrics        = Metric.order("id desc").limit(350) # 2+ days of metrics
     @unresolved_contracts = recent_metrics.pluck(:created_at, :unresolved_contracts).map {|m| [m.first.to_i * 1000, m.last]}
     @active_orders        = recent_metrics.pluck(:created_at, :open_orders).map {|m| [m.first.to_i * 1000, m.last]}
 
