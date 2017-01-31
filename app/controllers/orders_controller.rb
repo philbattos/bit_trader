@@ -75,6 +75,7 @@ class OrdersController < ApplicationController
     @unresolved_contracts = Contract.unresolved
     @completed_buys       = @unresolved_contracts.joins(:buy_orders).where(orders: {status: 'done'}).order(:created_at)
     @completed_sells      = @unresolved_contracts.joins(:sell_orders).where(orders: {status: 'done'}).order(:created_at)
+    @current_price        = (GDAX::MarketData.last_saved_trade.price * 0.01).to_f
 
     @chart4 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Open Contracts")
@@ -85,12 +86,12 @@ class OrdersController < ApplicationController
         # tickPositions: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         plotLines: [{
-          value: (GDAX::MarketData.last_saved_trade.price * 0.01).to_f,
+          value: @current_price,
           width: 1,
           color: 'red',
           dashStyle: 'dot',
           label: {
-            text: 'Current Price',
+            text: "Current Price $#{@current_price}",
             style: { color: 'lightgray' }
           }
         }]
