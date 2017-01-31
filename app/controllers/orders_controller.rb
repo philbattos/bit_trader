@@ -173,7 +173,7 @@ class OrdersController < ApplicationController
 
       f.series(
         type: 'column',
-        name: 'Active Orders'
+        name: 'Active Orders',
         data: @active_orders
       )
 
