@@ -1,17 +1,10 @@
 desc "Periodically check for data integrity"
 task data_integrity: :environment do
 
-  orders = Order.done.where(executed_value: nil)
-  puts "Updating executed_value for 100/#{orders.count} orders..."
-
-  Order.transaction do
-    orders.limit(100).map do |o|
-      response = Order.check_status(o.gdax_id)
-      o.update(executed_value: response.executed_value) if response
-    end
-  end
-
   puts "============================================================="
+
+  orders_without_executed_value = Order.done.where(executed_value: nil)
+  puts "These orders do not have an executed_value: #{orders_without_executed_value.count}"
 
   mismatched_buy_contracts = Contract.joins(:buy_orders).where(orders: {status: Order::ACTIVE_STATUSES}).where.not("contracts.gdax_buy_order_id = orders.gdax_id")
   puts "These contracts have gdax_buy_order_ids that don't match their BUY orders: #{mismatched_buy_contracts.pluck(:id)}."
