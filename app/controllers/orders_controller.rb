@@ -85,10 +85,14 @@ class OrdersController < ApplicationController
         # tickPositions: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         plotLines: [{
-          value: GDAX::MarketData.last_saved_trade.price.to_f,
+          value: (GDAX::MarketData.last_saved_trade.price * 0.01).to_f,
           width: 1,
           color: 'red',
-          dashStyle: 'dot'
+          dashStyle: 'dot',
+          label: {
+            text: 'Current Price',
+            style: { color: 'lightgray' }
+          }
         }]
       )
 
@@ -175,6 +179,13 @@ class OrdersController < ApplicationController
         type: 'column',
         name: 'Active Orders',
         data: @active_orders
+      )
+
+      f.plotOptions(
+        series: {
+          marker: { enabled: false },
+          lineWidth: 1
+        }
       )
 
       f.legend(
