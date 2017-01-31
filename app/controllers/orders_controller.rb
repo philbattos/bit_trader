@@ -101,14 +101,14 @@ class OrdersController < ApplicationController
         type: 'scatter',
         name: 'Completed Buy',
         color: 'rgba(119, 152, 191, .5)',
-        data: @completed_buys.pluck("orders.executed_value, contracts.created_at").map {|c| [c.first.to_f, c.last.to_i * 1000] }
+        data: @completed_buys.pluck("to_char(orders.executed_value, '99.999999999'), EXTRACT(EPOCH FROM orders.created_at)")
       )
 
       f.series(
         type: 'scatter',
         name: 'Completed Sell',
         color: 'rgba(223, 83, 83, .5)',
-        data: @completed_sells.pluck("orders.executed_value, contracts.created_at").map {|c| [c.first.to_f, c.last.to_i * 1000] }
+        data: @completed_sells.pluck("to_char(orders.executed_value, '99.999999999'), EXTRACT(EPOCH FROM orders.created_at)")
         # pointStart: @unresolved_contracts.order(:created_at).first
       )
 
