@@ -281,7 +281,7 @@ class Contract < ActiveRecord::Base
 
   def self.update_status
     mark_as_done
-    # mark_as_liquidate
+    mark_as_liquidate
   end
 
   def self.mark_as_done
