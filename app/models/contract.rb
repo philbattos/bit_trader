@@ -252,7 +252,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.buys_backlog?
-    Contract.without_active_buy.count > 30
+    Contract.without_active_buy.count > 15
     # open_buy_orders = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'buy' }
     # open_buy_orders.count > 5
     # unresolved.with_active_buy.count > 5
