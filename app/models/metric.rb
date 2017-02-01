@@ -39,4 +39,16 @@ class Metric < ActiveRecord::Base
     # metric.update(average_30_day: GDAX::MarketData.calculate_average(30.days.ago))
   end
 
+  def self.seven_day_range
+    metric = self.order(:created_at).last
+
+    if metric.average_7_day.nil?
+      -2..-1
+    else
+      floor   = metric.average_7_day * 0.95
+      ceiling = metric.average_7_day * 1.05
+      floor..ceiling
+    end
+  end
+
 end

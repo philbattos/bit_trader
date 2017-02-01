@@ -269,15 +269,15 @@ class Contract < ActiveRecord::Base
     # open_sell_orders.count > 5
   end
 
-  def self.seven_day_range
-    metric  = Metric.order(:created_at).last
-    return -2..-1 if metric.average_7_day.nil?
+  # def self.seven_day_range
+  #   metric  = Metric.order(:created_at).last
+  #   return -2..-1 if metric.average_7_day.nil?
 
-    floor   = metric.average_7_day * 0.95
-    ceiling = metric.average_7_day * 1.05
+  #   floor   = metric.average_7_day * 0.95
+  #   ceiling = metric.average_7_day * 1.05
 
-    floor..ceiling
-  end
+  #   floor..ceiling
+  # end
 
   def self.update_status
     mark_as_done
