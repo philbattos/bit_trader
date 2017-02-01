@@ -24,9 +24,9 @@ class Contract < ActiveRecord::Base
   scope :resolved,              -> { active.where(status: ['done']) }
   scope :unresolved,            -> { active.where.not(id: resolved) }
   scope :resolvable,            -> { matched.complete }
-  # scope :liquidatable,          -> { unresolved.where.not(id: liquidate).where("created_at < ?", 1.day.ago).where(id: Order.liquidatable.select(:contract_id)).distinct }
-  scope :liquidatable_sell,     -> { unresolved.where.not(id: liquidate).joins(:buy_orders).where("contracts.created_at < ?", 1.day.ago).where("orders.status = 'done' AND orders.requested_price NOT BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
-  scope :liquidatable_buy,      -> { unresolved.where.not(id: liquidate).joins(:sell_orders).where("contracts.created_at < ?", 1.day.ago).where("orders.status = 'done' AND orders.requested_price NOT BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
+  scope :liquidatable,          -> { unresolved.where.not(id: liquidate).where("created_at < ?", 1.day.ago).where(id: Order.liquidatable.select(:contract_id)).distinct }
+  # scope :liquidatable_sell,     -> { unresolved.where.not(id: liquidate).joins(:buy_orders).where("contracts.created_at < ?", 1.day.ago).where("orders.status = 'done' AND orders.requested_price NOT BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
+  # scope :liquidatable_buy,      -> { unresolved.where.not(id: liquidate).joins(:sell_orders).where("contracts.created_at < ?", 1.day.ago).where("orders.status = 'done' AND orders.requested_price NOT BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
   # scope :liquidatable_all,      -> { unresolved.where.not(id: liquidate).joins(:buy_orders, :sell_orders).where("contracts.created_at < ?", 1.day.ago).where.not("orders.status = 'done' AND orders.requested_price BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
   scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
   scope :complete,              -> { active.where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
@@ -293,8 +293,8 @@ class Contract < ActiveRecord::Base
   end
 
   def self.mark_as_liquidate
-    liquidatable_contracts = liquidatable_buy.merge(liquidatable_sell)
-    contract = liquidatable_contracts.sample
+    contract = liquidatable.sample
+
     if contract
       puts "Updating status of #{contract.strategy_type} contract #{contract.id} from #{contract.status} to liquidate"
       contract.update(status: 'liquidate')
