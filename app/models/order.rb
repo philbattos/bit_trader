@@ -12,7 +12,7 @@ class Order < ActiveRecord::Base
   scope :canceled,     -> { where(status: 'not-found') }
   scope :done,         -> { where(status: 'done') }
   scope :retired,      -> { where(status: 'retired') }
-  scope :liquidatable, -> { done.where.not(requested_price: Metric.seven_day_range) }
+  # scope :liquidatable, -> { done.where.not(requested_price: Metric.seven_day_range) }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
 
