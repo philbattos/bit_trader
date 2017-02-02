@@ -189,6 +189,10 @@ class OrdersController < ApplicationController
         }
       )
 
+      f.tooltip(
+        valuePrefix: '+ '
+      )
+
       f.legend(
         layout: 'vertical',
         align: 'right',
