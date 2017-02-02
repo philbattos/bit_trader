@@ -171,7 +171,7 @@ class OrdersController < ApplicationController
       )
 
       f.series(
-        # type: 'area',
+        type: 'spline',
         name: 'Open Contracts',
         data: @unresolved_contracts
       )
@@ -184,13 +184,9 @@ class OrdersController < ApplicationController
 
       f.plotOptions(
         series: {
-          marker: { enabled: false },
+          marker: { enabled: true },
           lineWidth: 1
         }
-      )
-
-      f.tooltip(
-        valuePrefix: '+ '
       )
 
       f.legend(
