@@ -85,8 +85,6 @@ class OrdersController < ApplicationController
         # type: "linear",
         # tickPositions: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
-        min: @current_price * 0.99,
-        max: @current_price * 1.01,
         plotLines: [{
           value: @current_price,
           width: 1,
@@ -150,14 +148,14 @@ class OrdersController < ApplicationController
       )
     end
 
-    recent_metrics        = Metric.order("id desc").limit(100) # 2+ days of metrics
+    recent_metrics        = Metric.order("id desc").limit(350) # 2+ days of metrics
     @unresolved_contracts = recent_metrics.pluck(:created_at, :unresolved_contracts).map {|m| [m.first.to_i * 1000, m.last]}
     # @active_orders        = recent_metrics.pluck(:created_at, :open_orders).map {|m| [m.first.to_i * 1000, m.last]}
 
     @chart5 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Unresolved Contracts")
-      f.chart(zoomType: 'x')
       f.subtitle(text: "Contracts Without A Completed Buy & Sell")
+      f.chart(zoomType: 'x')
 
       f.xAxis(
         type: 'datetime'
@@ -165,15 +163,15 @@ class OrdersController < ApplicationController
 
       f.yAxis(
         title: { text: "Contracts", margin: 20 },
-        plotLines: [{
-          value: 0,
-          width: 1,
-          color: '#434b8e'
-        }]
+        # plotLines: [{
+        #   value: 0,
+        #   width: 1,
+        #   color: '#434b8e'
+        # }]
       )
 
       f.series(
-        type: 'area',
+        # type: 'area',
         name: 'Open Contracts',
         data: @unresolved_contracts
       )
