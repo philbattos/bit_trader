@@ -85,8 +85,8 @@ class OrdersController < ApplicationController
         # type: "linear",
         # tickPositions: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
         # categories: @unresolved_contracts.order("date_trunc('day', created_at)").map {|c| c.created_at.in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d").strip }.uniq
-        min: @current_price * 0.95,
-        max: @current_price * 1.05,
+        min: @current_price * 0.99,
+        max: @current_price * 1.01,
         plotLines: [{
           value: @current_price,
           width: 1,
