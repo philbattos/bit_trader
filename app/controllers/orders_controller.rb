@@ -149,7 +149,7 @@ class OrdersController < ApplicationController
     end
 
     recent_metrics        = Metric.order("id desc").limit(350) # 2+ days of metrics
-    @unresolved_contracts = recent_metrics.pluck(:created_at, :unresolved_contracts).map {|m| [m.first.to_i * 1000, m.last]}
+    @incomplete_contracts = recent_metrics.pluck(:created_at, :unresolved_contracts).map {|m| [m.first.to_i * 1000, m.last]}
     # @active_orders        = recent_metrics.pluck(:created_at, :open_orders).map {|m| [m.first.to_i * 1000, m.last]}
 
     @chart5 = LazyHighCharts::HighChart.new('graph') do |f|
@@ -171,9 +171,10 @@ class OrdersController < ApplicationController
       )
 
       f.series(
-        type: 'spline',
+        # type: 'spline',
         name: 'Open Contracts',
-        data: @unresolved_contracts
+        data: @incomplete_contracts,
+        yAxis: 0
       )
 
       # f.series(
@@ -184,19 +185,19 @@ class OrdersController < ApplicationController
 
       f.plotOptions(
         series: {
-          marker: { enabled: true },
+          marker: { enabled: false },
           lineWidth: 1
         }
       )
 
-      f.legend(
-        layout: 'vertical',
-        align: 'right',
-        verticalAlign: 'top',
-        y: 75,
-        x: -50,
-        floating: true
-      )
+      # f.legend(
+      #   layout: 'vertical',
+      #   align: 'right',
+      #   verticalAlign: 'top',
+      #   y: 75,
+      #   x: -50,
+      #   floating: true
+      # )
     end
 
     @chart6 = LazyHighCharts::HighChart.new('graph') do |f|
