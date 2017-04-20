@@ -37,3 +37,46 @@ All orders belong to a contract and a contract can have many orders buy each con
 one active buy order and one active sell order. If an order is rejected or canceled (or inactive for
 any reason), it will be replaced in the contract with a similar order that is fulfilled. This means
 that each contract will have two "matching" fulfilled orders.
+
+## Algorithm
+
+The trading algorithm cycles through a series of actions:
+
+1. Order.update_status: Randomly select an unresolved order (an order that is 'open' or 'pending') and update its status if is has changed
+  - fetch GDAX status for that order
+  - compare order's recorded status and GDAX's status
+  - if statuses are different, update order with new status, price, filled size, etc.
+2. Contract.update_status: Randomly select a contract that is awaiting a status update and update it
+  - fetch random contract that has a completed buy & sell order but has not yet been marked as 'done'
+  - update contract's status to 'done'
+3. Contract.update_status: Randomly select a contract that is liquidatable and update it's status to 'liquidate'
+  - a liquidatable contract is 1) at least a day old, and 2) has at least one completed order with
+    a price that is outside the acceptable range (more than 5% above or below the 7-day average)
+    + the idea is that we don't want to continually attempt to resolve an order that is far below or
+      far above the current market. instead of attempting to indefinitely fulfill an order, we just
+      cut our losses and move on. contracts that are liquidated are unprofitable but they allow us
+      to use the funds in our account to make other trades.
+4. Contract.resolve_open:
+  1. liquidate_old_contracts: Randomly select liquidatable contract and fill open order at current market price
+  2. populate_empty_contracts: Randomly select a contract that has no orders and place a buy order for it
+  3. match_open_buys: place sell order for a contract that needs one
+    - find contract that has a buy order but not a sell order; select contract with lowest buy price
+    - place sell order for marginally more than buy price
+  4. match_open_sells: place buy order for a contract that needs one
+    - find contract that has a sell order but not a buy order; select contract with highest sell price
+    - place buy order for marginally less than sell price
+5. Order.cancel_stale_orders: Cancel orders that have been sitting for awhile
+  - cancel buy-orders if they were created more than 5 minutes ago and there have not been any
+    buy-orders completed in the last 2 minutes
+  - cancel sell-orders if they were created more than 5 minutes ago and there have not been any
+    sell-orders completed in the last 2 minutes
+6. Contract.place_new_buy_order: Place a new buy order
+  - if market price is not dropping
+  - if there is not a backlog of buy orders (a backlog is 50 open orders)
+  - if there is a reasonable gap between the current market price and the highest open buy order price
+    + this prevents a bunch of orders getting clumped near the current market price
+7. Contract.place_new_sell_order: Place a new sell order
+  - if market price is not surging
+  - if there is not a backlog of sell orders (a backlog is 50 sell orders)
+  - if there is a reasonable gap between the current market price and the lowest open sell order price
+    + this prevents a bunch of orders getting clumped near the current market price

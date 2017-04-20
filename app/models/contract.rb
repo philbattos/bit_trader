@@ -120,6 +120,7 @@ class Contract < ActiveRecord::Base
 
       contract  = open_contracts.sample
       buy_price = current_bid.round(2)
+      # the contract has no buy-order and no sell-order so we start with a buy-order
       buy_order = Order.place_buy(buy_price, contract.id)
 
       contract.update(gdax_buy_order_id: buy_order['id']) if buy_order

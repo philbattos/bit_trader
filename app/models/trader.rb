@@ -87,9 +87,9 @@ class Trader
 
     def update_orders_and_contracts
       Order.update_status
-      Contract.update_status
+      Contract.update_status # updates random 'done' contract; updates random liquidatable contract
       # Contract.market_maker.resolve_open
-      Contract.resolve_open
+      Contract.resolve_open # liquidates old contracts; populates empty contracts with a buy order; matches open orders
       Order.cancel_stale_orders
     end
 
