@@ -122,7 +122,7 @@ class OrdersController < ApplicationController
           marker: {},
           states: {},
           series: {
-            pointStart: @unresolved_contracts.order(:created_at).first.try(:created_at),
+            pointStart: @unresolved_contracts.order(:created_at).first.try(:created_at).to_f,
             pointInterval: 24 * 3600 * 1000 # one day
           },
           # tooltip: {
