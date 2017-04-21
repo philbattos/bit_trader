@@ -117,22 +117,22 @@ class OrdersController < ApplicationController
         # pointStart: @unresolved_contracts.order(:created_at).first
       )
 
-      # f.plotOptions(
-      #   scatter: {
-      #     marker: {},
-      #     states: {},
-      #     series: {
-      #       pointStart: @unresolved_contracts.order(:created_at).first.try(:created_at),
-      #       pointInterval: 24 * 3600 * 1000 # one day
-      #     },
-      #     # tooltip: {
-      #     #   # borderWidth: 3,
-      #     #   headerFormat: '<b>{series.name}</b><br>',
-      #     #   pointFormat: '${point.x}, {point.y}'
-      #     #   # pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
-      #     # }
-      #   }
-      # )
+      f.plotOptions(
+        scatter: {
+          marker: {},
+          states: {},
+          # series: {
+          #   pointStart: @unresolved_contracts.order(:created_at).first.try(:created_at),
+          #   pointInterval: 24 * 3600 * 1000 # one day
+          # },
+          # tooltip: {
+          #   # borderWidth: 3,
+          #   headerFormat: '<b>{series.name}</b><br>',
+          #   pointFormat: '${point.x}, {point.y}'
+          #   # pointFormat: '{Time.at(point.x).in_time_zone("Mountain Time (US & Canada)").strftime("%_m/%d %l:%M%P").strip}, {point.y}'
+          # }
+        }
+      )
 
       f.tooltip(
         borderWidth: 3
