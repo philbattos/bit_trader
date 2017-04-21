@@ -121,10 +121,10 @@ class OrdersController < ApplicationController
         scatter: {
           marker: {},
           states: {},
-          # series: {
-          #   pointStart: @unresolved_contracts.order(:created_at).first.try(:created_at),
-          #   pointInterval: 24 * 3600 * 1000 # one day
-          # },
+          series: {
+            pointStart: @unresolved_contracts.any? ? @unresolved_contracts.order(:created_at).first.try(:created_at) : 0,
+            pointInterval: 24 * 3600 * 1000 # one day
+          },
           # tooltip: {
           #   # borderWidth: 3,
           #   headerFormat: '<b>{series.name}</b><br>',
