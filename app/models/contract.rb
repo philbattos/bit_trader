@@ -194,16 +194,30 @@ class Contract < ActiveRecord::Base
   def self.buy_order_gap?
     bid         = GDAX::MarketData.current_bid
     highest_buy = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'buy' }.sort_by(&:price).last
-    if bid && highest_buy
-      (highest_buy.price * 1.0005) < bid
+
+    if highest_buy
+      if bid
+        (highest_buy.price * 1.0005) < bid
+      else
+        false
+      end
+    else
+      true # if there are no current buys, return true to initiate a new buy
     end
   end
 
   def self.sell_order_gap?
     ask         = GDAX::MarketData.current_ask
     lowest_sell = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'sell' }.sort_by(&:price).first
-    if ask && lowest_sell
-      (lowest_sell.price * 0.9995) > ask
+
+    if lowest_sell
+      if ask
+        (lowest_sell.price * 0.9995) > ask
+      else
+        false
+      end
+    else
+      true # if there are no current sells, return true to initiate a new sell
     end
   end
 
