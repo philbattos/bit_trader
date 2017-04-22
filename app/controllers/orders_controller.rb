@@ -49,6 +49,53 @@ class OrdersController < ApplicationController
     #   # f.chart({defaultSeriesType: "column"})
     # end
 
+    @chart2 = LazyHighCharts::HighChart.new('graph') do |f|
+      f.title(text: "Account Growth")
+      f.chart(zoomType: 'x')
+
+      f.xAxis(
+        type: 'datetime'
+      )
+
+      f.yAxis([
+        { title: { text: "Bitcoin Price" }},
+        {
+          title: { text: "Account Value" },
+          opposite: true
+        }
+      ])
+
+      f.series(
+        name: 'Bitcoin Price',
+        data: Metric.order(:id).pluck(:created_at, :bitcoin_price).last(1000).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        name: 'Account Value',
+        data: Metric.order(:id).pluck(:created_at, :account_value).last(1000).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 1
+      )
+
+      f.plotOptions(
+        series: {
+          marker: { enabled: false },
+          lineWidth: 1
+        }
+      )
+
+      f.tooltip(
+        valuePrefix: '$'
+      )
+
+      f.legend(
+        layout: 'vertical',
+        align: 'left',
+        verticalAlign: 'top',
+        floating: true
+      )
+    end
+
     @resolved_contracts_hourly = Contract.resolved.order("date_trunc('hour', updated_at)").group("date_trunc('hour', updated_at)")
 
     @chart3 = LazyHighCharts::HighChart.new('graph') do |f|

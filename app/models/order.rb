@@ -209,7 +209,10 @@ class Order < ActiveRecord::Base
   end
 
   def self.cancel_stale_orders
-    open_orders = GDAX::Connection.new.rest_client.orders(status: 'open').sort_by(&:price).group_by(&:side) # { 'buy' => [], 'sell' => [] }
+    open_orders = GDAX::Connection.new.rest_client.orders(status: 'open')
+                    .select {|o| o.filled_size == 0.0} # we don't want to cancel orders that have been partially filled.
+                    .sort_by(&:price)
+                    .group_by(&:side) # { 'buy' => [], 'sell' => [] }
     open_buys   = open_orders['buy']
     open_sells  = open_orders['sell']
 
