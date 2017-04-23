@@ -2,17 +2,18 @@ class Order < ActiveRecord::Base
 
   belongs_to :contract
 
-  scope :trendline,    -> { where(strategy_type: 'trendline') }
-  scope :market_maker, -> { where(strategy_type: 'market-maker') }
-  scope :resolved,     -> { where(status: CLOSED_STATUSES) }
-  scope :unresolved,   -> { where.not(id: resolved) }
-  scope :active,       -> { where(status: ACTIVE_STATUSES) }
-  # scope :inactive,     -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
-  scope :purchased,    -> { where(status: PURCHASED_STATUSES) }
-  scope :canceled,     -> { where(status: 'not-found') }
-  scope :done,         -> { where(status: 'done') }
-  scope :retired,      -> { where(status: 'retired') }
-  scope :liquidatable, -> { done.where.not(requested_price: Metric.seven_day_range) }
+  scope :trendline,      -> { where(strategy_type: 'trendline') }
+  scope :market_maker,   -> { where(strategy_type: 'market-maker') }
+  scope :adjust_balance, -> { where(strategy_type: 'adjust-balance') }
+  scope :resolved,       -> { where(status: CLOSED_STATUSES) }
+  scope :unresolved,     -> { where.not(id: resolved) }
+  scope :active,         -> { where(status: ACTIVE_STATUSES) }
+  # scope :inactive,       -> { where(updated_at: Date.parse('october 8 2016')..2.hours.ago) }
+  scope :purchased,      -> { where(status: PURCHASED_STATUSES) }
+  scope :canceled,       -> { where(status: 'not-found') }
+  scope :done,           -> { where(status: 'done') }
+  scope :retired,        -> { where(status: 'retired') }
+  scope :liquidatable,   -> { done.where.not(requested_price: Metric.seven_day_range) }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
 
@@ -23,27 +24,58 @@ class Order < ActiveRecord::Base
   PURCHASED_STATUSES = %w[ done open ]
   ACTIVE_STATUSES    = %w[ done open pending ]
   INACTIVE_STATUSES  = %w[ rejected not-found ] << nil # nil should be considered an "inactive" status
+  ORDER_SIZE         = 0.01
+  MARGIN             = 0.01
+  TRADING_UNITS      = 36
 
   # TODO: add validation for gdax_id (every order should have one)
   # TODO: currently, we can create an order without an associated contract but it would be better if
   #       every order had an associated contract. find a way to build orders and contracts together
   #       and then add validations to prevent orphaned orders and contracts
 
-  # attr_accessor :type, :side, :product_id, :price, :size, :post_only
-
-  # def initialize(side, price)
-  #   # @type       = 'limit' # default
-  #   # @side       = side
-  #   # @product_id = 'BTC-USD'
-  #   # @price      = price
-  #   # @size       = '0.01'
-  #   # @post_only  = true
-  # end
-
-  # NOTE: Available product IDs:
-  #   BTC-USD, BTC-GBP, BTC-EUR, ETH-USD, ETH-BTC, LTC-USD, LTC-BTC
   # NOTE: GDAX order statuses
   #   pending, done, rejected, open (i added 'not-found' for canceled orders)
+
+  # attr_accessor :side, :price, :size, :optional_params, :contract_id, :strategy_type
+
+  def self.submit_adjustment_order(order_type, price, size, optional_params, contract_id, strategy)
+    order_type      = order_type
+    price           = price
+    size            = size || ORDER_SIZE.to_s
+    optional_params = optional_params || { post_only: true }
+    contact_id      = contract_id
+    strategy_type   = strategy
+    # @type           = 'limit' # GDAX default
+    # @product_id     = 'BTC-USD' # Coinbase gem default
+
+    case order_type
+    when 'buy'
+      response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
+    when 'sell'
+      response = GDAX::Connection.new.rest_client.sell(size, price, optional_params)
+    end
+
+    if response
+      puts "Order successful: #{order_type.upcase} @ #{response['price']}"
+      store_order(response, order_type, contract_id, strategy_type)
+    end
+    response
+  rescue Coinbase::Exchange::BadRequestError => gdax_error
+    puts "GDAX error (order submit): #{gdax_error}"
+    nil
+  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+    puts "GDAX rate limit error (order submit): #{rate_limit_error}"
+    nil
+  rescue Net::ReadTimeout => timeout_error
+    puts "GDAX timeout error (order submit): #{timeout_error}"
+    nil
+  rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
+    puts "GDAX SSL error (order submit): #{ssl_error}"
+    nil
+  rescue Coinbase::Exchange::InternalServerError => server_error
+    puts "GDAX server error (order submit): #{server_error}"
+    nil
+  end
 
   def cancel
     update(status: 'canceled')
@@ -67,7 +99,7 @@ class Order < ActiveRecord::Base
 
   def self.submit_market_order(order_type, price, contract_id) # should this be an instance method??
     price = price.to_s
-    size  = '0.01'
+    size  = ORDER_SIZE.to_s
 
     case order_type
     when 'buy'
@@ -104,7 +136,7 @@ class Order < ActiveRecord::Base
     # product_id = 'BTC-USD'
     # post_only  = true
     price = price.to_s
-    size  = '0.01'
+    size  = ORDER_SIZE.to_s
     optional_params = {
       post_only: true,
       # time_in_force: 'GTT',
@@ -150,6 +182,24 @@ class Order < ActiveRecord::Base
     submit('sell', ask, contract_id)
   end
 
+  def self.buy_price
+    current_bid = GDAX::MarketData.current_bid
+    if current_bid == 0.0
+      return current_bid
+    else
+      (current_bid - MARGIN).round(2)
+    end
+  end
+
+  def self.ask_price
+    current_ask = GDAX::MarketData.current_ask
+    if current_ask == 0.0
+      return current_ask
+    else
+      (current_ask + MARGIN).round(2)
+    end
+  end
+
   # def self.fetch_all
   #   request_path = '/orders'
   #   request_info = "#{timestamp}GET#{request_path}"
@@ -168,6 +218,10 @@ class Order < ActiveRecord::Base
 
   def self.check_status(id)
     GDAX::Connection.new.rest_client.order(id)
+  end
+
+  def self.open_orders
+    GDAX::Connection.new.rest_client.orders(status: 'open')
   end
 
   def self.update_status

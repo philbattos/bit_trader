@@ -425,10 +425,10 @@ class OrdersController < ApplicationController
     render :show
   end
 
-  def create
-    order = Order.new(params[:type], params[:side], params[:product_id], params[:stp]).submit
-    render json: order
-  end
+  # def create
+  #   order = Order.new(params[:type], params[:side], params[:product_id], params[:stp]).submit
+  #   render json: order
+  # end
 
   def update
     @order = Order.find_by_gdax_id(params[:id])

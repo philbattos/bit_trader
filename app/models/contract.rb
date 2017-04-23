@@ -167,6 +167,8 @@ class Contract < ActiveRecord::Base
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
     # return if buys_backlog? || recent_buys?
     return unless buy_order_gap? && !buys_backlog?
+
+    my_buy_price = Order.buy_price
     return missing_price('buy') if my_buy_price == 0.0
     new_order = Order.place_buy(my_buy_price)
 
@@ -181,6 +183,8 @@ class Contract < ActiveRecord::Base
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
     # return if sells_backlog? || recent_sells?
     return unless sell_order_gap? && !sells_backlog?
+
+    my_ask_price = Order.ask_price
     return missing_price('sell') if my_ask_price == 0.0
     new_order = Order.place_sell(my_ask_price)
 
@@ -237,24 +241,6 @@ class Contract < ActiveRecord::Base
     # else
     #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
     # end
-  end
-
-  def self.my_buy_price # move this into Order class?
-    current_bid = GDAX::MarketData.current_bid
-    if current_bid == 0.0
-      return current_bid
-    else
-      (current_bid - MARGIN).round(2)
-    end
-  end
-
-  def self.my_ask_price # move this into Order class?
-    current_ask = GDAX::MarketData.current_ask
-    if current_ask == 0.0
-      return current_ask
-    else
-      (current_ask + MARGIN).round(2)
-    end
   end
 
   def self.recent_buys?
