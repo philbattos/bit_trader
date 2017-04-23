@@ -16,8 +16,8 @@ class Account < ActiveRecord::Base
     return if Order.open_orders.any? {|o| o.time_in_force == "GTT" }
 
     bitcoin_balance = gdax_bitcoin_account.balance
-    low_cutoff      = Order::TRADING_UNITS * 0.3
-    high_cutoff     = Order::TRADING_UNITS * 0.7
+    low_cutoff      = Order::TRADING_UNITS * 0.15
+    high_cutoff     = Order::TRADING_UNITS * 0.85
     optional_params = { time_in_force: 'GTT', cancel_after: 'min', post_only: true }
 
     if bitcoin_balance < low_cutoff * Order::ORDER_SIZE
