@@ -9,7 +9,8 @@ class Contract < ActiveRecord::Base
   scope :liquidate,             -> { where(status: 'liquidate') }
   scope :trendline,             -> { where(strategy_type: 'trendline') }
   scope :market_maker,          -> { where(strategy_type: 'market-maker') }
-  scope :active,                -> { where.not(id: retired) }
+  scope :adjust_balance,        -> { where(strategy_type: 'adjust-balance') }
+  scope :active,                -> { where.not(id: retired).where.not(id: adjust_balance) }
   scope :with_buy_orders,       -> { active.where(id: BuyOrder.select(:contract_id).distinct) }
   scope :with_sell_orders,      -> { active.where(id: SellOrder.select(:contract_id).distinct) }
   scope :without_buy_orders,    -> { active.where.not(id: with_buy_orders) }
