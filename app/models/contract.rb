@@ -202,7 +202,7 @@ class Contract < ActiveRecord::Base
 
     if highest_buy
       if bid
-        (highest_buy.price * 1.0005) < bid
+        (highest_buy.price * 1.0003) < bid
       else
         false
       end
@@ -217,7 +217,7 @@ class Contract < ActiveRecord::Base
 
     if lowest_sell
       if ask
-        (lowest_sell.price * 0.9995) > ask
+        (lowest_sell.price * 0.9997) > ask
       else
         false
       end
