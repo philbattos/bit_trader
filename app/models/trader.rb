@@ -52,19 +52,8 @@ class Trader
 
         update_orders_and_contracts
         Account.balance_adjustment
+        place_new_orders
 
-        floor, ceiling = trading_range
-
-        next if floor.nil? || ceiling.nil?
-
-        if (floor..ceiling).include? current_price
-          Contract.place_new_buy_order
-          Contract.place_new_sell_order
-        elsif current_price > ceiling
-          price_jump
-        elsif current_price < floor
-          price_drop
-        end
       }
       EM.error_handler { |e|
         p "Trader.start Error: #{e.message}"
@@ -127,6 +116,23 @@ class Trader
       floor   = ma_15mins * 0.995
 
       [floor, ceiling]
+    end
+
+    def place_new_orders
+      ma_15mins = GDAX::MarketData.calculate_average(15.minutes.ago)
+      ma_4hours = GDAX::MarketData.calculate_average(4.hours.ago)
+
+      return false if ma_15mins.nil? || ma_4hours.nil?
+
+      ceiling = ma_4hours * 1.001
+      floor   = ma_4hours * 0.999
+
+      if (floor..ceiling).include? ma_15mins
+        Contract.place_new_buy_order
+        Contract.place_new_sell_order
+      else
+        puts "Volatile market. 15min average: #{ma_15mins}, 4-hour average: #{ma_4hours}"
+      end
     end
 
     def price_jump

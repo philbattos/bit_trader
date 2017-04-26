@@ -166,8 +166,7 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_buy_order # move to Order class?
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
-    # return if buys_backlog? || recent_buys?
-    return unless buy_order_gap? && !buys_backlog?
+    return if buys_backlog? || !buy_order_gap?
 
     my_buy_price = Order.buy_price
     return missing_price('buy') if my_buy_price == 0.0
@@ -182,8 +181,7 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_sell_order # move to Order class?
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
-    # return if sells_backlog? || recent_sells?
-    return unless sell_order_gap? && !sells_backlog?
+    return if sells_backlog? || !sell_order_gap?
 
     my_ask_price = Order.ask_price
     return missing_price('sell') if my_ask_price == 0.0
@@ -228,20 +226,10 @@ class Contract < ActiveRecord::Base
 
   def self.calculate_sell_price(open_buy)
     open_buy.requested_price * (1.0 + PROFIT_PERCENT.sample)
-    # if open_buy.updated_at > 6.hours.ago
-    #   open_buy.requested_price * (1.0 + PROFIT_PERCENT.sample)
-    # else
-    #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
-    # end
   end
 
   def self.calculate_buy_price(open_sell)
     open_sell.requested_price * (1.0 - PROFIT_PERCENT.sample)
-    # if open_sell.updated_at > 6.hours.ago
-    #   open_sell.requested_price * (1.0 - PROFIT_PERCENT.sample)
-    # else
-    #   nil # setting the sell price to nil will force the bot to place a sell order at the current asking price
-    # end
   end
 
   def self.recent_buys?
@@ -258,31 +246,11 @@ class Contract < ActiveRecord::Base
 
   def self.buys_backlog?
     Contract.without_active_buy.count > 10
-    # open_buy_orders = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'buy' }
-    # open_buy_orders.count > 5
-    # unresolved.with_active_buy.count > 5
-    # open_buy_orders = unresolved.where(id: BuyOrder.where(status: ['open', 'pending']).select(:contract_id).distinct)
-    # open_buy_orders.count > 5
   end
 
   def self.sells_backlog?
     Contract.without_active_sell.count > 10
-    # open_sell_orders = GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.side == 'sell' }
-    # open_sell_orders.count > 5
-    # unresolved.with_active_sell.count > 5
-    # open_sell_orders = unresolved.where(id: SellOrder.where(status: ['open', 'pending']).select(:contract_id).distinct)
-    # open_sell_orders.count > 5
   end
-
-  # def self.seven_day_range
-  #   metric  = Metric.order(:created_at).last
-  #   return -2..-1 if metric.average_7_day.nil?
-
-  #   floor   = metric.average_7_day * 0.95
-  #   ceiling = metric.average_7_day * 1.05
-
-  #   floor..ceiling
-  # end
 
   def self.update_status
     mark_as_done
