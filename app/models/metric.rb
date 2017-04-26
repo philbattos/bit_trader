@@ -1,12 +1,15 @@
 class Metric < ActiveRecord::Base
 
-  scope :with_averages, -> { where.not(average_15_min: nil).where.not(average_30_min: nil) }
-  scope :trending_down, -> { with_averages.where("average_30_min > average_15_min").where("average_15_min > bitcoin_price") }
-  scope :trending_up,   -> { with_averages.where("average_30_min < average_15_min").where("average_15_min < bitcoin_price") }
+  # scope :with_averages, -> { where.not(average_15_min: nil).where.not(average_30_min: nil) }
+  # scope :trending_down, -> { with_averages.where("average_30_min > average_15_min").where("average_15_min > bitcoin_price") }
+  # scope :trending_up,   -> { with_averages.where("average_30_min < average_15_min").where("average_15_min < bitcoin_price") }
+  scope :with_averages, -> { where.not(average_15_min: nil).where.not(average_4_hour: nil) }
+  scope :trending_up,   -> { with_averages.where("average_15_min < ?", average_4_hour * 1.001) }
+  scope :trending_down, -> { with_averages.where("average_15_min > ?", average_4_hour * 0.999) }
 
   def self.save_current_data
     # A transaction is necessary (below) to prevent data errors from other queries
-    # while the metric is being calculated and saved. A db lock might be better 
+    # while the metric is being calculated and saved. A db lock might be better
     # but this transaction seems to work.
     Metric.transaction do
       dollar_balance        = Account.gdax_usdollar_account.balance
