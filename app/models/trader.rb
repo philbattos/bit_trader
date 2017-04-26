@@ -124,8 +124,8 @@ class Trader
 
       return false if ma_15mins.nil? || ma_4hours.nil?
 
-      ceiling = ma_4hours * 1.001
-      floor   = ma_4hours * 0.999
+      ceiling = ma_4hours * 1.002
+      floor   = ma_4hours * 0.998
 
       if (floor..ceiling).include? ma_15mins
         Contract.place_new_buy_order
