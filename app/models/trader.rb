@@ -51,7 +51,7 @@ class Trader
         # end
 
         update_orders_and_contracts
-        Account.balance_adjustment
+        # Account.balance_adjustment
         place_new_orders
 
       }
