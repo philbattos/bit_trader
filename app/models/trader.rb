@@ -55,15 +55,21 @@ class Trader
         place_new_orders
 
       }
-      EM.error_handler { |e|
+      EM.error_handler do |e|
         p "Trader.start Error: #{e.message}"
+        p "Trader.start Error ['message']: #{e.message['message'].inspect}"
+        p "Trader.start Error .message: #{e.message.message.inspect}"
         p "Trader.start Backtrace: #{e.backtrace}"
 
         # send alert to frontend; or send email/text
 
         p "Restarting Trader.... \n\n"
         Trader.new.start
-      }
+
+        if e.message.message == 'request timestamp expired'
+          # restart
+        end
+      end
     end
   end
 
