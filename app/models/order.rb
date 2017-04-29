@@ -27,6 +27,7 @@ class Order < ActiveRecord::Base
   ORDER_SIZE         = 0.01
   MARGIN             = 0.01
   TRADING_UNITS      = 36
+  SPREAD_PERCENT     = 0.01
 
   # TODO: add validation for gdax_id (every order should have one)
   # TODO: currently, we can create an order without an associated contract but it would be better if
@@ -187,7 +188,11 @@ class Order < ActiveRecord::Base
     if current_bid == 0.0
       return current_bid
     else
-      (current_bid - MARGIN).round(2)
+      # (current_bid - MARGIN).round(2)
+      available_buys   = (Account.gdax_usdollar_account.balance / (current_bid * ORDER_SIZE)).round
+      spread_increment = ((current_bid * SPREAD_PERCENT) / (available_buys + 1)).round(3)
+
+      (current_bid - spread_increment).round(2)
     end
   end
 
@@ -196,7 +201,11 @@ class Order < ActiveRecord::Base
     if current_ask == 0.0
       return current_ask
     else
-      (current_ask + MARGIN).round(2)
+      # (current_ask + MARGIN).round(2)
+      available_sells  = (Account.gdax_bitcoin_account.balance * 100).round
+      spread_increment = ((current_ask * SPREAD_PERCENT) / (available_sells + 1)).round(3)
+
+      (current_ask + spread_increment).round(2)
     end
   end
 
