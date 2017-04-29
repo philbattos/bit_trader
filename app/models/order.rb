@@ -230,6 +230,7 @@ class Order < ActiveRecord::Base
       response = check_status(order.gdax_id)
       if response && response.status != order.gdax_status
         puts "Updating status of #{order.type} #{order.id} from #{order.gdax_status} to #{response.status}"
+        puts "response: #{response.inspect}"
         # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
         order.update(
           gdax_status:         response.status,
@@ -258,6 +259,8 @@ class Order < ActiveRecord::Base
   end
 
   def self.calculate_filled_price(response)
+    puts "response.executed_value: #{response.executed_value.inspect}"
+    puts "response.filled_size: #{response.filled_size.inspect}"
     return nil if response.executed_value.nil? || response.filled_size.nil?
     response.executed_value / response.filled_size
   end
