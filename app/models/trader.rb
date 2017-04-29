@@ -57,8 +57,8 @@ class Trader
       }
       EM.error_handler do |e|
         p "Trader.start Error: #{e.message}"
-        p "Trader.start Error ['message']: #{e.message['message'].inspect}"
-        p "Trader.start Error .message: #{e.message.message.inspect}"
+        json = JSON.parse(e.message)
+        p "Trader.start JSON Error: #{json['message'].inspect}"
         p "Trader.start Backtrace: #{e.backtrace}"
 
         # send alert to frontend; or send email/text
