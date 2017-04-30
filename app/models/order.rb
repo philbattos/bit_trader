@@ -190,7 +190,7 @@ class Order < ActiveRecord::Base
     else
       # (current_bid - MARGIN).round(2)
       available_buys   = (Account.gdax_usdollar_account.balance / (current_bid * ORDER_SIZE)).round
-      spread_increment = ((current_bid * SPREAD_PERCENT) / (available_buys + 1)).round(3)
+      spread_increment = ((current_bid * SPREAD_PERCENT) / (available_buys + 1)).round(3) * 0.75
 
       (current_bid - spread_increment).round(2)
     end
@@ -203,7 +203,7 @@ class Order < ActiveRecord::Base
     else
       # (current_ask + MARGIN).round(2)
       available_sells  = (Account.gdax_bitcoin_account.balance * 100).round
-      spread_increment = ((current_ask * SPREAD_PERCENT) / (available_sells + 1)).round(3)
+      spread_increment = ((current_ask * SPREAD_PERCENT) / (available_sells + 1)).round(3) * 0.75
 
       (current_ask + spread_increment).round(2)
     end

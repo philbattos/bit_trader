@@ -166,7 +166,8 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_buy_order # move to Order class?
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
-    return if buys_backlog? || !buy_order_gap?
+    # return if buys_backlog? || !buy_order_gap?
+    return if BuyOrder.where(status: ['pending', 'open']).where(contract_id: Contract.without_active_sell).count > 0
 
     my_buy_price = Order.buy_price
     return missing_price('buy') if my_buy_price == 0.0
@@ -181,7 +182,8 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_sell_order # move to Order class?
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
-    return if sells_backlog? || !sell_order_gap?
+    # return if sells_backlog? || !sell_order_gap?
+    return if SellOrder.where(status: ['pending', 'open']).where(contract_id: Contract.without_active_buy).count > 0
 
     my_ask_price = Order.ask_price
     return missing_price('sell') if my_ask_price == 0.0
