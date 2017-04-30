@@ -39,10 +39,10 @@ class Order < ActiveRecord::Base
 
   # attr_accessor :side, :price, :size, :optional_params, :contract_id, :strategy_type
 
-  def self.submit_adjustment_order(order_type, price, size, optional_params, contract_id, strategy)
+  def self.submit_order(order_type, price, size, optional_params, contract_id, strategy)
     order_type      = order_type
     price           = price
-    size            = size || ORDER_SIZE.to_s
+    size            = size.to_s || ORDER_SIZE.to_s
     optional_params = optional_params || { post_only: true }
     contact_id      = contract_id
     strategy_type   = strategy
@@ -98,38 +98,38 @@ class Order < ActiveRecord::Base
     status == 'retired'
   end
 
-  def self.submit_market_order(order_type, price, contract_id) # should this be an instance method??
-    price = price.to_s
-    size  = ORDER_SIZE.to_s
+  # def self.submit_market_order(order_type, price, contract_id) # should this be an instance method??
+  #   price = price.to_s
+  #   size  = ORDER_SIZE.to_s
 
-    case order_type
-    when 'buy'
-      response = GDAX::Connection.new.rest_client.buy(size, price)
-    when 'sell'
-      response = GDAX::Connection.new.rest_client.sell(size, price)
-    end
+  #   case order_type
+  #   when 'buy'
+  #     response = GDAX::Connection.new.rest_client.buy(size, price)
+  #   when 'sell'
+  #     response = GDAX::Connection.new.rest_client.sell(size, price)
+  #   end
 
-    if response
-      puts "Order successful: Market #{order_type.upcase} @ #{response['price']}"
-      store_order(response, order_type, contract_id, 'trendline')
-    end
-    response
-  rescue Coinbase::Exchange::BadRequestError => gdax_error
-    puts "GDAX error (order submit): #{gdax_error}"
-    nil
-  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error (order submit): #{rate_limit_error}"
-    nil
-  rescue Net::ReadTimeout => timeout_error
-    puts "GDAX timeout error (order submit): #{timeout_error}"
-    nil
-  rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
-    puts "GDAX SSL error (order submit): #{ssl_error}"
-    nil
-  rescue Coinbase::Exchange::InternalServerError => server_error
-    puts "GDAX server error (order submit): #{server_error}"
-    nil
-  end
+  #   if response
+  #     puts "Order successful: Market #{order_type.upcase} @ #{response['price']}"
+  #     store_order(response, order_type, contract_id, 'trendline')
+  #   end
+  #   response
+  # rescue Coinbase::Exchange::BadRequestError => gdax_error
+  #   puts "GDAX error (order submit): #{gdax_error}"
+  #   nil
+  # rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+  #   puts "GDAX rate limit error (order submit): #{rate_limit_error}"
+  #   nil
+  # rescue Net::ReadTimeout => timeout_error
+  #   puts "GDAX timeout error (order submit): #{timeout_error}"
+  #   nil
+  # rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
+  #   puts "GDAX SSL error (order submit): #{ssl_error}"
+  #   nil
+  # rescue Coinbase::Exchange::InternalServerError => server_error
+  #   puts "GDAX server error (order submit): #{server_error}"
+  #   nil
+  # end
 
   def self.submit(order_type, price, contract_id) # should this be an instance method??
     # type       = 'limit' # default
@@ -176,11 +176,13 @@ class Order < ActiveRecord::Base
   end
 
   def self.place_buy(bid, contract_id=nil)
-    submit('buy', bid, contract_id)
+    optional_params = { post_only: true }
+    submit_order('buy', bid, ORDER_SIZE, optional_params, contract_id, 'market-maker')
   end
 
   def self.place_sell(ask, contract_id=nil)
-    submit('sell', ask, contract_id)
+    optional_params = { post_only: true }
+    submit_order('sell', ask, ORDER_SIZE, optional_params, contract_id, 'market-maker')
   end
 
   def self.buy_price
