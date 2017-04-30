@@ -63,11 +63,9 @@ class Trader
 
         # send alert to frontend; or send email/text
 
-        p "Restarting Trader.... \n\n"
-        Trader.new.start
-
-        if e.message.message == 'request timestamp expired'
-          # restart
+        if json['message'] == 'request timestamp expired'
+          puts "Timestamp expiration error. Restarting Trader"
+          Trader.new.start
         end
       end
     end
