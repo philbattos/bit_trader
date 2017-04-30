@@ -54,7 +54,17 @@ class OrdersController < ApplicationController
       f.chart(zoomType: 'x')
 
       f.xAxis(
-        type: 'datetime'
+        type: 'datetime',
+        plotLines: [{
+          value: 1493535618000, # April 30, 1:00am
+          width: 1,
+          color: 'red',
+          dashStyle: 'dot',
+          label: {
+            text: "Started new algorithm: logarithmic spread",
+            style: { color: 'lightgray' }
+          }
+        }]
       )
 
       f.yAxis([
