@@ -131,49 +131,49 @@ class Order < ActiveRecord::Base
   #   nil
   # end
 
-  def self.submit(order_type, price, contract_id) # should this be an instance method??
-    # type       = 'limit' # default
-    # side       = order_type
-    # product_id = 'BTC-USD'
-    # post_only  = true
-    price = price.to_s
-    size  = ORDER_SIZE.to_s
-    optional_params = {
-      post_only: true,
-      # time_in_force: 'GTT',
-      # cancel_after: 'hour' # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
-    }
+  # def self.submit(order_type, price, contract_id) # should this be an instance method??
+  #   # type       = 'limit' # default
+  #   # side       = order_type
+  #   # product_id = 'BTC-USD'
+  #   # post_only  = true
+  #   price = price.to_s
+  #   size  = ORDER_SIZE.to_s
+  #   optional_params = {
+  #     post_only: true,
+  #     # time_in_force: 'GTT',
+  #     # cancel_after: 'hour' # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
+  #   }
 
-    # TODO: add check of account balance to avoid multitude of "insufficient funds" errors
+  #   # TODO: add check of account balance to avoid multitude of "insufficient funds" errors
 
-    case order_type
-    when 'buy'
-      response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
-    when 'sell'
-      response = GDAX::Connection.new.rest_client.sell(size, price, optional_params)
-    end
+  #   case order_type
+  #   when 'buy'
+  #     response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
+  #   when 'sell'
+  #     response = GDAX::Connection.new.rest_client.sell(size, price, optional_params)
+  #   end
 
-    if response
-      puts "Order successful: #{order_type.upcase} @ #{response['price']}"
-      store_order(response, order_type, contract_id, 'market-maker')
-    end
-    response
-  rescue Coinbase::Exchange::BadRequestError => gdax_error
-    puts "GDAX error (order submit): #{gdax_error}"
-    nil
-  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error (order submit): #{rate_limit_error}"
-    nil
-  rescue Net::ReadTimeout => timeout_error
-    puts "GDAX timeout error (order submit): #{timeout_error}"
-    nil
-  rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
-    puts "GDAX SSL error (order submit): #{ssl_error}"
-    nil
-  rescue Coinbase::Exchange::InternalServerError => server_error
-    puts "GDAX server error (order submit): #{server_error}"
-    nil
-  end
+  #   if response
+  #     puts "Order successful: #{order_type.upcase} @ #{response['price']}"
+  #     store_order(response, order_type, contract_id, 'market-maker')
+  #   end
+  #   response
+  # rescue Coinbase::Exchange::BadRequestError => gdax_error
+  #   puts "GDAX error (order submit): #{gdax_error}"
+  #   nil
+  # rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+  #   puts "GDAX rate limit error (order submit): #{rate_limit_error}"
+  #   nil
+  # rescue Net::ReadTimeout => timeout_error
+  #   puts "GDAX timeout error (order submit): #{timeout_error}"
+  #   nil
+  # rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
+  #   puts "GDAX SSL error (order submit): #{ssl_error}"
+  #   nil
+  # rescue Coinbase::Exchange::InternalServerError => server_error
+  #   puts "GDAX server error (order submit): #{server_error}"
+  #   nil
+  # end
 
   def self.place_buy(bid, contract_id=nil)
     optional_params = { post_only: true }
