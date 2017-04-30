@@ -55,17 +55,19 @@ class Trader
 
       }
       EM.error_handler do |e|
-        p "Trader.start Error: #{e.message}"
         json = JSON.parse(e.message)
-        p "Trader.start JSON Error: #{json['message'].inspect}"
-        p "Trader.start Backtrace: #{e.backtrace}"
-
-        # send alert to frontend; or send email/text
 
         if json['message'] == 'request timestamp expired'
           puts "Timestamp expiration error. Restarting Trader"
           Trader.new.start
+        else
+          puts "Unrecognized Trader error"
+          puts "e: #{e.message.inspect}"
+          puts "json: #{json.inspect}"
+          puts "Trader.start Backtrace: #{e.backtrace}"
         end
+
+        # send alert to frontend; or send email/text
       end
     end
   end
