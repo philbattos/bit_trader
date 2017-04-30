@@ -166,15 +166,15 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_buy_order # move to Order class?
     # a new BUY order gets executed when the USD account has enough funds to buy the selected amount
-    return if buys_backlog? || !buy_order_gap?
-    # return if BuyOrder.where(status: ['pending', 'open']).where(contract_id: Contract.without_active_sell).count > 0
+    # return if buys_backlog? || !buy_order_gap?
+    return if BuyOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: SellOrder.done.select(:contract_id).distinct)).count > 0
 
     my_buy_price = Order.buy_price
     return missing_price('buy') if my_buy_price == 0.0
     new_order = Order.place_buy(my_buy_price)
 
     if new_order
-      puts "placed new buy: #{new_order['id']}"
+      puts "placed new buy: #{new_order['id']} for $#{my_buy_price}"
       order = Order.find_by_gdax_id(new_order['id'])
       order.contract.update(gdax_buy_order_id: new_order['id'])
     end
@@ -182,15 +182,15 @@ class Contract < ActiveRecord::Base
 
   def self.place_new_sell_order # move to Order class?
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
-    return if sells_backlog? || !sell_order_gap?
-    # return if SellOrder.where(status: ['pending', 'open']).where(contract_id: Contract.without_active_buy).count > 0
+    # return if sells_backlog? || !sell_order_gap?
+    return if SellOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: BuyOrder.done.select(:contract_id).distinct)).count > 0
 
     my_ask_price = Order.ask_price
     return missing_price('sell') if my_ask_price == 0.0
     new_order = Order.place_sell(my_ask_price)
 
     if new_order
-      puts "placed new sell: #{new_order['id']}"
+      puts "placed new sell: #{new_order['id']} for $#{my_ask_price}"
       order = Order.find_by_gdax_id(new_order['id'])
       order.contract.update(gdax_sell_order_id: new_order['id'])
     end
