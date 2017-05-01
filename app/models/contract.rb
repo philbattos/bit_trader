@@ -133,14 +133,10 @@ class Contract < ActiveRecord::Base
     open_contract = with_buy_without_sell.where.not(id: liquidate).includes(:buy_orders).order("orders.requested_price").first # finds contracts with lowest active buy price and without an active sell
     # open_contract = with_buy_without_sell.includes(:buy_orders).sample
     if open_contract
-      current_ask = GDAX::MarketData.current_ask
-      return missing_price('ask') if current_ask == 0.0
-
       return if open_contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
 
-      min_sell_price = calculate_sell_price(open_contract.buy_order)
-      sell_price     = [current_ask, min_sell_price].compact.max.round(2)
-      sell_order     = Order.place_sell(sell_price, open_contract.id)
+      sell_price = calculate_sell_price(open_contract.buy_order)
+      sell_order = Order.place_sell(sell_price, open_contract.id)
 
       open_contract.update(gdax_sell_order_id: sell_order['id']) if sell_order
     end
@@ -151,14 +147,10 @@ class Contract < ActiveRecord::Base
     open_contract = with_sell_without_buy.where.not(id: liquidate).includes(:sell_orders).order("orders.requested_price desc").first # finds contracts with highest active sell price and without an active buy
     # open_contract = with_sell_without_buy.includes(:sell_orders).sample
     if open_contract
-      current_bid = GDAX::MarketData.current_bid
-      return missing_price('bid') if current_bid == 0.0
-
       return if open_contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
 
-      max_buy_price = calculate_buy_price(open_contract.sell_order)
-      buy_price     = [current_bid, max_buy_price].compact.min.round(2)
-      buy_order     = Order.place_buy(buy_price, open_contract.id)
+      buy_price = calculate_buy_price(open_contract.sell_order)
+      buy_order = Order.place_buy(buy_price, open_contract.id)
 
       open_contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
     end
