@@ -1,8 +1,9 @@
 class Metric < ActiveRecord::Base
 
-  scope :with_averages, -> { where.not(average_15_min: nil).where.not(average_4_hour: nil) }
-  scope :trending_up,   -> { with_averages.where("average_15_min > (average_4_hour * 1.002)") }
-  scope :trending_down, -> { with_averages.where("average_15_min < (average_4_hour * 0.998)") }
+  scope :with_averages, ->        { where.not(average_15_min: nil).where.not(average_4_hour: nil) }
+  scope :trending_up,   ->        { with_averages.where("average_15_min > (average_4_hour * 1.002)") }
+  scope :trending_down, ->        { with_averages.where("average_15_min < (average_4_hour * 0.998)") }
+  scope :since,         -> (date) { where("created_at > ?", date) }
 
   def self.save_current_data
     # A transaction is necessary (below) to prevent data errors from other queries

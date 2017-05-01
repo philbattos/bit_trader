@@ -328,62 +328,62 @@ class OrdersController < ApplicationController
 
       f.series(
         name: 'Bitcoin Price',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0,
         lineWidth: 3
       )
 
       f.series(
         name: '15-Minute Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_15_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_15_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         name: '30-Minute Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_30_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_30_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         # type: 'spline',
         name: '1-Hour Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_1_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_1_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         # type: 'spline',
         name: '4-Hour Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_4_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_4_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
-      # f.series(
-      #   # type: 'spline',
-      #   name: '12-Hour Average',
-      #   data: Metric.with_averages.order(:id).pluck(:created_at, :average_12_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-      #   yAxis: 0
-      # )
+      f.series(
+        # type: 'spline',
+        name: '12-Hour Average',
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_12_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
 
       f.series(
         # type: 'spline',
         name: '24-Hour Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         type: 'spline',
         name: '3-Day Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_3_day).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_3_day).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         type: 'spline',
         name: '7-Day Average',
-        data: Metric.with_averages.order(:id).pluck(:created_at, :average_7_day).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_7_day).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
