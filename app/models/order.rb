@@ -30,6 +30,7 @@ class Order < ActiveRecord::Base
   SPREAD_PERCENT     = 0.01
 
   # TODO: add validation for gdax_id (every order should have one)
+  # TODO: add validation for status (every order should have one; can cause confusion if order has status of nil)
   # TODO: currently, we can create an order without an associated contract but it would be better if
   #       every order had an associated contract. find a way to build orders and contracts together
   #       and then add validations to prevent orphaned orders and contracts
@@ -98,83 +99,6 @@ class Order < ActiveRecord::Base
     status == 'retired'
   end
 
-  # def self.submit_market_order(order_type, price, contract_id) # should this be an instance method??
-  #   price = price.to_s
-  #   size  = ORDER_SIZE.to_s
-
-  #   case order_type
-  #   when 'buy'
-  #     response = GDAX::Connection.new.rest_client.buy(size, price)
-  #   when 'sell'
-  #     response = GDAX::Connection.new.rest_client.sell(size, price)
-  #   end
-
-  #   if response
-  #     puts "Order successful: Market #{order_type.upcase} @ #{response['price']}"
-  #     store_order(response, order_type, contract_id, 'trendline')
-  #   end
-  #   response
-  # rescue Coinbase::Exchange::BadRequestError => gdax_error
-  #   puts "GDAX error (order submit): #{gdax_error}"
-  #   nil
-  # rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-  #   puts "GDAX rate limit error (order submit): #{rate_limit_error}"
-  #   nil
-  # rescue Net::ReadTimeout => timeout_error
-  #   puts "GDAX timeout error (order submit): #{timeout_error}"
-  #   nil
-  # rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
-  #   puts "GDAX SSL error (order submit): #{ssl_error}"
-  #   nil
-  # rescue Coinbase::Exchange::InternalServerError => server_error
-  #   puts "GDAX server error (order submit): #{server_error}"
-  #   nil
-  # end
-
-  # def self.submit(order_type, price, contract_id) # should this be an instance method??
-  #   # type       = 'limit' # default
-  #   # side       = order_type
-  #   # product_id = 'BTC-USD'
-  #   # post_only  = true
-  #   price = price.to_s
-  #   size  = ORDER_SIZE.to_s
-  #   optional_params = {
-  #     post_only: true,
-  #     # time_in_force: 'GTT',
-  #     # cancel_after: 'hour' # available options: min, hour, day (presumably this means we can set an order to be canceled after 1 minute, or 1 hour, or 1 day)
-  #   }
-
-  #   # TODO: add check of account balance to avoid multitude of "insufficient funds" errors
-
-  #   case order_type
-  #   when 'buy'
-  #     response = GDAX::Connection.new.rest_client.buy(size, price, optional_params)
-  #   when 'sell'
-  #     response = GDAX::Connection.new.rest_client.sell(size, price, optional_params)
-  #   end
-
-  #   if response
-  #     puts "Order successful: #{order_type.upcase} @ #{response['price']}"
-  #     store_order(response, order_type, contract_id, 'market-maker')
-  #   end
-  #   response
-  # rescue Coinbase::Exchange::BadRequestError => gdax_error
-  #   puts "GDAX error (order submit): #{gdax_error}"
-  #   nil
-  # rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-  #   puts "GDAX rate limit error (order submit): #{rate_limit_error}"
-  #   nil
-  # rescue Net::ReadTimeout => timeout_error
-  #   puts "GDAX timeout error (order submit): #{timeout_error}"
-  #   nil
-  # rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
-  #   puts "GDAX SSL error (order submit): #{ssl_error}"
-  #   nil
-  # rescue Coinbase::Exchange::InternalServerError => server_error
-  #   puts "GDAX server error (order submit): #{server_error}"
-  #   nil
-  # end
-
   def self.place_buy(bid, contract_id=nil)
     optional_params = { post_only: true }
     submit_order('buy', bid, ORDER_SIZE, optional_params, contract_id, 'market-maker')
@@ -210,22 +134,6 @@ class Order < ActiveRecord::Base
       (current_ask + spread_increment).round(2)
     end
   end
-
-  # def self.fetch_all
-  #   request_path = '/orders'
-  #   request_info = "#{timestamp}GET#{request_path}"
-  #   request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
-
-  #   send_get_request(request_path, request_hash)
-  # end
-
-  # def self.fetch_single(order_id)
-  #   request_path = "/orders/#{order_id}"
-  #   request_info = "#{timestamp}GET#{request_path}"
-  #   request_hash = OpenSSL::HMAC.digest('sha256', secret_hash, request_info)
-
-  #   send_get_request(request_path, request_hash)
-  # end
 
   def self.check_status(id)
     GDAX::Connection.new.rest_client.order(id)

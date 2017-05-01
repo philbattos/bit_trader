@@ -117,13 +117,12 @@ class Contract < ActiveRecord::Base
   def self.populate_empty_contracts
     open_contracts = without_active_order.where.not(id: liquidate)
     if open_contracts.any?
-      current_bid = GDAX::MarketData.current_bid
-      return missing_price('bid') if current_bid == 0.0
+      # current_bid = GDAX::MarketData.current_bid
+      # return missing_price('bid') if current_bid == 0.0
 
       contract  = open_contracts.sample
-      buy_price = current_bid.round(2)
-      # the contract has no buy-order and no sell-order so we start with a buy-order
-      buy_order = Order.place_buy(buy_price, contract.id)
+      buy_price = Order.buy_price
+      buy_order = Order.place_buy(buy_price, contract.id) # the contract has no buy-order and no sell-order so we start with a buy-order
 
       contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
     end
@@ -228,11 +227,17 @@ class Contract < ActiveRecord::Base
   end
 
   def self.calculate_sell_price(open_buy)
-    open_buy.requested_price * (1.0 + PROFIT_PERCENT.sample)
+    sell_minimum    = open_buy.requested_price * (1.0 + PROFIT_PERCENT.sample)
+    sell_spread_min = Order.sell_price
+
+    [sell_minimum, sell_spread_min].max
   end
 
   def self.calculate_buy_price(open_sell)
-    open_sell.requested_price * (1.0 - PROFIT_PERCENT.sample)
+    buy_minimum    = open_sell.requested_price * (1.0 - PROFIT_PERCENT.sample)
+    buy_spread_min = Order.buy_price
+
+    [buy_minimum, buy_spread_min].min
   end
 
   def self.recent_buys?
