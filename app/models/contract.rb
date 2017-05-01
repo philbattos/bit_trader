@@ -228,7 +228,7 @@ class Contract < ActiveRecord::Base
 
   def self.calculate_sell_price(open_buy)
     sell_minimum    = open_buy.requested_price * (1.0 + PROFIT_PERCENT.sample)
-    sell_spread_min = Order.sell_price
+    sell_spread_min = Order.ask_price
 
     [sell_minimum, sell_spread_min].max
   end
