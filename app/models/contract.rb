@@ -135,7 +135,7 @@ class Contract < ActiveRecord::Base
     if open_contract
       return if open_contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
 
-      sell_price = calculate_sell_price(open_contract.buy_order)
+      sell_price = calculate_sell_price(open_contract.buy_order).round(2)
       sell_order = Order.place_sell(sell_price, open_contract.id)
 
       open_contract.update(gdax_sell_order_id: sell_order['id']) if sell_order
@@ -149,7 +149,7 @@ class Contract < ActiveRecord::Base
     if open_contract
       return if open_contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet
 
-      buy_price = calculate_buy_price(open_contract.sell_order)
+      buy_price = calculate_buy_price(open_contract.sell_order).round(2)
       buy_order = Order.place_buy(buy_price, open_contract.id)
 
       open_contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
