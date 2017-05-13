@@ -39,7 +39,7 @@ class Metric < ActiveRecord::Base
       metric.update(average_12_hour: GDAX::MarketData.calculate_average(12.hours.ago))
       metric.update(average_24_hour: GDAX::MarketData.calculate_average(24.hours.ago))
       metric.update(average_3_day: GDAX::MarketData.calculate_average(3.days.ago))
-      metric.update(average_7_day: GDAX::MarketData.calculate_average(7.days.ago))
+      # metric.update(average_7_day: GDAX::MarketData.calculate_average(7.days.ago))
       # metric.update(average_15_day: GDAX::MarketData.calculate_average(15.days.ago))
       # metric.update(average_30_day: GDAX::MarketData.calculate_average(30.days.ago))
     end
