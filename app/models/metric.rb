@@ -57,4 +57,16 @@ class Metric < ActiveRecord::Base
     end
   end
 
+  def self.three_day_range
+    metric = self.order(:created_at).last
+
+    if metric.average_3_day.nil?
+      -2..-1
+    else
+      floor   = metric.average_3_day * 0.95
+      ceiling = metric.average_3_day * 1.05
+      floor..ceiling
+    end
+  end
+
 end
