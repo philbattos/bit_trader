@@ -131,7 +131,7 @@ class Order < ActiveRecord::Base
       multiplier         = INCREMENTS[existent_buys.count]
 
       buy_price = (current_bid * (1 - multiplier)).round(2)
-      puts "There are #{existent_buys.count} existing buys without matching sells: #{existing_buys.map(&:id)}"
+      puts "There are #{existent_buys.count} existing buys without matching sells: #{existent_buys.map(&:id)}"
       puts "Current buy price calculation: #{current_bid} * (1 - #{multiplier}) = #{buy_price}"
 
       buy_price
