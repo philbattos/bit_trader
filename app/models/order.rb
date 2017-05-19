@@ -127,7 +127,7 @@ class Order < ActiveRecord::Base
       # available_buys = 10 if available_buys > 10
 
       buys_without_sells = BuyOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: SellOrder.done.select(:contract_id).distinct)).order(:requested_price)
-      existent_buys      = open_buys.select {|o| buys_without_sells.pluck(:gdax_id).include?(o.id) }
+      existent_buys      = open_orders.select {|o| buys_without_sells.pluck(:gdax_id).include?(o.id) }
       multiplier         = INCREMENTS[existent_buys.count]
 
       buy_price = (current_bid * (1 - multiplier)).round(2)
