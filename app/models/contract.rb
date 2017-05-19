@@ -172,7 +172,7 @@ class Contract < ActiveRecord::Base
     end
   end
 
-  def self.logarythmic_buy
+  def self.logarithmic_buy
     # how many buy units are available? (up to 10)
     # if 10 units, then check current buy orders
     # if less than 10 units, then check current buy orders
@@ -185,7 +185,7 @@ class Contract < ActiveRecord::Base
     highest_buy_order  = buys_without_sells.last
     current_bid        = GDAX::MarketData.current_bid
 
-    if current_bid > highest_buy_order.requested_price * 1.001
+    if current_bid && highest_buy_order && (current_bid > highest_buy_order.requested_price * 1.001)
       buys_without_sells.each {|o| Order.find_by(gdax_id: o.gdax_id).cancel_order }
 
       3.times do
@@ -228,6 +228,41 @@ class Contract < ActiveRecord::Base
       puts "placed new sell: #{new_order['id']} for $#{my_ask_price}"
       order = Order.find_by_gdax_id(new_order['id'])
       order.contract.update(gdax_sell_order_id: new_order['id'])
+    end
+  end
+
+  def self.logarithmic_sell
+    sells_without_buys = SellOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: BuyOrder.done.select(:contract_id).distinct)).order(:requested_price)
+    lowest_sell_order  = sells_without_buys.first
+    current_ask        = GDAX::MarketData.current_ask
+
+    if current_ask && lowest_sell_order && (current_ask < lowest_sell_order.requested_price * 0.999)
+      sells_without_buys.each {|o| Order.find_by(gdax_id: o.gdax_id).cancel_order }
+
+      3.times do
+        my_sell_price = Order.new_ask_price
+        return missing_price('sell') if my_sell_price == 0.0
+        new_order = Order.place_sell(my_sell_price)
+
+        if new_order
+          puts "placed new sell: #{new_order['id']} for $#{my_sell_price}"
+          order = Order.find_by_gdax_id(new_order['id'])
+          order.contract.update(gdax_buy_order_id: new_order['id'])
+        end
+      end
+    else
+      return if sells_without_buys.count > 5
+
+      # place new sell order on higher end
+      my_sell_price = Order.new_ask_price
+      return missing_price('sell') if my_sell_price == 0.0
+      new_order = Order.place_sell(my_sell_price)
+
+      if new_order
+        puts "placed new sell: #{new_order['id']} for $#{my_sell_price}"
+        order = Order.find_by_gdax_id(new_order['id'])
+        order.contract.update(gdax_sell_order_id: new_order['id'])
+      end
     end
   end
 

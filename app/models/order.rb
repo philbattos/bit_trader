@@ -131,7 +131,7 @@ class Order < ActiveRecord::Base
       multiplier         = INCREMENTS[existent_buys.count]
 
       buy_price = (current_bid * (1 - multiplier)).round(2)
-      puts "There are #{existent_buys.count} existing buys without matching sells: #{existent_buys.map(&:id)}"
+      puts "There are #{existent_buys.count} existing buys without matching sell: #{existent_buys.map(&:id)}"
       puts "Current buy price calculation: #{current_bid} * (1 - #{multiplier}) = #{buy_price}"
 
       buy_price
@@ -151,6 +151,26 @@ class Order < ActiveRecord::Base
     end
   end
 
+  def self.new_ask_price
+    current_ask = GDAX::MarketData.current_ask
+    if current_ask == 0.0
+      return current_ask
+    else
+      # available_sells = (Account.gdax_bitcoin_account.balance / (current_ask * ORDER_SIZE)).round
+      # available_sells = 10 if available_sells > 10
+
+      sells_without_buy = SellOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: BuyOrder.done.select(:contract_id).distinct)).order(:requested_price)
+      existent_sells    = open_orders.select {|o| sells_without_buy.pluck(:gdax_id).include?(o.id) }
+      multiplier        = INCREMENTS[existent_sells.count]
+
+      sell_price = (current_ask * (1 + multiplier)).round(2)
+      puts "There are #{existent_sells.count} existing sells without matching buy: #{existent_sells.map(&:id)}"
+      puts "Current sell price calculation: #{current_ask} * (1 - #{multiplier}) = #{sell_price}"
+
+      sell_price
+    end
+  end
+
   def self.check_status(id)
     GDAX::Connection.new.rest_client.order(id)
   end
@@ -165,12 +185,12 @@ class Order < ActiveRecord::Base
   end
 
   def self.cancel_stale_orders
-    open_orders = GDAX::Connection.new.rest_client.orders(status: 'open')
-                    .select {|o| o.filled_size == 0.0} # we don't want to cancel orders that have been partially filled.
-                    .sort_by(&:price)
-                    .group_by(&:side) # { 'buy' => [], 'sell' => [] }
-    open_buys  = open_orders['buy']
-    open_sells = open_orders['sell']
+    exchange_orders = open_orders
+                        .select {|o| o.filled_size == 0.0} # we don't want to cancel orders that have been partially filled.
+                        .sort_by(&:price)
+                        .group_by(&:side) # { 'buy' => [], 'sell' => [] }
+    open_buys  = exchange_orders['buy']
+    open_sells = exchange_orders['sell']
 
     lowest_buy   = open_buys.first if open_buys  # && open_buys.count > 10
     highest_sell = open_sells.last if open_sells # && open_sells.count > 10
