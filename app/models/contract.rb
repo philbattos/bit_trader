@@ -251,7 +251,7 @@ class Contract < ActiveRecord::Base
         end
       end
     else
-      return if sells_without_buys.count > 5
+      return if sells_without_buys.count > 10
 
       # place new sell order on higher end
       my_sell_price = Order.new_ask_price
