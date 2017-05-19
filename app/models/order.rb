@@ -235,8 +235,12 @@ class Order < ActiveRecord::Base
     status == 'retired'
   end
 
+  def check_gdax_status
+    GDAX::Connection.new.rest_client.order(self.gdax_id)
+  end
+
   def update_order
-    response = check_status(self.gdax_id)
+    response = check_gdax_status
     if response && response.status != self.gdax_status
       puts "Updating status of #{self.type} #{self.id} from #{self.gdax_status} to #{response.status}"
       # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
