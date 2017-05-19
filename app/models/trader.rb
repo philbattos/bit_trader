@@ -4,7 +4,7 @@ class Trader
     EM.run do
       EM.add_periodic_timer(1) {
         update_orders_and_contracts
-        place_new_orders
+        # place_new_orders
       }
       EM.error_handler do |e|
         json = JSON.parse(e.message)
