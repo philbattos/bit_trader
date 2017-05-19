@@ -1,7 +1,13 @@
 class Order < ActiveRecord::Base
 
+  #-------------------------------------------------
+  #    associations
+  #-------------------------------------------------
   belongs_to :contract
 
+  #-------------------------------------------------
+  #    scopes
+  #-------------------------------------------------
   scope :trendline,      -> { where(strategy_type: 'trendline') }
   scope :market_maker,   -> { where(strategy_type: 'market-maker') }
   scope :adjust_balance, -> { where(strategy_type: 'adjust-balance') }
@@ -17,9 +23,15 @@ class Order < ActiveRecord::Base
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
 
+  #-------------------------------------------------
+  #    validations
+  #-------------------------------------------------
   validates :contract,      presence: true # all orders should be associated with a contract
   validates :strategy_type, presence: true
 
+  #-------------------------------------------------
+  #    constants
+  #-------------------------------------------------
   CLOSED_STATUSES    = %w[ done rejected not-found retired ]
   PURCHASED_STATUSES = %w[ done open ]
   ACTIVE_STATUSES    = %w[ done open pending ]
@@ -28,6 +40,7 @@ class Order < ActiveRecord::Base
   MARGIN             = 0.01
   TRADING_UNITS      = 36
   SPREAD_PERCENT     = 0.01
+  INCREMENTS         = [0.0002, 0.0003, 0.0005, 0.0008, 0.0013, 0.0021, 0.0034, 0.0055, 0.0089, 0.0123, 0.0212, 0.0335, 0.0547, 0.0882, 0.1429] # fibonacci increments
 
   # TODO: add validation for gdax_id (every order should have one)
   # TODO: add validation for status (every order should have one; can cause confusion if order has status of nil)
@@ -40,6 +53,9 @@ class Order < ActiveRecord::Base
 
   # attr_accessor :side, :price, :size, :optional_params, :contract_id, :strategy_type
 
+  #-------------------------------------------------
+  #    class methods
+  #-------------------------------------------------
   def self.submit_order(order_type, price, size, optional_params, contract_id, strategy)
     order_type      = order_type
     price           = price
@@ -79,26 +95,6 @@ class Order < ActiveRecord::Base
     nil
   end
 
-  def cancel
-    update(status: 'canceled')
-  end
-
-  def closed?
-    CLOSED_STATUSES.include? gdax_status
-  end
-
-  def purchased?
-    PURCHASED_STATUSES.include? gdax_status
-  end
-
-  def done?
-    status == 'done'
-  end
-
-  def retired?
-    status == 'retired'
-  end
-
   def self.place_buy(bid, contract_id=nil)
     optional_params = { post_only: true }
     submit_order('buy', bid, ORDER_SIZE, optional_params, contract_id, 'market-maker')
@@ -119,6 +115,26 @@ class Order < ActiveRecord::Base
       spread_increment = ((current_bid * SPREAD_PERCENT) / (available_buys + 1)).round(3) * 0.75
 
       (current_bid - spread_increment).round(2)
+    end
+  end
+
+  def self.new_buy_price
+    current_bid = GDAX::MarketData.current_bid
+    if current_bid == 0.0
+      return current_bid
+    else
+      # available_buys = (Account.gdax_usdollar_account.balance / (current_bid * ORDER_SIZE)).round
+      # available_buys = 10 if available_buys > 10
+
+      buys_without_sells = BuyOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: SellOrder.done.select(:contract_id).distinct)).order(:requested_price)
+      existent_buys      = open_buys.select {|o| buys_without_sells.pluck(:gdax_id).include?(o.id) }
+      multiplier         = INCREMENTS[existent_buys.count]
+
+      buy_price = (current_bid * (1 - multiplier)).round(2)
+      puts "There are #{existent_buys.count} existing buys without matching sells: #{existing_buys.map(&:id)}"
+      puts "Current buy price calculation: #{current_bid} * (1 - #{multiplier}) = #{buy_price}"
+
+      buy_price
     end
   end
 
@@ -143,39 +159,6 @@ class Order < ActiveRecord::Base
     GDAX::Connection.new.rest_client.orders(status: 'open')
   end
 
-  def self.update_status
-    order = Order.unresolved.sample # for now, we are checking the status of one randomly selected order at a time
-    if order
-      response = check_status(order.gdax_id)
-      if response && response.status != order.gdax_status
-        puts "Updating status of #{order.type} #{order.id} from #{order.gdax_status} to #{response.status}"
-        # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
-        order.update(
-          gdax_status:         response.status,
-          gdax_price:          response.price, # price in original request; may not be executed price
-          gdax_executed_value: response.executed_value,
-          gdax_filled_size:    response.filled_size,
-          gdax_filled_fees:    response.fill_fees,
-          status:              response.status,
-          requested_price:     response.price,
-          filled_price:        calculate_filled_price(response),
-          executed_value:      response.executed_value, # filled_price * quantity; does not include fees
-          quantity:            response.filled_size,
-          fees:                response.fill_fees,
-        )
-      end
-    end
-  rescue Coinbase::Exchange::BadRequestError => request_error
-    puts "GDAX couldn't check/update status for order #{order.gdax_id}"
-  rescue Coinbase::Exchange::NotFoundError => not_found_error
-    # this happens after an order has been canceled so we want to update the order's status
-    order.update(gdax_status: 'not-found', status: 'not-found')
-    puts "GDAX couldn't find order #{order.gdax_id}: #{not_found_error}"
-    puts "Updated order #{order.id} with status 'not-found'"
-  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error (update order status): #{rate_limit_error}"
-  end
-
   def self.calculate_filled_price(response)
     return nil if response.executed_value.nil? || response.filled_size.nil? || response.filled_size.zero?
     response.executed_value / response.filled_size
@@ -186,22 +169,109 @@ class Order < ActiveRecord::Base
                     .select {|o| o.filled_size == 0.0} # we don't want to cancel orders that have been partially filled.
                     .sort_by(&:price)
                     .group_by(&:side) # { 'buy' => [], 'sell' => [] }
-    open_buys   = open_orders['buy']
-    open_sells  = open_orders['sell']
+    open_buys  = open_orders['buy']
+    open_sells = open_orders['sell']
 
     lowest_buy   = open_buys.first if open_buys  # && open_buys.count > 10
     highest_sell = open_sells.last if open_sells # && open_sells.count > 10
 
-    cancel_order(lowest_buy.id)   if lowest_buy   && (lowest_buy.created_at   < 5.minutes.ago) && !Contract.recent_buys?
-    cancel_order(highest_sell.id) if highest_sell && (highest_sell.created_at < 5.minutes.ago) && !Contract.recent_sells?
+    Order.find_by(gdax_id: lowest_buy.id).cancel_order   if lowest_buy   && (lowest_buy.created_at   < 5.minutes.ago) && !Contract.recent_buys?
+    Order.find_by(gdax_id: highest_sell.id).cancel_order if highest_sell && (highest_sell.created_at < 5.minutes.ago) && !Contract.recent_sells?
   end
 
-  def self.cancel_order(gdax_id)
-    GDAX::Connection.new.rest_client.cancel(gdax_id)
+  def self.store_order(response, order_type, contract_id, strategy_type)
+    puts "Storing order #{response['id']}"
+    contract = Contract.create_with(strategy_type: strategy_type).find_or_create_by(id: contract_id)
+    contract.update(gdax_buy_order_id: response.id)  if order_type == 'buy'
+    contract.update(gdax_sell_order_id: response.id) if order_type == 'sell'
+    contract.orders.create(
+      # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
+      type:                lookup_class_type[order_type],
+      gdax_id:             response['id'],
+      gdax_price:          response['price'],
+      gdax_size:           response['size'],
+      gdax_product_id:     response['product_id'],
+      gdax_side:           response['side'],
+      gdax_stp:            response['stp'],
+      gdax_type:           response['type'],
+      gdax_post_only:      response['post_only'],
+      gdax_created_at:     response['created_at'],
+      gdax_filled_fees:    response['fill_fees'],
+      gdax_filled_size:    response['filled_size'],
+      gdax_executed_value: response['executed_value'],
+      gdax_status:         response['status'],
+      gdax_settled:        response['settled'],
+      quantity:            response['size'],
+      requested_price:     response['price'],
+      executed_value:      response['executed_value'],
+      fees:                response['fill_fees'],
+      status:              response['status'],
+      strategy_type:       strategy_type,
+      # custom_id:           response['oid'],
+      # currency:            response['currency'],
+    )
+  end
+
+  def self.lookup_class_type
+    { 'buy' => 'BuyOrder', 'sell' => 'SellOrder' }
+  end
+
+  #-------------------------------------------------
+  #    instance methods
+  #-------------------------------------------------
+  def closed?
+    CLOSED_STATUSES.include? gdax_status
+  end
+
+  def purchased?
+    PURCHASED_STATUSES.include? gdax_status
+  end
+
+  def done?
+    status == 'done'
+  end
+
+  def retired?
+    status == 'retired'
+  end
+
+  def update_order
+    response = check_status(self.gdax_id)
+    if response && response.status != self.gdax_status
+      puts "Updating status of #{self.type} #{self.id} from #{self.gdax_status} to #{response.status}"
+      # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
+      self.update(
+        gdax_status:         response.status,
+        gdax_price:          response.price, # price in original request; may not be executed price
+        gdax_executed_value: response.executed_value,
+        gdax_filled_size:    response.filled_size,
+        gdax_filled_fees:    response.fill_fees,
+        status:              response.status,
+        requested_price:     response.price,
+        filled_price:        Order.calculate_filled_price(response),
+        executed_value:      response.executed_value, # filled_price * quantity; does not include fees
+        quantity:            response.filled_size,
+        fees:                response.fill_fees,
+      )
+    end
+  rescue Coinbase::Exchange::BadRequestError => request_error
+    puts "GDAX couldn't check/update status for order #{self.gdax_id}"
+  rescue Coinbase::Exchange::NotFoundError => not_found_error
+    # this happens after an order has been canceled so we want to update the order's status
+    self.update(gdax_status: 'not-found', status: 'not-found')
+    puts "GDAX couldn't find order #{self.gdax_id}: #{not_found_error}"
+    puts "Updated order #{self.id} with status 'not-found'"
+  rescue Coinbase::Exchange::RateLimitError => rate_limit_error
+    puts "GDAX rate limit error (update order status): #{rate_limit_error}"
+  end
+
+  def cancel_order
+    cancellation = GDAX::Connection.new.rest_client.cancel(self.gdax_id)
+    self.update(gdax_status: 'not-found', status: 'not-found') if cancellation == {}
   rescue Coinbase::Exchange::BadRequestError => request_error
     puts "GDAX couldn't cancel order #{request_error}"
   rescue Coinbase::Exchange::NotFoundError => not_found_error
-    # order.update(gdax_status: 'not-found', status: 'not-found')
+    self.update(gdax_status: 'not-found', status: 'not-found')
     puts "GDAX couldn't find/cancel order: #{not_found_error}"
   rescue StandardError => error
     puts "Order cancellation error: #{error.inspect}"
@@ -210,42 +280,5 @@ class Order < ActiveRecord::Base
   #=================================================
     private
   #=================================================
-
-    def self.store_order(response, order_type, contract_id, strategy_type)
-      puts "Storing order #{response['id']}"
-      contract = Contract.create_with(strategy_type: strategy_type).find_or_create_by(id: contract_id)
-      contract.update(gdax_buy_order_id: response.id)  if order_type == 'buy'
-      contract.update(gdax_sell_order_id: response.id) if order_type == 'sell'
-      contract.orders.create(
-        # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
-        type:                lookup_class_type[order_type],
-        gdax_id:             response['id'],
-        gdax_price:          response['price'],
-        gdax_size:           response['size'],
-        gdax_product_id:     response['product_id'],
-        gdax_side:           response['side'],
-        gdax_stp:            response['stp'],
-        gdax_type:           response['type'],
-        gdax_post_only:      response['post_only'],
-        gdax_created_at:     response['created_at'],
-        gdax_filled_fees:    response['fill_fees'],
-        gdax_filled_size:    response['filled_size'],
-        gdax_executed_value: response['executed_value'],
-        gdax_status:         response['status'],
-        gdax_settled:        response['settled'],
-        quantity:            response['size'],
-        requested_price:     response['price'],
-        executed_value:      response['executed_value'],
-        fees:                response['fill_fees'],
-        status:              response['status'],
-        strategy_type:       strategy_type,
-        # custom_id:           response['oid'],
-        # currency:            response['currency'],
-      )
-    end
-
-    def self.lookup_class_type
-      { 'buy' => 'BuyOrder', 'sell' => 'SellOrder' }
-    end
 
 end

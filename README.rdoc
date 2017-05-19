@@ -42,7 +42,7 @@ that each contract will have two "matching" fulfilled orders.
 
 The trading algorithm cycles through a series of actions:
 
-1. Order.update_status: Randomly select an unresolved order (an order that is 'open' or 'pending') andupdate its status if is has changed
+1. update_unresolved_order: Randomly select an unresolved order (an order that is 'open' or 'pending') and update its status if is has changed
     - fetch GDAX status for that order
     - compare order's recorded status and GDAX's status
     - if statuses are different, update order with new status, price, filled size, etc.

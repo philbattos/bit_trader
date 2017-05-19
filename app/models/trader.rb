@@ -29,11 +29,16 @@ class Trader
   #=================================================
 
     def update_orders_and_contracts
-      Order.update_status
+      update_unresolved_order
       Contract.update_status # updates random 'done' contract; updates random liquidatable contract
       # Contract.market_maker.resolve_open
       Contract.resolve_open # liquidates old contracts; populates empty contracts with a buy order; matches open orders
       Order.cancel_stale_orders
+    end
+
+    def update_unresolved_order
+      order = Order.unresolved.sample
+      order.update_order if order
     end
 
     def place_new_orders
@@ -51,7 +56,7 @@ class Trader
       # else
       #   puts "Volatile market. 15min average: #{ma_15mins}, 4-hour average: #{ma_4hours}, trading range: #{floor.round(2)} - #{ceiling.round(2)}"
       # end
-      Contract.place_new_buy_order
+      Contract.logarythmic_buy
       Contract.place_new_sell_order
     end
 
