@@ -56,8 +56,14 @@ class Trader
       # else
       #   puts "Volatile market. 15min average: #{ma_15mins}, 4-hour average: #{ma_4hours}, trading range: #{floor.round(2)} - #{ceiling.round(2)}"
       # end
-      Contract.logarithmic_buy
-      Contract.logarithmic_sell
+      # Contract.logarithmic_buy
+      # Contract.logarithmic_sell
+
+      if Contract.incomplete.count > 3
+        # do nothing
+      else
+        Contract.place_new_buy_order
+      end
     end
 
 end
