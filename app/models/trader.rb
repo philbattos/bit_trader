@@ -48,8 +48,8 @@ class Trader
 
       return false if ma_30mins.nil? || ma_4hours.nil?
 
-      ceiling = ma_4hours * 1.005
-      floor   = ma_4hours * 0.995
+      ceiling = ma_4hours * 1.01
+      floor   = ma_4hours * 0.99
 
       if (floor..ceiling).include?(ma_30mins) && Contract.incomplete.count <= 3
         Contract.place_new_buy_order
