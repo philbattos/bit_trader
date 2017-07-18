@@ -94,7 +94,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.resolve_open
-    liquidate_old_contracts
+    # liquidate_old_contracts
     populate_empty_contracts
     match_open_buys
     match_open_sells
@@ -153,6 +153,12 @@ class Contract < ActiveRecord::Base
       buy_order = Order.place_buy(buy_price, open_contract.id)
 
       open_contract.update(gdax_buy_order_id: buy_order['id']) if buy_order
+    end
+  end
+
+  def self.add_new_contract
+    if unresolved.order(:created_at).last.created_at < 12.hours.ago
+      place_new_buy_order
     end
   end
 

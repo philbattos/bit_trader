@@ -5,6 +5,7 @@ class Trader
       EM.add_periodic_timer(1) {
         update_orders_and_contracts
         place_new_orders
+        Contract.add_new_contract
       }
       EM.error_handler do |e|
         json = JSON.parse(e.message)
@@ -42,6 +43,8 @@ class Trader
     end
 
     def place_new_orders
+      return false if Contract.incomplete.count > 3
+
       # ma_15mins = GDAX::MarketData.calculate_average(15.minutes.ago)
       ma_30mins = GDAX::MarketData.calculate_average(30.minutes.ago)
       ma_4hours = GDAX::MarketData.calculate_average(4.hours.ago)
@@ -51,9 +54,9 @@ class Trader
       ceiling = ma_4hours * 1.01
       floor   = ma_4hours * 0.99
 
-      if (floor..ceiling).include?(ma_30mins) && Contract.incomplete.count <= 3
+      if (floor..ceiling).include?(ma_30mins)
         Contract.place_new_buy_order
-        Contract.place_new_sell_order
+        # Contract.place_new_sell_order
       else
         puts "Volatile market. 30min average: #{ma_30mins}, 4-hour average: #{ma_4hours}, trading range: #{floor.round(2)} - #{ceiling.round(2)}"
       end
