@@ -1,8 +1,8 @@
 class Metric < ActiveRecord::Base
 
-  scope :with_averages, ->        { where.not(average_15_min: nil).where.not(average_4_hour: nil) }
-  scope :trending_up,   ->        { with_averages.where("average_15_min > (average_4_hour * 1.002)") }
-  scope :trending_down, ->        { with_averages.where("average_15_min < (average_4_hour * 0.998)") }
+  scope :with_averages, ->        { where.not(average_30_min: nil).where.not(average_4_hour: nil) }
+  scope :trending_up,   ->        { with_averages.where("average_30_min > (average_4_hour * 1.005)") }
+  scope :trending_down, ->        { with_averages.where("average_30_min < (average_4_hour * 0.995)") }
   scope :since,         -> (date) { where("created_at > ?", date) }
 
   def self.save_current_data

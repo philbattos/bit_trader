@@ -42,19 +42,20 @@ class Trader
     end
 
     def place_new_orders
-      ma_15mins = GDAX::MarketData.calculate_average(15.minutes.ago)
+      # ma_15mins = GDAX::MarketData.calculate_average(15.minutes.ago)
+      ma_30mins = GDAX::MarketData.calculate_average(30.minutes.ago)
       ma_4hours = GDAX::MarketData.calculate_average(4.hours.ago)
 
-      return false if ma_15mins.nil? || ma_4hours.nil?
+      return false if ma_30mins.nil? || ma_4hours.nil?
 
-      ceiling = ma_4hours * 1.002
-      floor   = ma_4hours * 0.998
+      ceiling = ma_4hours * 1.005
+      floor   = ma_4hours * 0.995
 
-      if (floor..ceiling).include?(ma_15mins) && Contract.incomplete.count <= 3
+      if (floor..ceiling).include?(ma_30mins) && Contract.incomplete.count <= 3
         Contract.place_new_buy_order
         Contract.place_new_sell_order
       else
-        puts "Volatile market. 15min average: #{ma_15mins}, 4-hour average: #{ma_4hours}, trading range: #{floor.round(2)} - #{ceiling.round(2)}"
+        puts "Volatile market. 30min average: #{ma_30mins}, 4-hour average: #{ma_4hours}, trading range: #{floor.round(2)} - #{ceiling.round(2)}"
       end
 
       # Contract.logarithmic_buy
