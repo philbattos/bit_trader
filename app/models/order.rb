@@ -40,6 +40,7 @@ class Order < ActiveRecord::Base
   MARGIN             = 0.01
   TRADING_UNITS      = 36
   SPREAD_PERCENT     = 0.01
+  PROFIT_PERCENT     = 0.002
   INCREMENTS         = [0.0002, 0.0003, 0.0005, 0.0008, 0.0013, 0.0021, 0.0034, 0.0055, 0.0089, 0.0123, 0.0212, 0.0335, 0.0547, 0.0882, 0.1429] # fibonacci increments
 
   # TODO: add validation for gdax_id (every order should have one)
@@ -111,10 +112,12 @@ class Order < ActiveRecord::Base
       return current_bid
     else
       # (current_bid - MARGIN).round(2)
-      available_buys   = (Account.gdax_usdollar_account.balance / (current_bid * ORDER_SIZE)).round
-      spread_increment = ((current_bid * SPREAD_PERCENT) / (available_buys + 1)).round(3) * 0.75
+      # available_buys   = (Account.gdax_usdollar_account.balance / (current_bid * ORDER_SIZE)).round
+      # spread_increment = ((current_bid * SPREAD_PERCENT) / (available_buys + 1)).round(3) * 0.75
+      # (current_bid - spread_increment).round(2)
 
-      (current_bid - spread_increment).round(2)
+      profit_percent = 1 - PROFIT_PERCENT
+      (current_bid * profit_percent).round(2)
     end
   end
 
@@ -143,11 +146,13 @@ class Order < ActiveRecord::Base
     if current_ask == 0.0
       return current_ask
     else
-      # (current_ask + MARGIN).round(2)
-      available_sells  = (Account.gdax_bitcoin_account.balance * 100).round
-      spread_increment = ((current_ask * SPREAD_PERCENT) / (available_sells + 1)).round(3) * 0.75
+      # # (current_ask + MARGIN).round(2)
+      # available_sells  = (Account.gdax_bitcoin_account.balance * 100).round
+      # spread_increment = ((current_ask * SPREAD_PERCENT) / (available_sells + 1)).round(3) * 0.75
+      # (current_ask + spread_increment).round(2)
 
-      (current_ask + spread_increment).round(2)
+      profit_percent = 1 + PROFIT_PERCENT
+      (current_ask * profit_percent).round(2)
     end
   end
 

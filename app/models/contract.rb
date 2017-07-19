@@ -157,7 +157,7 @@ class Contract < ActiveRecord::Base
   end
 
   def self.add_new_contract
-    if unresolved.order(:created_at).last.created_at < 12.hours.ago
+    if unresolved.order(:created_at).last.created_at < 5.hours.ago
       place_new_buy_order
     end
   end
