@@ -158,6 +158,7 @@ class Contract < ActiveRecord::Base
 
   def self.add_new_contract
     if unresolved.order(:created_at).last.created_at < 5.hours.ago
+      puts "There are #{unresolved.count} stale contracts. Adding a new one."
       place_new_buy_order
     end
   end
@@ -338,7 +339,7 @@ class Contract < ActiveRecord::Base
 
   def self.update_status
     mark_as_done
-    mark_as_liquidate
+    # mark_as_liquidate
   end
 
   def self.mark_as_done
