@@ -75,7 +75,8 @@ class Order < ActiveRecord::Base
     end
 
     if response
-      puts "Order successful: #{order_type.upcase} @ #{response['price']}"
+      price = response.keys.include?('price') ? response['price'] : 'unknown price'
+      puts "#{strategy_type.capitalize} order successful: #{order_type.upcase} @ #{response['price']}"
       store_order(response, order_type, contract_id, strategy_type)
     end
     response
@@ -210,11 +211,12 @@ class Order < ActiveRecord::Base
     contract = Contract.create_with(strategy_type: strategy_type).find_or_create_by(id: contract_id)
     contract.update(gdax_buy_order_id: response.id)  if order_type == 'buy'
     contract.update(gdax_sell_order_id: response.id) if order_type == 'sell'
+    price = response.keys.include?('price') ? response['price'] : nil
     contract.orders.create(
       # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
       type:                lookup_class_type[order_type],
       gdax_id:             response['id'],
-      gdax_price:          response['price'],
+      gdax_price:          price,
       gdax_size:           response['size'],
       gdax_product_id:     response['product_id'],
       gdax_side:           response['side'],
@@ -228,7 +230,7 @@ class Order < ActiveRecord::Base
       gdax_status:         response['status'],
       gdax_settled:        response['settled'],
       quantity:            response['size'],
-      requested_price:     response['price'],
+      requested_price:     price,
       executed_value:      response['executed_value'],
       fees:                response['fill_fees'],
       status:              response['status'],
@@ -236,6 +238,9 @@ class Order < ActiveRecord::Base
       # custom_id:           response['oid'],
       # currency:            response['currency'],
     )
+  rescue => error
+    puts "Error when storing order: #{error.inspect}"
+    puts "response: #{response.inspect}"
   end
 
   def self.lookup_class_type
