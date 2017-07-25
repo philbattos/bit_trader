@@ -6,6 +6,7 @@ class Trader
         update_orders_and_contracts
         place_new_orders
         Contract.add_new_contract
+        technical_analysis_orders
       }
       EM.error_handler do |e|
         json = JSON.parse(e.message)
@@ -34,7 +35,7 @@ class Trader
       Contract.update_status # updates random 'done' contract; updates random liquidatable contract
       # Contract.market_maker.resolve_open
       Contract.resolve_open # liquidates old contracts; populates empty contracts with a buy order; matches open orders
-      Order.cancel_stale_orders
+      # Order.cancel_stale_orders
     end
 
     def update_unresolved_order
@@ -63,6 +64,25 @@ class Trader
 
       # Contract.logarithmic_buy
       # Contract.logarithmic_sell
+    end
+
+    def technical_analysis_orders
+      ma_13hours = GDAX::MarketData.calculate_average(13.hours.ago)
+      ma_43hours = GDAX::MarketData.calculate_average(43.hours.ago)
+
+      if ma_13hours > ma_43hours && Contract.trendline.with_active_buy.empty?
+        contract_id = Contract.trendline.with_sell_without_buy.first.try(:id)
+        size        = 0.02
+        price       = 1.00 # any number is sufficient since it is a 'market' order
+        puts "Price is increasing... Placing new trendline BUY order for contract #{contract_id}."
+        Order.submit_order('buy', price, size, {type: 'market'}, contract_id, 'trendline')
+      elsif ma_13hours < ma_43hours && Contract.trendline.with_active_sell.empty?
+        contract_id = Contract.trendline.with_buy_without_sell.first.try(:id)
+        size        = 0.02
+        price       = 10000.00 # any number is sufficient since it is a 'market' order
+        puts "Price is decreasing... Placing new trendline SELL order for contract #{contract_id}."
+        Order.submit_order('sell', price, size, {type: 'market'}, contract_id, 'trendline')
+      end
     end
 
 end

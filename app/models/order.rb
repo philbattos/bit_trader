@@ -190,6 +190,7 @@ class Order < ActiveRecord::Base
   end
 
   def self.cancel_stale_orders
+    # Does this affect tech-analysis orders??
     exchange_orders = open_orders
                         .select {|o| o.filled_size == 0.0} # we don't want to cancel orders that have been partially filled.
                         .sort_by(&:price)

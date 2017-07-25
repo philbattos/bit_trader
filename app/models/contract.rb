@@ -129,8 +129,8 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_buys
-    return if SellOrder.where(status: ['open', 'pending']).count > 3 # cap active buy orders at 3
-    open_contract = with_buy_without_sell.where.not(id: liquidate).includes(:buy_orders).order("orders.requested_price").first # finds contracts with lowest active buy price and without an active sell
+    return if SellOrder.market_maker.where(status: ['open', 'pending']).count > 3 # cap active buy orders at 3
+    open_contract = market_maker.with_buy_without_sell.where.not(id: liquidate).includes(:buy_orders).order("orders.requested_price").first # finds contracts with lowest active buy price and without an active sell
     # open_contract = with_buy_without_sell.includes(:buy_orders).sample
     if open_contract
       return if open_contract.buy_order.status == 'pending' # if the buy order is pending, it may not have a price yet
@@ -143,8 +143,8 @@ class Contract < ActiveRecord::Base
   end
 
   def self.match_open_sells
-    return if BuyOrder.where(status: ['open', 'pending']).count > 3 # cap active sell orders at 3
-    open_contract = with_sell_without_buy.where.not(id: liquidate).includes(:sell_orders).order("orders.requested_price desc").first # finds contracts with highest active sell price and without an active buy
+    return if BuyOrder.market_maker.where(status: ['open', 'pending']).count > 3 # cap active sell orders at 3
+    open_contract = market_maker.with_sell_without_buy.where.not(id: liquidate).includes(:sell_orders).order("orders.requested_price desc").first # finds contracts with highest active sell price and without an active buy
     # open_contract = with_sell_without_buy.includes(:sell_orders).sample
     if open_contract
       return if open_contract.sell_order.status == 'pending' # if the sell order is pending, it may not have a price yet

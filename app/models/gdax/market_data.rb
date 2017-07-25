@@ -46,13 +46,10 @@ module GDAX
     end
 
     def self.calculate_average(date)
-      trades = trades_since(date)
-      if trades.present?
-        (trades.sum(:price) / trades.count).round(2)
-      else
-        nil
-      end
+      trades_since(date).average(:price).try(:round, 2)
     end
+
+    # TO DO: create method to calculate exponential moving-average
 
     def self.orderbook
       GDAX::Connection.new.rest_client.orderbook
