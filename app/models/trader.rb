@@ -70,13 +70,13 @@ class Trader
       ma_13hours = GDAX::MarketData.calculate_average(13.hours.ago)
       ma_43hours = GDAX::MarketData.calculate_average(43.hours.ago)
 
-      if ma_13hours > ma_43hours && Contract.trendline.with_active_buy.empty?
+      if ma_13hours > ma_43hours && Contract.trendline.without_active_sell.empty?
         contract_id = Contract.trendline.with_sell_without_buy.first.try(:id)
         size        = 0.02
         price       = 1.00 # any number is sufficient since it is a 'market' order
         puts "Price is increasing... Placing new trendline BUY order for contract #{contract_id}."
         Order.submit_order('buy', price, size, {type: 'market'}, contract_id, 'trendline')
-      elsif ma_13hours < ma_43hours && Contract.trendline.with_active_sell.empty?
+      elsif ma_13hours < ma_43hours && Contract.trendline.without_active_buy.empty?
         contract_id = Contract.trendline.with_buy_without_sell.first.try(:id)
         size        = 0.02
         price       = 10000.00 # any number is sufficient since it is a 'market' order
