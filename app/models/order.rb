@@ -211,7 +211,7 @@ class Order < ActiveRecord::Base
     contract = Contract.create_with(strategy_type: strategy_type).find_or_create_by(id: contract_id)
     contract.update(gdax_buy_order_id: response.id)  if order_type == 'buy'
     contract.update(gdax_sell_order_id: response.id) if order_type == 'sell'
-    price = response.keys.include?('price') ? response['price'] : nil
+    price = response.keys.include?('price') ? response['price'] : nil # NOTE: market orders do not include 'price' in response
     contract.orders.create(
       # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
       type:                lookup_class_type[order_type],
@@ -274,15 +274,16 @@ class Order < ActiveRecord::Base
     response = check_gdax_status
     if response && response.status != self.gdax_status
       puts "Updating status of #{self.type} #{self.id} from #{self.gdax_status} to #{response.status}"
+      price = response.keys.include?('price') ? response.price : nil # NOTE: market orders do not include 'price' in response
       # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
       self.update(
         gdax_status:         response.status,
-        gdax_price:          response.price, # price in original request; may not be executed price
+        gdax_price:          price, # price in original request; may not be executed price
         gdax_executed_value: response.executed_value,
         gdax_filled_size:    response.filled_size,
         gdax_filled_fees:    response.fill_fees,
         status:              response.status,
-        requested_price:     response.price,
+        requested_price:     price,
         filled_price:        Order.calculate_filled_price(response),
         executed_value:      response.executed_value, # filled_price * quantity; does not include fees
         quantity:            response.filled_size,
