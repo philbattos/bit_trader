@@ -48,7 +48,7 @@ class Contract < ActiveRecord::Base
   #       or deactivated, the contract's ROI should be recalculated.
 
   # PROFIT = 0.10
-  PROFIT_PERCENT = [0.0002, 0.0003, 0.0004, 0.0005, 0.0006, 0.0007, 0.0008, 0.0009, 0.0010, 0.0015, 0.0020]
+  PROFIT_PERCENT = [0.002]
   MARGIN = 0.01
   # MAX_OPEN_ORDERS = 3
   # MAX_TIME_BETWEEN_ORDERS = 1.minute.ago.to_i
@@ -179,48 +179,48 @@ class Contract < ActiveRecord::Base
     end
   end
 
-  def self.logarithmic_buy
-    # how many buy units are available? (up to 10)
-    # if 10 units, then check current buy orders
-    # if less than 10 units, then check current buy orders
-    # if highest open buy order (without matching sell order) is more than x % lower than current bid,
-    #   delete all open buy orders (without matching sell orders) and place 3 new buy order closer to current bid.
-    #   then, successive loops will place new buy orders on the lower end
-    # if highest open buy order is within range of current bid, then place new buy order on lower end of open buy orders.
-    #   for example, if there are already 6 open buy orders (without matching sell orders), then add a 7th lower than the 6th
-    buys_without_sells = BuyOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: SellOrder.done.select(:contract_id).distinct)).order(:requested_price)
-    highest_buy_order  = buys_without_sells.last
-    current_bid        = GDAX::MarketData.current_bid
+  # def self.logarithmic_buy
+  #   # how many buy units are available? (up to 10)
+  #   # if 10 units, then check current buy orders
+  #   # if less than 10 units, then check current buy orders
+  #   # if highest open buy order (without matching sell order) is more than x % lower than current bid,
+  #   #   delete all open buy orders (without matching sell orders) and place 3 new buy order closer to current bid.
+  #   #   then, successive loops will place new buy orders on the lower end
+  #   # if highest open buy order is within range of current bid, then place new buy order on lower end of open buy orders.
+  #   #   for example, if there are already 6 open buy orders (without matching sell orders), then add a 7th lower than the 6th
+  #   buys_without_sells = BuyOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: SellOrder.done.select(:contract_id).distinct)).order(:requested_price)
+  #   highest_buy_order  = buys_without_sells.last
+  #   current_bid        = GDAX::MarketData.current_bid
 
-    if current_bid && highest_buy_order && (current_bid > highest_buy_order.requested_price * 1.001)
-      buys_without_sells.each {|o| Order.find_by(gdax_id: o.gdax_id).cancel_order }
+  #   if current_bid && highest_buy_order && (current_bid > highest_buy_order.requested_price * 1.001)
+  #     buys_without_sells.each {|o| Order.find_by(gdax_id: o.gdax_id).cancel_order }
 
-      3.times do
-        my_buy_price = Order.new_buy_price
-        return missing_price('buy') if my_buy_price == 0.0
-        new_order = Order.place_buy(my_buy_price)
+  #     3.times do
+  #       my_buy_price = Order.new_buy_price
+  #       return missing_price('buy') if my_buy_price == 0.0
+  #       new_order = Order.place_buy(my_buy_price)
 
-        if new_order
-          puts "placed new buy: #{new_order['id']} for $#{my_buy_price}"
-          order = Order.find_by_gdax_id(new_order['id'])
-          order.contract.update(gdax_buy_order_id: new_order['id'])
-        end
-      end
-    else
-      return if buys_without_sells.count > 10
+  #       if new_order
+  #         puts "placed new buy: #{new_order['id']} for $#{my_buy_price}"
+  #         order = Order.find_by_gdax_id(new_order['id'])
+  #         order.contract.update(gdax_buy_order_id: new_order['id'])
+  #       end
+  #     end
+  #   else
+  #     return if buys_without_sells.count > 10
 
-      # place new buy order on lower end
-      my_buy_price = Order.new_buy_price
-      return missing_price('buy') if my_buy_price == 0.0
-      new_order = Order.place_buy(my_buy_price)
+  #     # place new buy order on lower end
+  #     my_buy_price = Order.new_buy_price
+  #     return missing_price('buy') if my_buy_price == 0.0
+  #     new_order = Order.place_buy(my_buy_price)
 
-      if new_order
-        puts "placed new buy: #{new_order['id']} for $#{my_buy_price}"
-        order = Order.find_by_gdax_id(new_order['id'])
-        order.contract.update(gdax_buy_order_id: new_order['id'])
-      end
-    end
-  end
+  #     if new_order
+  #       puts "placed new buy: #{new_order['id']} for $#{my_buy_price}"
+  #       order = Order.find_by_gdax_id(new_order['id'])
+  #       order.contract.update(gdax_buy_order_id: new_order['id'])
+  #     end
+  #   end
+  # end
 
   def self.place_new_sell_order # move to Order class?
     # a new SELL order gets executed when the BTC account has enough funds to sell the selected amount
@@ -238,40 +238,40 @@ class Contract < ActiveRecord::Base
     end
   end
 
-  def self.logarithmic_sell
-    sells_without_buys = SellOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: BuyOrder.done.select(:contract_id).distinct)).order(:requested_price)
-    lowest_sell_order  = sells_without_buys.first
-    current_ask        = GDAX::MarketData.current_ask
+  # def self.logarithmic_sell
+  #   sells_without_buys = SellOrder.where(status: ['pending', 'open']).where(contract_id: Contract.where.not(id: BuyOrder.done.select(:contract_id).distinct)).order(:requested_price)
+  #   lowest_sell_order  = sells_without_buys.first
+  #   current_ask        = GDAX::MarketData.current_ask
 
-    if current_ask && lowest_sell_order && (current_ask < lowest_sell_order.requested_price * 0.999)
-      sells_without_buys.each {|o| Order.find_by(gdax_id: o.gdax_id).cancel_order }
+  #   if current_ask && lowest_sell_order && (current_ask < lowest_sell_order.requested_price * 0.999)
+  #     sells_without_buys.each {|o| Order.find_by(gdax_id: o.gdax_id).cancel_order }
 
-      3.times do
-        my_sell_price = Order.new_ask_price
-        return missing_price('sell') if my_sell_price == 0.0
-        new_order = Order.place_sell(my_sell_price)
+  #     3.times do
+  #       my_sell_price = Order.new_ask_price
+  #       return missing_price('sell') if my_sell_price == 0.0
+  #       new_order = Order.place_sell(my_sell_price)
 
-        if new_order
-          puts "placed new sell: #{new_order['id']} for $#{my_sell_price}"
-          order = Order.find_by_gdax_id(new_order['id'])
-          order.contract.update(gdax_buy_order_id: new_order['id'])
-        end
-      end
-    else
-      return if sells_without_buys.count > 10
+  #       if new_order
+  #         puts "placed new sell: #{new_order['id']} for $#{my_sell_price}"
+  #         order = Order.find_by_gdax_id(new_order['id'])
+  #         order.contract.update(gdax_buy_order_id: new_order['id'])
+  #       end
+  #     end
+  #   else
+  #     return if sells_without_buys.count > 10
 
-      # place new sell order on higher end
-      my_sell_price = Order.new_ask_price
-      return missing_price('sell') if my_sell_price == 0.0
-      new_order = Order.place_sell(my_sell_price)
+  #     # place new sell order on higher end
+  #     my_sell_price = Order.new_ask_price
+  #     return missing_price('sell') if my_sell_price == 0.0
+  #     new_order = Order.place_sell(my_sell_price)
 
-      if new_order
-        puts "placed new sell: #{new_order['id']} for $#{my_sell_price}"
-        order = Order.find_by_gdax_id(new_order['id'])
-        order.contract.update(gdax_sell_order_id: new_order['id'])
-      end
-    end
-  end
+  #     if new_order
+  #       puts "placed new sell: #{new_order['id']} for $#{my_sell_price}"
+  #       order = Order.find_by_gdax_id(new_order['id'])
+  #       order.contract.update(gdax_sell_order_id: new_order['id'])
+  #     end
+  #   end
+  # end
 
   def self.buy_order_gap?
     bid         = GDAX::MarketData.current_bid

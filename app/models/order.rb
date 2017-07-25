@@ -116,7 +116,7 @@ class Order < ActiveRecord::Base
       # spread_increment = ((current_bid * SPREAD_PERCENT) / (available_buys + 1)).round(3) * 0.75
       # (current_bid - spread_increment).round(2)
 
-      profit_percent = 1 - PROFIT_PERCENT
+      profit_percent = 1.0 - PROFIT_PERCENT
       (current_bid * profit_percent).round(2)
     end
   end
@@ -151,7 +151,7 @@ class Order < ActiveRecord::Base
       # spread_increment = ((current_ask * SPREAD_PERCENT) / (available_sells + 1)).round(3) * 0.75
       # (current_ask + spread_increment).round(2)
 
-      profit_percent = 1 + PROFIT_PERCENT
+      profit_percent = 1.0 + PROFIT_PERCENT
       (current_ask * profit_percent).round(2)
     end
   end
