@@ -67,8 +67,8 @@ class Trader
     end
 
     def technical_analysis_orders
-      ma_13hours = GDAX::MarketData.calculate_average(13.hours.ago)
-      ma_43hours = GDAX::MarketData.calculate_average(43.hours.ago)
+      ma_13hours = GDAX::MarketData.calculate_exponential_average(13.hours.ago.time)
+      ma_43hours = GDAX::MarketData.calculate_exponential_average(43.hours.ago.time)
 
       if ma_13hours > ma_43hours && Contract.trendline.without_active_sell.empty?
         contract_id = Contract.trendline.with_sell_without_buy.first.try(:id)

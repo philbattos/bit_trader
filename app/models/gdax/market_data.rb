@@ -49,7 +49,19 @@ module GDAX
       trades_since(date).average(:price).try(:round, 2)
     end
 
-    # TO DO: create method to calculate exponential moving-average
+    def self.calculate_exponential_average(date)
+      # date should be in format '2017-07-25 17:55:16' or '2017-07-25 17:55:16 +0000' or '2017-07-25 17:55:16 UTC'
+      sql_query = "WITH trades AS (
+        SELECT ROW_NUMBER() OVER(ORDER BY trade_id) AS weight,
+               ROUND(price,2) AS trade_price
+        FROM market_data
+        WHERE created_at > '#{date}' AND created_at < now()
+      )
+      SELECT ROUND(SUM(trade_price * weight) / SUM(weight), 2) AS weighted_average
+      FROM trades;"
+      results = ActiveRecord::Base.connection.execute(sql_query)
+      results.first['weighted_average'].to_d
+    end
 
     def self.orderbook
       GDAX::Connection.new.rest_client.orderbook
