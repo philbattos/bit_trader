@@ -78,6 +78,8 @@ class Trader
         puts "Price is increasing... Placing new trendline BUY order for contract #{contract_id}."
         if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
           Order.submit_order('buy', price, size, {type: 'market'}, contract_id, 'trendline')
+        else
+          puts "USD balance not sufficient for trendline BUY order."
         end
       elsif ma_13hours < ma_43hours && Contract.trendline.without_active_buy.empty?
         contract_id = Contract.trendline.with_buy_without_sell.first.try(:id)
@@ -86,6 +88,8 @@ class Trader
         puts "Price is decreasing... Placing new trendline SELL order for contract #{contract_id}."
         if Account.gdax_bitcoin_account.available >= (size).to_d
           Order.submit_order('sell', price, size, {type: 'market'}, contract_id, 'trendline')
+        else
+          puts "BTC balance not sufficient for trendline SELL order."
         end
       end
     end
