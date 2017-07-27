@@ -67,6 +67,7 @@ class Trader
     end
 
     def technical_analysis_orders
+      # TO DO: Prevent queries from being run on every cycle. They slow down other bot actions.
       ma_13hours = GDAX::MarketData.calculate_exponential_average(13.hours.ago.time)
       ma_43hours = GDAX::MarketData.calculate_exponential_average(43.hours.ago.time)
 
@@ -75,13 +76,17 @@ class Trader
         size        = 0.02
         price       = 1.00 # any number is sufficient since it is a 'market' order
         puts "Price is increasing... Placing new trendline BUY order for contract #{contract_id}."
-        Order.submit_order('buy', price, size, {type: 'market'}, contract_id, 'trendline')
+        if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
+          Order.submit_order('buy', price, size, {type: 'market'}, contract_id, 'trendline')
+        end
       elsif ma_13hours < ma_43hours && Contract.trendline.without_active_buy.empty?
         contract_id = Contract.trendline.with_buy_without_sell.first.try(:id)
         size        = 0.02
         price       = 10000.00 # any number is sufficient since it is a 'market' order
         puts "Price is decreasing... Placing new trendline SELL order for contract #{contract_id}."
-        Order.submit_order('sell', price, size, {type: 'market'}, contract_id, 'trendline')
+        if Account.gdax_bitcoin_account.available >= (size).to_d
+          Order.submit_order('sell', price, size, {type: 'market'}, contract_id, 'trendline')
+        end
       end
     end
 
