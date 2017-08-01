@@ -4,9 +4,9 @@ class Trader
     EM.run do
       EM.add_periodic_timer(1) {
         update_orders_and_contracts
-        place_new_orders
-        Contract.add_new_contract
-        technical_analysis_orders
+        # place_new_orders
+        # Contract.add_new_contract
+        # technical_analysis_orders
       }
       EM.error_handler do |e|
         json = JSON.parse(e.message)
@@ -68,9 +68,11 @@ class Trader
 
     def technical_analysis_orders
       # TO DO: Prevent queries from being run on every cycle. They slow down other bot actions.
+      #   Query Metrics table instead of all trades??
       ma_13hours = GDAX::MarketData.calculate_exponential_average(13.hours.ago.time)
       ma_43hours = GDAX::MarketData.calculate_exponential_average(43.hours.ago.time)
 
+      # TO DO: place stop orders once market price passes profit margin (multiply buy price * 1.0052 to cover fees)
       if ma_13hours > ma_43hours && Contract.trendline.without_active_sell.empty?
         contract_id = Contract.trendline.with_sell_without_buy.first.try(:id)
         size        = 0.02
