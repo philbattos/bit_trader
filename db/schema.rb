@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170130021823) do
+ActiveRecord::Schema.define(version: 20170801054243) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -127,6 +127,18 @@ ActiveRecord::Schema.define(version: 20170130021823) do
     t.index ["requested_price"], name: "index_orders_on_requested_price", using: :btree
     t.index ["status"], name: "index_orders_on_status", using: :btree
     t.index ["strategy_type"], name: "index_orders_on_strategy_type", using: :btree
+  end
+
+  create_table "traders", force: :cascade do |t|
+    t.string   "name"
+    t.text     "description"
+    t.boolean  "is_active"
+    t.boolean  "is_market_maker"
+    t.boolean  "is_trendline"
+    t.decimal  "moving_average_short", precision: 15, scale: 8
+    t.decimal  "moving_average_long",  precision: 15, scale: 8
+    t.datetime "created_at",                                    null: false
+    t.datetime "updated_at",                                    null: false
   end
 
   create_table "transfers", force: :cascade do |t|

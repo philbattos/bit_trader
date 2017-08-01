@@ -1,5 +1,12 @@
 <h1>Orders Page</h1>
 
+<!-- Trader Status -->
+Trader Active?: <%= Trader.find_by(name: 'default').is_active %>
+<br></br>
+<%= link_to("Turn ON", trader_path(nil, id: 1, is_active: true), method: :put) %>
+<%= link_to("Turn OFF", trader_path(nil, id: 1, is_active: false), method: :put) %>
+
+
 <h3>Charts</h3>
   <%= high_chart_globals(@chart_globals) %>
 

@@ -1,12 +1,20 @@
-class Trader
+class Trader < ActiveRecord::Base
+  after_initialize :default_trader
 
   def start
     EM.run do
+      current_trader = Trader.find_by(name: name)
       EM.add_periodic_timer(1) {
-        update_orders_and_contracts
-        # place_new_orders
-        # Contract.add_new_contract
-        # technical_analysis_orders
+        if current_trader.is_active
+          puts 'active trader'
+          update_orders_and_contracts
+          # place_new_orders
+          # Contract.add_new_contract
+          # technical_analysis_orders
+        else
+          puts 'inactive trader'
+        end
+        current_trader.reload
       }
       EM.error_handler do |e|
         json = JSON.parse(e.message)
@@ -24,6 +32,10 @@ class Trader
         # send alert to frontend; or send email/text
       end
     end
+  end
+
+  def default_trader
+    self.name = 'default'
   end
 
   #=================================================
