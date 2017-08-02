@@ -7,9 +7,9 @@ class Trader < ActiveRecord::Base
       EM.add_periodic_timer(1) {
         if current_trader.is_active
           update_orders_and_contracts
-          # place_new_orders
-          # Contract.add_new_contract
-          # technical_analysis_orders
+          place_new_orders
+          Contract.add_new_contract
+          technical_analysis_orders
         else
           # inactive trader
         end
