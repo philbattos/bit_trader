@@ -24,6 +24,8 @@ gem 'em-http-request'                       # required by coinbase gem for authe
 gem 'pg'                                    # use postgres db (required by Heroku)
 gem 'puma'                                  # server that supports ActionCable (Rails 5)
 gem 'lazy_high_charts'                      # use HighCharts in Rails
+gem 'bootstrap-sass'                        # use Bootstrap styles (via sass) in UI
+gem 'haml'                                  # use haml templates in views instead of erb
 
 group :development, :test do
   gem 'pry'                                 # Call 'byebug' anywhere in the code to stop execution and get a debugger console
