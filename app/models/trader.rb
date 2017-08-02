@@ -6,13 +6,12 @@ class Trader < ActiveRecord::Base
       current_trader = Trader.find_by(name: name)
       EM.add_periodic_timer(1) {
         if current_trader.is_active
-          puts 'active trader'
           update_orders_and_contracts
           # place_new_orders
           # Contract.add_new_contract
           # technical_analysis_orders
         else
-          puts 'inactive trader'
+          # inactive trader
         end
         current_trader.reload
       }
