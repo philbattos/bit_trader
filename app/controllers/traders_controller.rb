@@ -407,6 +407,71 @@ class TradersController < ApplicationController
       )
     end
 
+    @chart8 = LazyHighCharts::HighChart.new('graph') do |f|
+      f.title(text: "Moving Averages: 13h & 43h")
+      f.chart(zoomType: 'x')
+
+      f.xAxis(
+        type: 'datetime',
+        plotLines: find_trading_points
+      )
+
+      f.yAxis(
+        title: { text: "Bitcoin Price" }
+      )
+
+      f.series(
+        name: 'Bitcoin Price',
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0,
+        lineWidth: 3
+      )
+
+      f.series(
+        name: '13-Hour Average',
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_13_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        name: '43-Hour Average',
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_43_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        # type: 'spline',
+        name: '13-Hour Average (weighted)',
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_weighted_13_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        # type: 'spline',
+        name: '43-Hour Average (weighted)',
+        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_weighted_43_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.plotOptions(
+        series: {
+          marker: { enabled: false },
+          lineWidth: 1
+        }
+      )
+
+      f.tooltip(
+        valuePrefix: '$'
+      )
+
+      f.legend(
+        layout: 'vertical',
+        align: 'left',
+        verticalAlign: 'top',
+        floating: true
+      )
+    end
+
     @chart_globals = LazyHighCharts::HighChartGlobals.new do |f|
       # NOTE: for high-charts times, use milliseconds:
       #       find the Rails date/time, convert to epoch time with .to_i, and then multiply by 1000
