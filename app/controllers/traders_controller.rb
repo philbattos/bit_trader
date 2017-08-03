@@ -413,7 +413,7 @@ class TradersController < ApplicationController
 
       f.xAxis(
         type: 'datetime',
-        plotLines: find_trading_points
+        plotLines: find_trendline_trades
       )
 
       f.yAxis(
@@ -572,6 +572,33 @@ class TradersController < ApplicationController
       # sell_lines + stop_selling_lines + buy_lines + stop_buying_lines
       sell_lines + buy_lines
       # [sell_lines.first, buy_lines.first]
+    end
+
+    def find_trendline_trades
+      buy_orders  = BuyOrder.trendline
+      sell_orders = SellOrder.trendline
+
+      sell_lines = sell_orders.map do |order|
+        {
+          value: order.created_at.to_i * 1000,
+          # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
+          width: 1,
+          color: 'red',
+          dashStyle: 'dot'
+        }
+      end
+
+      buy_lines = buy_orders.map do |order|
+        {
+          value: order.created_at.to_i * 1000,
+          # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
+          width: 1,
+          color: 'blue',
+          dashStyle: 'dot'
+        }
+      end
+
+      sell_lines + buy_lines
     end
 
 end
