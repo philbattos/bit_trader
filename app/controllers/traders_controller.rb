@@ -422,34 +422,34 @@ class TradersController < ApplicationController
 
       f.series(
         name: 'Bitcoin Price',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0,
         lineWidth: 3
       )
 
       f.series(
         name: '13-Hour Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_13_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_13_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         name: '43-Hour Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_43_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_43_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         # type: 'spline',
         name: '13-Hour Average (weighted)',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_weighted_13_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_13_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
         # type: 'spline',
         name: '43-Hour Average (weighted)',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_weighted_43_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_43_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
@@ -584,7 +584,7 @@ class TradersController < ApplicationController
           # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
           width: 1,
           color: 'red',
-          dashStyle: 'dot'
+          dashStyle: 'solid'
         }
       end
 
@@ -594,7 +594,7 @@ class TradersController < ApplicationController
           # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
           width: 1,
           color: 'blue',
-          dashStyle: 'dot'
+          dashStyle: 'solid'
         }
       end
 
