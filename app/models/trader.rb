@@ -97,7 +97,7 @@ class Trader < ActiveRecord::Base
         entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
 
         # TO DO: place stop orders once market price passes profit margin (multiply buy price * 1.0052 to cover fees)
-        if entry_short_line > (entry_long_line * (1 + crossover_buffer))
+        if entry_short_line > (entry_long_line * (1 + crossover_buffer)) && (exit_short_line > exit_long_line)
           size  = trading_units
           price = 1.00 # any number is sufficient since it is a 'market' order
           puts "Price is increasing... Placing new trendline BUY order."
@@ -106,7 +106,7 @@ class Trader < ActiveRecord::Base
           else
             puts "USD balance not sufficient for trendline BUY order."
           end
-        elsif entry_short_line < (entry_long_line * (1 - crossover_buffer))
+        elsif entry_short_line < (entry_long_line * (1 - crossover_buffer)) && (exit_short_line < exit_long_line)
           size  = trading_units
           price = 10000.00 # any number is sufficient since it is a 'market' order
           puts "Price is decreasing... Placing new trendline SELL order."
