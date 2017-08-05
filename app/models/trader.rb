@@ -119,7 +119,10 @@ class Trader < ActiveRecord::Base
         end
       else # an entry trendline order has been made. check the market conditions to make an exit order.
         contract = Contract.trendline.unresolved.first # there should only be 1 contract that needs an order
-        return "There is a matched trendline contract #{contract.id} that needs to update its status." if Contract.matched.any?
+        if Contract.trendline.matched.any?
+          Rails.logger.info "There is a matched trendline contract #{contract.id} that needs to update its status."
+          return
+        end
 
         if contract.lacking_sell?
           if exit_short_line < exit_long_line
