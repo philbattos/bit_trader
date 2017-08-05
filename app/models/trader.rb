@@ -87,6 +87,7 @@ class Trader < ActiveRecord::Base
       exit_long_time  = exit_long.minutes.ago.time
       exit_short_line = GDAX::MarketData.calculate_exponential_average(exit_short_time)
       exit_long_line  = GDAX::MarketData.calculate_exponential_average(exit_long_time)
+      algorithm = "enter#{entry_short.to_i}x#{entry_long.to_i}(#{crossover_buffer})~exit#{exit_short.to_i}x#{exit_long.to_i}~#{trading_units}units"
 
       if waiting_for_entry?
         entry_short_time = entry_short.minutes.ago.time
@@ -102,7 +103,7 @@ class Trader < ActiveRecord::Base
           price = 1.00 # any number is sufficient since it is a 'market' order
           puts "Price is increasing... Placing new trendline BUY order."
           if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
-            Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline')
+            Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline', algorithm)
           else
             puts "USD balance not sufficient for trendline BUY order."
           end
@@ -111,7 +112,7 @@ class Trader < ActiveRecord::Base
           price = 10000.00 # any number is sufficient since it is a 'market' order
           puts "Price is decreasing... Placing new trendline SELL order."
           if Account.gdax_bitcoin_account.available >= (size).to_d
-            Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline')
+            Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline', algorithm)
           else
             puts "BTC balance not sufficient for trendline SELL order."
           end
@@ -126,7 +127,7 @@ class Trader < ActiveRecord::Base
             price = 10000.00      # any number is sufficient since it is a 'market' order
             puts "Price is decreasing... Placing trendline SELL order for contract #{contract.id}."
             if Account.gdax_bitcoin_account.available >= (size).to_d
-              Order.submit_order('sell', price, size, {type: 'market'}, contract.id, 'trendline')
+              Order.submit_order('sell', price, size, {type: 'market'}, contract.id, 'trendline', algorithm)
             else
               puts "BTC balance not sufficient for matching trendline SELL order."
             end
@@ -137,7 +138,7 @@ class Trader < ActiveRecord::Base
             price = 1.00          # any number is sufficient since it is a 'market' order
             puts "Price is increasing... Placing trendline BUY order for contract #{contract.id}."
             if Account.gdax_bitcoin_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
-              Order.submit_order('buy', price, size, {type: 'market'}, contract.id, 'trendline')
+              Order.submit_order('buy', price, size, {type: 'market'}, contract.id, 'trendline', algorithm)
             else
               puts "BTC balance not sufficient for matching trendline BUY order."
             end

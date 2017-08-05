@@ -107,10 +107,10 @@ class Contract < ActiveRecord::Base
     optional_params = { post_only: true }
     if old_contract.lacking_buy?
       current_bid = GDAX::MarketData.current_bid.round(2)
-      Order.submit_order('buy', current_bid, Order::ORDER_SIZE, optional_params, old_contract.id, 'market-maker')
+      Order.submit_order('buy', current_bid, Order::ORDER_SIZE, optional_params, old_contract.id, 'market-maker', nil)
     elsif old_contract.lacking_sell?
       current_ask = GDAX::MarketData.current_ask.round(2)
-      Order.submit_order('sell', current_ask, Order::ORDER_SIZE, optional_params, old_contract.id, 'market-maker')
+      Order.submit_order('sell', current_ask, Order::ORDER_SIZE, optional_params, old_contract.id, 'market-maker', nil)
     end
   end
 

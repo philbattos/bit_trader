@@ -57,12 +57,9 @@ class Order < ActiveRecord::Base
   #-------------------------------------------------
   #    class methods
   #-------------------------------------------------
-  def self.submit_order(order_type, price, size, optional_params, contract_id, strategy)
-    order_type      = order_type
-    price           = price
+  def self.submit_order(order_type, price, size, optional_params, contract_id, strategy, algorithm)
     size            = size.to_s || ORDER_SIZE.to_s
     optional_params = optional_params || { post_only: true }
-    contact_id      = contract_id
     strategy_type   = strategy
     # @type           = 'limit' # GDAX default
     # @product_id     = 'BTC-USD' # Coinbase gem default
@@ -76,35 +73,35 @@ class Order < ActiveRecord::Base
 
     if response
       price = response.keys.include?('price') ? response['price'] : 'unknown price'
-      puts "#{strategy_type.capitalize} order successful: #{order_type.upcase} @ #{response['price']}"
-      store_order(response, order_type, contract_id, strategy_type)
+      Rails.logger.info "#{strategy_type.capitalize} (#{algorithm}) order successful: #{order_type.upcase} @ #{response['price']}"
+      store_order(response, order_type, contract_id, strategy_type, algorithm)
     end
     response
   rescue Coinbase::Exchange::BadRequestError => gdax_error
-    puts "GDAX error (order submit): #{gdax_error}"
+    Rails.logger.info "GDAX error (order submit): #{gdax_error}"
     nil
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error (order submit): #{rate_limit_error}"
+    Rails.logger.info "GDAX rate limit error (order submit): #{rate_limit_error}"
     nil
   rescue Net::ReadTimeout => timeout_error
-    puts "GDAX timeout error (order submit): #{timeout_error}"
+    Rails.logger.info "GDAX timeout error (order submit): #{timeout_error}"
     nil
   rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
-    puts "GDAX SSL error (order submit): #{ssl_error}"
+    Rails.logger.info "GDAX SSL error (order submit): #{ssl_error}"
     nil
   rescue Coinbase::Exchange::InternalServerError => server_error
-    puts "GDAX server error (order submit): #{server_error}"
+    Rails.logger.info "GDAX server error (order submit): #{server_error}"
     nil
   end
 
   def self.place_buy(bid, contract_id=nil)
     optional_params = { post_only: true }
-    submit_order('buy', bid, ORDER_SIZE, optional_params, contract_id, 'market-maker')
+    submit_order('buy', bid, ORDER_SIZE, optional_params, contract_id, 'market-maker', nil)
   end
 
   def self.place_sell(ask, contract_id=nil)
     optional_params = { post_only: true }
-    submit_order('sell', ask, ORDER_SIZE, optional_params, contract_id, 'market-maker')
+    submit_order('sell', ask, ORDER_SIZE, optional_params, contract_id, 'market-maker', nil)
   end
 
   def self.buy_price
@@ -206,9 +203,9 @@ class Order < ActiveRecord::Base
     Order.find_by(gdax_id: highest_sell.id).cancel_order if highest_sell && (highest_sell.created_at < 5.minutes.ago) && !Contract.recent_sells?
   end
 
-  def self.store_order(response, order_type, contract_id, strategy_type)
-    puts "Storing order #{response['id']}"
-    contract = Contract.create_with(strategy_type: strategy_type).find_or_create_by(id: contract_id)
+  def self.store_order(response, order_type, contract_id, strategy_type, algorithm)
+    Rails.logger.info "Storing order #{response['id']}"
+    contract = Contract.create_with(strategy_type: strategy_type, algorithm: algorithm).find_or_create_by(id: contract_id)
     contract.update(gdax_buy_order_id: response.id)  if order_type == 'buy'
     contract.update(gdax_sell_order_id: response.id) if order_type == 'sell'
     price = response.keys.include?('price') ? response['price'] : nil # NOTE: market orders do not include 'price' in response
@@ -239,8 +236,8 @@ class Order < ActiveRecord::Base
       # currency:            response['currency'],
     )
   rescue => error
-    puts "Error when storing order: #{error.inspect}"
-    puts "response: #{response.inspect}"
+    Rails.logger.info "Error when storing order: #{error.inspect}"
+    Rails.logger.info "response: #{response.inspect}"
   end
 
   def self.lookup_class_type
