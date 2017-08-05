@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170803050349) do
+ActiveRecord::Schema.define(version: 20170804231335) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -35,6 +35,7 @@ ActiveRecord::Schema.define(version: 20170803050349) do
     t.datetime "created_at",                                  null: false
     t.datetime "updated_at",                                  null: false
     t.string   "strategy_type"
+    t.string   "algorithm"
     t.index ["roi"], name: "index_contracts_on_roi", using: :btree
     t.index ["status"], name: "index_contracts_on_status", using: :btree
     t.index ["strategy_type"], name: "index_contracts_on_strategy_type", using: :btree
@@ -52,8 +53,10 @@ ActiveRecord::Schema.define(version: 20170803050349) do
     t.datetime "gdax_time"
     t.datetime "created_at",                              null: false
     t.datetime "updated_at",                              null: false
+    t.index ["created_at"], name: "index_market_data_on_created_at", using: :btree
     t.index ["gdax_time"], name: "index_market_data_on_gdax_time", using: :btree
     t.index ["price"], name: "index_market_data_on_price", using: :btree
+    t.index ["trade_id"], name: "index_market_data_on_trade_id", using: :btree
   end
 
   create_table "metrics", force: :cascade do |t|
@@ -84,15 +87,21 @@ ActiveRecord::Schema.define(version: 20170803050349) do
     t.decimal  "average_weighted_43_hour"
     t.index ["account_value"], name: "index_metrics_on_account_value", using: :btree
     t.index ["average_12_hour"], name: "index_metrics_on_average_12_hour", using: :btree
+    t.index ["average_13_hour"], name: "index_metrics_on_average_13_hour", using: :btree
     t.index ["average_15_day"], name: "index_metrics_on_average_15_day", using: :btree
     t.index ["average_15_min"], name: "index_metrics_on_average_15_min", using: :btree
     t.index ["average_1_hour"], name: "index_metrics_on_average_1_hour", using: :btree
     t.index ["average_24_hour"], name: "index_metrics_on_average_24_hour", using: :btree
     t.index ["average_30_day"], name: "index_metrics_on_average_30_day", using: :btree
+    t.index ["average_30_min"], name: "index_metrics_on_average_30_min", using: :btree
     t.index ["average_3_day"], name: "index_metrics_on_average_3_day", using: :btree
+    t.index ["average_43_hour"], name: "index_metrics_on_average_43_hour", using: :btree
     t.index ["average_4_hour"], name: "index_metrics_on_average_4_hour", using: :btree
     t.index ["average_7_day"], name: "index_metrics_on_average_7_day", using: :btree
+    t.index ["average_weighted_13_hour"], name: "index_metrics_on_average_weighted_13_hour", using: :btree
+    t.index ["average_weighted_43_hour"], name: "index_metrics_on_average_weighted_43_hour", using: :btree
     t.index ["bitcoin_price"], name: "index_metrics_on_bitcoin_price", using: :btree
+    t.index ["created_at"], name: "index_metrics_on_created_at", using: :btree
   end
 
   create_table "orders", force: :cascade do |t|
@@ -139,10 +148,14 @@ ActiveRecord::Schema.define(version: 20170803050349) do
     t.boolean  "is_active"
     t.boolean  "is_market_maker"
     t.boolean  "is_trendline"
-    t.decimal  "moving_average_short", precision: 15, scale: 8
-    t.decimal  "moving_average_long",  precision: 15, scale: 8
-    t.datetime "created_at",                                    null: false
-    t.datetime "updated_at",                                    null: false
+    t.decimal  "entry_short",      precision: 15, scale: 8
+    t.decimal  "entry_long",       precision: 15, scale: 8
+    t.datetime "created_at",                                null: false
+    t.datetime "updated_at",                                null: false
+    t.decimal  "exit_short"
+    t.decimal  "exit_long"
+    t.decimal  "crossover_buffer"
+    t.decimal  "trading_units"
   end
 
   create_table "transfers", force: :cascade do |t|
