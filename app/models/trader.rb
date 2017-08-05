@@ -83,29 +83,32 @@ class Trader < ActiveRecord::Base
     end
 
     def technical_analysis_orders
+      exit_short_time = exit_short.minutes.ago.time
+      exit_long_time  = exit_long.minutes.ago.time
+      exit_short_line = GDAX::MarketData.calculate_exponential_average(exit_short_time)
+      exit_long_line  = GDAX::MarketData.calculate_exponential_average(exit_long_time)
+
       if waiting_for_entry?
         entry_short_time = entry_short.minutes.ago.time
         entry_long_time  = entry_long.minutes.ago.time
 
         # TO DO: Query Metrics table instead of MarketData for faster queries??
-        short_line = GDAX::MarketData.calculate_exponential_average(entry_short_time)
-        long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
+        entry_short_line = GDAX::MarketData.calculate_exponential_average(entry_short_time)
+        entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
 
         # TO DO: place stop orders once market price passes profit margin (multiply buy price * 1.0052 to cover fees)
-        if short_line > (long_line * (1 + crossover_buffer)) # && Contract.trendline.without_active_sell.empty?
-          # contract_id = Contract.trendline.with_sell_without_buy.first.try(:id)
-          size        = trading_units
-          price       = 1.00 # any number is sufficient since it is a 'market' order
+        if entry_short_line > (entry_long_line * (1 + crossover_buffer))
+          size  = trading_units
+          price = 1.00 # any number is sufficient since it is a 'market' order
           puts "Price is increasing... Placing new trendline BUY order."
           if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
             Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline')
           else
             puts "USD balance not sufficient for trendline BUY order."
           end
-        elsif short_line < (long_line * (1 - crossover_buffer)) # && Contract.trendline.without_active_buy.empty?
-          # contract_id = Contract.trendline.with_buy_without_sell.first.try(:id)
-          size        = trading_units
-          price       = 10000.00 # any number is sufficient since it is a 'market' order
+        elsif entry_short_line < (entry_long_line * (1 - crossover_buffer))
+          size  = trading_units
+          price = 10000.00 # any number is sufficient since it is a 'market' order
           puts "Price is decreasing... Placing new trendline SELL order."
           if Account.gdax_bitcoin_account.available >= (size).to_d
             Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline')
@@ -113,17 +116,12 @@ class Trader < ActiveRecord::Base
             puts "BTC balance not sufficient for trendline SELL order."
           end
         end
-      else # an entry trendline order has been placed. check the market conditions to place an exit order.
-        exit_short_time = exit_short.minutes.ago.time
-        exit_long_time  = exit_long.minutes.ago.time
-
-        # TO DO: Query Metrics table instead of MarketData for faster queries??
-        short_exit_line = GDAX::MarketData.calculate_exponential_average(exit_short_time)
-        long_exit_line  = GDAX::MarketData.calculate_exponential_average(exit_long_time)
-
+      else # an entry trendline order has been made. check the market conditions to make an exit order.
         contract = Contract.trendline.unresolved.first # there should only be 1 contract that needs an order
+        return "There is a matched trendline contract #{contract.id} that needs to update its status." if Contract.matched.any?
+
         if contract.lacking_sell?
-          if short_exit_line < long_exit_line
+          if exit_short_line < exit_long_line
             size  = trading_units # should match contract.buy_order.quantity
             price = 10000.00      # any number is sufficient since it is a 'market' order
             puts "Price is decreasing... Placing trendline SELL order for contract #{contract.id}."
@@ -134,7 +132,7 @@ class Trader < ActiveRecord::Base
             end
           end
         elsif contract.lacking_buy?
-          if short_exit_line > long_exit_line
+          if exit_short_line > exit_long_line
             size  = trading_units # should match contract.sell_order.quantity
             price = 1.00          # any number is sufficient since it is a 'market' order
             puts "Price is increasing... Placing trendline BUY order for contract #{contract.id}."
@@ -152,10 +150,6 @@ class Trader < ActiveRecord::Base
 
     def waiting_for_entry?
       Contract.trendline.unresolved.empty?
-    end
-
-    def waiting_for_exit?
-      Contract.trendline.unresolved.present?
     end
 
 end
