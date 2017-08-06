@@ -20,19 +20,17 @@ module Charts
           }
         ])
 
-        f.series([
-          {
-            name: 'Bitcoin Price',
-            type: 'spline',
-            data: Metric.order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-            yAxis: 1
-          },
-          {
-            name: 'Trendlines',
-            type: 'column',
-            data: Contract.trendline.order(:created_at).pluck(:created_at, :roi).map {|c| [c.first.to_i * 1000, c.last.to_f.round(2)] },
-          }
-        ]
+        f.series(
+          name: 'Bitcoin Price',
+          type: 'spline',
+          data: Metric.order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+          yAxis: 1
+        )
+
+        f.series(
+          name: 'Trendlines',
+          type: 'column',
+          data: Contract.trendline.order(:created_at).pluck(:created_at, :roi).map {|c| [c.first.to_i * 1000, c.last.to_f.round(2)] }
         )
 
         f.plotOptions(
