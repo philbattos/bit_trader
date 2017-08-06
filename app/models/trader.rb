@@ -142,10 +142,10 @@ class Trader < ActiveRecord::Base
             size  = trading_units # should match contract.sell_order.quantity
             price = 1.00          # any number is sufficient since it is a 'market' order
             puts "Price is increasing... Placing trendline BUY order for contract #{contract.id}."
-            if Account.gdax_bitcoin_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
+            if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
               Order.submit_order('buy', price, size, {type: 'market'}, contract.id, 'trendline', algorithm)
             else
-              puts "BTC balance not sufficient for matching trendline BUY order."
+              puts "USD balance not sufficient for matching trendline BUY order."
             end
           end
         else
