@@ -38,7 +38,7 @@ module Charts
 
         f.plotOptions(
           series: {
-            # marker: { enabled: false },
+            marker: { enabled: false },
             lineWidth: 1
           }
         )
