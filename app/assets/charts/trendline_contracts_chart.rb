@@ -33,7 +33,7 @@ module Charts
         f.series(
           name: 'Trendlines',
           type: 'column',
-          data: Contract.trendline.where("id > 56250").order(:created_at).pluck(:created_at, :roi).map {|c| [c.first.to_i * 1000, c.last.to_f.round(2)] }
+          data: Contract.trendline.where("id > 56250").order(:created_at).pluck(:created_at, :roi).map {|c| [c.first.to_i * 1000, c.last.to_f.round(2)] },
           tooltip: { valueSuffix: ' roi' }
         )
 
