@@ -11,7 +11,7 @@ class TradersController < ApplicationController
     # @open_buys         = BuyOrder.where(status: ['open', 'pending']).count
     # @open_sells        = SellOrder.where(status: ['open', 'pending']).count
 
-    @chart2 = Charts::AccountGrowthChart.new
+    @chart2 = Charts::AccountGrowthChart.build_chart
 
     @resolved_contracts_hourly = Contract.resolved.order("date_trunc('hour', updated_at)").group("date_trunc('hour', updated_at)")
 
@@ -164,7 +164,7 @@ class TradersController < ApplicationController
       # )
     end
 
-    @chart6 = Charts::AccountValueChart.new
+    @chart6 = Charts::AccountValueChart.build_chart
 
     @chart8 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Moving Averages: 13h & 43h")
