@@ -59,7 +59,7 @@ class Metric < ActiveRecord::Base
       metric.update(average_weighted_6_hour: GDAX::MarketData.calculate_exponential_average(6.hours.ago))
       metric.update(average_weighted_10_hour: GDAX::MarketData.calculate_exponential_average(10.hours.ago))
       metric.update(average_weighted_13_hour: GDAX::MarketData.calculate_exponential_average(13.hours.ago))
-      metric.update(average_weighted_21_hour: GDAX::MarketData.calculate_exponential_average(25.hours.ago))
+      metric.update(average_weighted_21_hour: GDAX::MarketData.calculate_exponential_average(21.hours.ago))
       metric.update(average_weighted_25_hour: GDAX::MarketData.calculate_exponential_average(25.hours.ago))
       metric.update(average_weighted_43_hour: GDAX::MarketData.calculate_exponential_average(43.hours.ago))
     end
