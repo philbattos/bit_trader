@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170804231335) do
+ActiveRecord::Schema.define(version: 20170806001936) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -69,8 +69,8 @@ ActiveRecord::Schema.define(version: 20170804231335) do
     t.integer  "unresolved_contracts"
     t.integer  "matched_contracts"
     t.integer  "open_orders"
-    t.datetime "created_at",               null: false
-    t.datetime "updated_at",               null: false
+    t.datetime "created_at",                 null: false
+    t.datetime "updated_at",                 null: false
     t.decimal  "average_15_min"
     t.decimal  "average_1_hour"
     t.decimal  "average_4_hour"
@@ -85,6 +85,13 @@ ActiveRecord::Schema.define(version: 20170804231335) do
     t.decimal  "average_43_hour"
     t.decimal  "average_weighted_13_hour"
     t.decimal  "average_weighted_43_hour"
+    t.decimal  "average_weighted_30_minute"
+    t.decimal  "average_weighted_1_hour"
+    t.decimal  "average_weighted_4_hour"
+    t.decimal  "average_weighted_6_hour"
+    t.decimal  "average_weighted_10_hour"
+    t.decimal  "average_weighted_21_hour"
+    t.decimal  "average_weighted_25_hour"
     t.index ["account_value"], name: "index_metrics_on_account_value", using: :btree
     t.index ["average_12_hour"], name: "index_metrics_on_average_12_hour", using: :btree
     t.index ["average_13_hour"], name: "index_metrics_on_average_13_hour", using: :btree
@@ -98,8 +105,15 @@ ActiveRecord::Schema.define(version: 20170804231335) do
     t.index ["average_43_hour"], name: "index_metrics_on_average_43_hour", using: :btree
     t.index ["average_4_hour"], name: "index_metrics_on_average_4_hour", using: :btree
     t.index ["average_7_day"], name: "index_metrics_on_average_7_day", using: :btree
+    t.index ["average_weighted_10_hour"], name: "index_metrics_on_average_weighted_10_hour", using: :btree
     t.index ["average_weighted_13_hour"], name: "index_metrics_on_average_weighted_13_hour", using: :btree
+    t.index ["average_weighted_1_hour"], name: "index_metrics_on_average_weighted_1_hour", using: :btree
+    t.index ["average_weighted_21_hour"], name: "index_metrics_on_average_weighted_21_hour", using: :btree
+    t.index ["average_weighted_25_hour"], name: "index_metrics_on_average_weighted_25_hour", using: :btree
+    t.index ["average_weighted_30_minute"], name: "index_metrics_on_average_weighted_30_minute", using: :btree
     t.index ["average_weighted_43_hour"], name: "index_metrics_on_average_weighted_43_hour", using: :btree
+    t.index ["average_weighted_4_hour"], name: "index_metrics_on_average_weighted_4_hour", using: :btree
+    t.index ["average_weighted_6_hour"], name: "index_metrics_on_average_weighted_6_hour", using: :btree
     t.index ["bitcoin_price"], name: "index_metrics_on_bitcoin_price", using: :btree
     t.index ["created_at"], name: "index_metrics_on_created_at", using: :btree
   end

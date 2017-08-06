@@ -90,6 +90,8 @@ class Trader < ActiveRecord::Base
       algorithm = "enter#{entry_short.to_i}x#{entry_long.to_i}(#{crossover_buffer})~exit#{exit_short.to_i}x#{exit_long.to_i}~#{trading_units}units"
 
       if waiting_for_entry?
+        # TO DO: if a trendline contract was recently exited and market is trending in the wrong direction, consider not entering a new trendline contract.
+
         entry_short_time = entry_short.minutes.ago.time
         entry_long_time  = entry_long.minutes.ago.time
 

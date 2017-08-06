@@ -11,101 +11,7 @@ class TradersController < ApplicationController
     # @open_buys         = BuyOrder.where(status: ['open', 'pending']).count
     # @open_sells        = SellOrder.where(status: ['open', 'pending']).count
 
-    # @chart1 = LazyHighCharts::HighChart.new('graph') do |f|
-    #   f.title(text: "Buy and Sell Orders")
-    #   f.xAxis(categories: ["Sell Orders", "Buy Orders"])
-    #   f.series(name: "Completed Orders", yAxis: 0, data: [@sell_orders_count, @buy_orders_count])
-    #   f.series(name: "Open Orders", yAxis: 1, data: [@open_sells, @open_buys])
-
-    #   f.yAxis [
-    #     {title: {text: "Complete Orders", margin: 70} },
-    #     {title: {text: "Open Orders"}, opposite: true},
-    #   ]
-
-    #   f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
-    #   f.chart({defaultSeriesType: "column"})
-    # end
-
-    # @unresolved_contracts = Contract.unresolved
-    # @resolved_contracts_daily = Contract.resolved.order("date_trunc('day', updated_at)").group("date_trunc('day', updated_at)")
-
-    # @chart2 = LazyHighCharts::HighChart.new('graph') do |f|
-    #   f.title(text: "Contracts")
-    #   f.xAxis(categories: @resolved_contracts_daily.count.keys.map {|c| c.in_time_zone("Mountain Time (US & Canada)").strftime("%-m/%d").strip })
-    #   f.yAxis(type: "datetime", categories: @resolved_contracts_daily.count.keys.map {|c| c.in_time_zone("Mountain Time (US & Canada)").strftime("%-m/%y").strip })
-    #   f.labels(items: [html:"Contracts (Daily)", style: {left: "40px", top: "8px", color: "black"}])
-    #   f.series(type: 'column', name: 'Total Contracts', yAxis: 0, data: @resolved_contracts_daily.count.values)
-    #   f.series(type: 'column', name: 'ROI', yAxis: 1, data: @resolved_contracts_daily.sum(:roi).values.map(&:to_f))
-    #   # f.series(:type=> 'column', :name=> 'John',:data=> [2, 3, 5, 7, 6])
-    #   # f.series(:type=> 'column', :name=> 'Joe',:data=> [4, 3, 3, 9, 0])
-
-    #   f.yAxis [
-    #     {title: {text: "Total Contracts", margin: 70} },
-    #     {title: {text: "ROI"}, opposite: true},
-    #   ]
-
-    #   f.series(type: 'spline', name: 'Resolved Contracts', data: @resolved_contracts_daily.count.to_a)
-
-    #   f.legend(align: 'right', verticalAlign: 'top', y: 75, x: -50, layout: 'vertical')
-    #   # f.chart({defaultSeriesType: "column"})
-    # end
-
-    @chart2 = LazyHighCharts::HighChart.new('graph') do |f|
-      f.title(text: "Account Growth")
-      f.chart(zoomType: 'x')
-
-      f.xAxis(
-        type: 'datetime',
-        plotLines: [{
-          value: 1493535618000, # April 30, 1:00am
-          width: 1,
-          color: 'red',
-          dashStyle: 'dot',
-          label: {
-            text: "Started new algorithm: logarithmic spread",
-            style: { color: 'lightgray' }
-          }
-        }]
-      )
-
-      f.yAxis([
-        { title: { text: "Bitcoin Price" }},
-        {
-          title: { text: "Account Value" },
-          opposite: true
-        }
-      ])
-
-      f.series(
-        name: 'Bitcoin Price',
-        data: Metric.order(:id).pluck(:created_at, :bitcoin_price).last(1000).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        name: 'Account Value',
-        data: Metric.order(:id).pluck(:created_at, :account_value).last(1000).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 1
-      )
-
-      f.plotOptions(
-        series: {
-          marker: { enabled: false },
-          lineWidth: 1
-        }
-      )
-
-      f.tooltip(
-        valuePrefix: '$'
-      )
-
-      f.legend(
-        layout: 'vertical',
-        align: 'left',
-        verticalAlign: 'top',
-        floating: true
-      )
-    end
+    @chart2 = Charts::AccountGrowthChart.new
 
     @resolved_contracts_hourly = Contract.resolved.order("date_trunc('hour', updated_at)").group("date_trunc('hour', updated_at)")
 
@@ -258,154 +164,7 @@ class TradersController < ApplicationController
       # )
     end
 
-    @chart6 = LazyHighCharts::HighChart.new('graph') do |f|
-      f.title(text: "Account Value")
-      f.chart(zoomType: 'x')
-
-      f.xAxis(
-        type: 'datetime'
-      )
-
-      f.yAxis([
-        { title: { text: "Account Value" }},
-        {
-          title: { text: "Bitcoin Price" },
-          opposite: true
-        }
-      ])
-
-      f.series(
-        # type: 'spline',
-        # type: 'area',
-        name: 'Account Value',
-        data: Metric.order(:id).pluck(:created_at, :account_value).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        name: 'Bitcoin Price',
-        data: Metric.order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 1
-      )
-
-      f.series(
-        type: 'spline',
-        name: 'Hold Value',
-        data: Metric.order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, ((m.last * 0.29808036) + 250).to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.plotOptions(
-        series: {
-          marker: { enabled: false },
-          lineWidth: 1
-        }
-      )
-
-      f.tooltip(
-        valuePrefix: '$'
-      )
-
-      f.legend(
-        layout: 'vertical',
-        align: 'left',
-        verticalAlign: 'top',
-        floating: true
-      )
-    end
-
-    @chart7 = LazyHighCharts::HighChart.new('graph') do |f|
-      f.title(text: "Moving Averages")
-      f.chart(zoomType: 'x')
-
-      f.xAxis(
-        type: 'datetime',
-        plotLines: find_trading_points
-      )
-
-      f.yAxis(
-        title: { text: "Bitcoin Price" }
-      )
-
-      f.series(
-        name: 'Bitcoin Price',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0,
-        lineWidth: 3
-      )
-
-      f.series(
-        name: '15-Minute Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_15_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        name: '30-Minute Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_30_min).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        # type: 'spline',
-        name: '1-Hour Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_1_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        # type: 'spline',
-        name: '4-Hour Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_4_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        # type: 'spline',
-        name: '12-Hour Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_12_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        # type: 'spline',
-        name: '24-Hour Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_24_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        type: 'spline',
-        name: '3-Day Average',
-        data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_3_day).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      # f.series(
-      #   type: 'spline',
-      #   name: '7-Day Average',
-      #   data: Metric.with_averages.since(4.weeks.ago).order(:id).pluck(:created_at, :average_7_day).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-      #   yAxis: 0
-      # )
-
-      f.plotOptions(
-        series: {
-          marker: { enabled: false },
-          lineWidth: 1
-        }
-      )
-
-      f.tooltip(
-        valuePrefix: '$'
-      )
-
-      f.legend(
-        layout: 'vertical',
-        align: 'left',
-        verticalAlign: 'top',
-        floating: true
-      )
-    end
+    @chart6 = Charts::AccountValueChart.new
 
     @chart8 = LazyHighCharts::HighChart.new('graph') do |f|
       f.title(text: "Moving Averages: 13h & 43h")
@@ -428,27 +187,57 @@ class TradersController < ApplicationController
       )
 
       f.series(
+        name: '30-Minute Average',
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_30_minute).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        name: '1-Hour Average',
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_1_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        name: '4-Hour Average',
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_4_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        name: '6-Hour Average',
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_6_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        name: '10-Hour Average',
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_10_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        type: 'spline', # remove?
         name: '13-Hour Average',
-        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_13_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        name: '43-Hour Average',
-        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_43_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
-        yAxis: 0
-      )
-
-      f.series(
-        # type: 'spline',
-        name: '13-Hour Average (weighted)',
         data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_13_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
 
       f.series(
-        # type: 'spline',
-        name: '43-Hour Average (weighted)',
+        name: '21-Hour Average',
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_21_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        name: '25-Hour Average',
+        data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_25_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+        yAxis: 0
+      )
+
+      f.series(
+        type: 'spline', # remove?
+        name: '43-Hour Average',
         data: Metric.with_averages.where("id > ?", 21253).order(:id).pluck(:created_at, :average_weighted_43_hour).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
         yAxis: 0
       )
@@ -527,53 +316,6 @@ class TradersController < ApplicationController
       params.require(:order).permit(:status)
     end
 
-    def find_trading_points
-      trending_down   = Metric.trending_down
-      trending_up     = Metric.trending_up
-      # down_trend_end  = Metric.with_averages.where("average_12_hour > average_4_hour").where("average_1_hour < average_15_min").where("average_15_min < bitcoin_price")
-      # up_trend_end    = Metric.with_averages.where("average_12_hour < average_4_hour").where("average_1_hour > average_15_min").where("average_15_min > bitcoin_price")
-
-      sell_lines = trending_down.map do |metric|
-        {
-          value: metric.created_at.to_i * 1000,
-          width: 1,
-          color: 'red',
-          dashStyle: 'dot'
-        }
-      end
-
-      # stop_selling_lines = down_trend_end.map do |metric|
-      #   {
-      #     value: metric.created_at.to_i * 1000,
-      #     width: 1,
-      #     color: 'orange',
-      #     dashStyle: 'dash'
-      #   }
-      # end
-
-      buy_lines = trending_up.map do |metric|
-        {
-          value: metric.created_at.to_i * 1000,
-          width: 1,
-          color: 'blue',
-          dashStyle: 'dot'
-        }
-      end
-
-      # stop_buying_lines = up_trend_end.map do |metric|
-      #   {
-      #     value: metric.created_at.to_i * 1000,
-      #     width: 1,
-      #     color: 'green',
-      #     dashStyle: 'dash'
-      #   }
-      # end
-
-      # sell_lines + stop_selling_lines + buy_lines + stop_buying_lines
-      sell_lines + buy_lines
-      # [sell_lines.first, buy_lines.first]
-    end
-
     def find_trendline_trades
       buy_orders  = BuyOrder.trendline
       sell_orders = SellOrder.trendline
@@ -593,7 +335,7 @@ class TradersController < ApplicationController
           value: order.created_at.to_i * 1000,
           # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
           width: 1,
-          color: 'blue',
+          color: 'green',
           dashStyle: 'solid'
         }
       end

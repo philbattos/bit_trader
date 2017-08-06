@@ -38,14 +38,22 @@ class Metric < ActiveRecord::Base
       metric.update(average_4_hour: GDAX::MarketData.calculate_average(4.hours.ago))
       metric.update(average_12_hour: GDAX::MarketData.calculate_average(12.hours.ago))
       metric.update(average_13_hour: GDAX::MarketData.calculate_average(13.hours.ago))
-      metric.update(average_weighted_13_hour: GDAX::MarketData.calculate_exponential_average(13.hours.ago))
       metric.update(average_24_hour: GDAX::MarketData.calculate_average(24.hours.ago))
       metric.update(average_43_hour: GDAX::MarketData.calculate_average(43.hours.ago))
-      metric.update(average_weighted_43_hour: GDAX::MarketData.calculate_exponential_average(43.hours.ago))
       metric.update(average_3_day: GDAX::MarketData.calculate_average(3.days.ago))
       # metric.update(average_7_day: GDAX::MarketData.calculate_average(7.days.ago))
       # metric.update(average_15_day: GDAX::MarketData.calculate_average(15.days.ago))
       # metric.update(average_30_day: GDAX::MarketData.calculate_average(30.days.ago))
+
+      metric.update(average_weighted_30_minute: GDAX::MarketData.calculate_weighted_average(30.minutes.ago))
+      metric.update(average_weighted_1_hour: GDAX::MarketData.calculate_weighted_average(1.hour.ago))
+      metric.update(average_weighted_4_hour: GDAX::MarketData.calculate_weighted_average(4.hours.ago))
+      metric.update(average_weighted_6_hour: GDAX::MarketData.calculate_weighted_average(6.hours.ago))
+      metric.update(average_weighted_10_hour: GDAX::MarketData.calculate_weighted_average(10.hours.ago))
+      metric.update(average_weighted_13_hour: GDAX::MarketData.calculate_exponential_average(13.hours.ago))
+      metric.update(average_weighted_21_hour: GDAX::MarketData.calculate_exponential_average(25.hours.ago))
+      metric.update(average_weighted_25_hour: GDAX::MarketData.calculate_exponential_average(25.hours.ago))
+      metric.update(average_weighted_43_hour: GDAX::MarketData.calculate_exponential_average(43.hours.ago))
     end
   end
 
