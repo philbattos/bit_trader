@@ -3,7 +3,7 @@ module Charts
 
     def self.build_chart
       LazyHighCharts::HighChart.new('graph') do |f|
-        f.title(text: "Moving Averages: 13h & 43h")
+        f.title(text: "Weighted Moving Averages")
         f.chart(zoomType: 'x')
 
         f.xAxis(
