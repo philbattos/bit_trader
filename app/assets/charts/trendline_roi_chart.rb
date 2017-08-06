@@ -15,7 +15,7 @@ module Charts
         f.yAxis([
           {
             title: { text: "Trendline Contracts" },
-            labels: { format: '${value.round}' }
+            labels: { format: '${value}' }
           },
           {
             title: { text: "Average ROI" },
@@ -38,7 +38,7 @@ module Charts
 
         f.plotOptions(
           series: {
-            marker: { enabled: false },
+            marker: { enabled: true },
             lineWidth: 1
           }
         )
