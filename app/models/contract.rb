@@ -33,6 +33,7 @@ class Contract < ActiveRecord::Base
   scope :complete,              -> { active.where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
   scope :incomplete,            -> { active.where.not(id: complete) }
   # scope :matched_and_complete,  -> { matched.complete }
+  scope :since_july2017,        -> { where("id > 56100") } # in July 2017, we changed the market-maker and trendline algorithms; before then, the ROI on contracts is unreliable.
 
   # unresolved == with_buy_without_sell + with_sell_without_buy + matched
 

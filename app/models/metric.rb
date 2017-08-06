@@ -10,26 +10,34 @@ class Metric < ActiveRecord::Base
     # while the metric is being calculated and saved. A db lock might be better
     # but this transaction seems to work.
     Metric.transaction do
-      dollar_balance        = Account.gdax_usdollar_account.balance
-      bitcoin_balance       = Account.gdax_bitcoin_account.balance
-      bitcoin_price         = GDAX::MarketData.last_trade.price
-      account_value         = (bitcoin_balance * bitcoin_price) + dollar_balance
-      total_roi             = Contract.resolved.sum(:roi)
-      roi_percent           = total_roi / Contract.resolved.count
-      unresolved_contracts  = Contract.unresolved.count
-      matched_contracts     = Contract.matched.count
-      open_orders           = Order.unresolved.count
+      dollar_balance           = Account.gdax_usdollar_account.balance
+      bitcoin_balance          = Account.gdax_bitcoin_account.balance
+      bitcoin_price            = GDAX::MarketData.last_trade.price
+      account_value            = (bitcoin_balance * bitcoin_price) + dollar_balance
+      unresolved_contracts     = Contract.unresolved.count
+      matched_contracts        = Contract.matched.count
+      open_orders              = Order.unresolved.count
+      total_roi                = Contract.resolved.sum(:roi)
+      roi_percent              = total_roi / Contract.resolved.count
+      trendline_roi            = Contract.trendline.resolved.sum(:roi)
+      trendline_roi_percent    = trendline_roi / Contract.trendline.resolved.count
+      market_maker_roi         = Contract.market_maker.resolved.sum(:roi)
+      market_maker_roi_percent = market_maker_roi / Contract.market_maker.resolved.count
 
       metric = Metric.create(
-        us_dollar_balance:    dollar_balance,
-        bitcoin_balance:      bitcoin_balance,
-        bitcoin_price:        bitcoin_price,
-        account_value:        account_value,
-        total_roi:            total_roi,
-        roi_percent:          roi_percent,
-        unresolved_contracts: unresolved_contracts,
-        matched_contracts:    matched_contracts,
-        open_orders:          open_orders
+        us_dollar_balance:        dollar_balance,
+        bitcoin_balance:          bitcoin_balance,
+        bitcoin_price:            bitcoin_price,
+        account_value:            account_value,
+        total_roi:                total_roi,
+        roi_percent:              roi_percent,
+        trendline_roi:            trendline_roi,
+        trendline_roi_percent:    trendline_roi_percent,
+        market_maker_roi:         market_maker_roi,
+        market_maker_roi_percent: market_maker_roi_percent,
+        unresolved_contracts:     unresolved_contracts,
+        matched_contracts:        matched_contracts,
+        open_orders:              open_orders
       )
 
       metric.update(average_15_min: GDAX::MarketData.calculate_average(15.minutes.ago))

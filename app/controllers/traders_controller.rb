@@ -15,6 +15,7 @@ class TradersController < ApplicationController
     # @chart7 = Charts::MovingAveragesChart.build_chart
     @chart8 = Charts::WeightedAveragesChart.build_chart
     @chart9 = Charts::TrendlineContractsChart.build_chart
+    @chart10 = Charts::TrendlineROIChart.build_chart
 
     @chart_settings = Charts::GlobalSettings.build
 

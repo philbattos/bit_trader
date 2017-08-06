@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170806001936) do
+ActiveRecord::Schema.define(version: 20170806061619) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -92,6 +92,10 @@ ActiveRecord::Schema.define(version: 20170806001936) do
     t.decimal  "average_weighted_10_hour"
     t.decimal  "average_weighted_21_hour"
     t.decimal  "average_weighted_25_hour"
+    t.decimal  "trendline_roi"
+    t.decimal  "trendline_roi_percent"
+    t.decimal  "market_maker_roi"
+    t.decimal  "market_maker_roi_percent"
     t.index ["account_value"], name: "index_metrics_on_account_value", using: :btree
     t.index ["average_12_hour"], name: "index_metrics_on_average_12_hour", using: :btree
     t.index ["average_13_hour"], name: "index_metrics_on_average_13_hour", using: :btree
