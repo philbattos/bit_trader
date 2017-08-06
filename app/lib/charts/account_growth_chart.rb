@@ -1,11 +1,7 @@
 module Charts
   class AccountGrowthChart
 
-    def initialize
-      build_chart
-    end
-
-    def build_chart
+    def self.build_chart
       LazyHighCharts::HighChart.new('graph') do |f|
         f.title(text: "Account Growth")
         f.chart(zoomType: 'x')
