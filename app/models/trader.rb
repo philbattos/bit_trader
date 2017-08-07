@@ -56,9 +56,9 @@ class Trader < ActiveRecord::Base
     entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
 
     market_conditions = {}
-    market_conditions["#{exit_short}mins>240mins"]            = exit_short_line > exit_medium_line
-    market_conditions["240mins>#{exit_long}"]                 = exit_medium_line > exit_long_line
-    market_conditions["#{entry_short}mins>#{entry_long}mins"] = entry_short_line > entry_long_line
+    market_conditions["#{exit_short.to_i}mins>240mins"]            = exit_short_line > exit_medium_line
+    market_conditions["240mins>#{exit_long.to_i}"]                 = exit_medium_line > exit_long_line
+    market_conditions["#{entry_short.to_i}mins>#{entry_long.to_i}mins"] = entry_short_line > entry_long_line
     market_conditions
   end
 
@@ -104,7 +104,6 @@ class Trader < ActiveRecord::Base
 
     def technical_analysis_orders
       algorithm = "enter#{entry_short.to_i}x#{entry_long.to_i}(#{crossover_buffer})~exit#{exit_short.to_i}x#{exit_long.to_i}~#{trading_units}units"
-      @market_conditions ||= market_conditions
 
       if waiting_for_entry?
         # TO DO: if a trendline contract was recently exited and market is trending in the wrong direction, consider not entering a new trendline contract.
@@ -118,7 +117,7 @@ class Trader < ActiveRecord::Base
 
         # TO DO: place stop orders once market price passes profit margin (multiply buy price * 1.0052 to cover fees)
         # if entry_short_line > (entry_long_line * (1 + crossover_buffer)) && (exit_short_line > exit_long_line)
-        if @market_conditions.values.all? {|value| value == true }
+        if market_conditions.values.all? {|value| value == true }
           size  = trading_units
           price = 1.00 # any number is sufficient since it is a 'market' order
           Rails.logger.info "Price is increasing... Placing new trendline BUY order."
@@ -127,7 +126,7 @@ class Trader < ActiveRecord::Base
           else
             Rails.logger.info "USD balance not sufficient for trendline BUY order."
           end
-        elsif @market_conditions.values.all? {|value| value == false }
+        elsif market_conditions.values.all? {|value| value == false }
           size  = trading_units
           price = 10000.00 # any number is sufficient since it is a 'market' order
           Rails.logger.info "Price is decreasing... Placing new trendline SELL order."
