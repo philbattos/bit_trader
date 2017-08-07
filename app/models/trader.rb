@@ -136,8 +136,6 @@ class Trader < ActiveRecord::Base
           else
             Rails.logger.info "BTC balance not sufficient for trendline SELL order."
           end
-        else
-          Rails.logger.info @market_conditions.inspect
         end
       else # an entry trendline order has been made previously. check the market conditions to make an exit order.
         contract = Contract.trendline.unresolved.first # there should only be 1 contract that needs an order
