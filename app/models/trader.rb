@@ -24,13 +24,13 @@ class Trader < ActiveRecord::Base
         json = JSON.parse(e.message)
 
         if json['message'] == 'request timestamp expired'
-          puts "Timestamp expiration error. Restarting Trader"
+          Rails.logger.info "Timestamp expiration error. Restarting Trader"
           Trader.new.start
         else
-          puts "Unrecognized Trader error"
-          puts "e: #{e.message.inspect}"
-          puts "json: #{json.inspect}"
-          puts "Trader.start Backtrace: #{e.backtrace}"
+          Rails.logger.info "Unrecognized Trader error"
+          Rails.logger.info "e: #{e.message.inspect}"
+          Rails.logger.info "json: #{json.inspect}"
+          Rails.logger.info "Trader.start Backtrace: #{e.backtrace}"
         end
 
         # send alert to frontend; or send email/text
@@ -40,6 +40,26 @@ class Trader < ActiveRecord::Base
 
   def default_trader
     self.name = 'default'
+  end
+
+  def market_conditions
+    exit_short_time  = exit_short.minutes.ago.time
+    exit_long_time   = exit_long.minutes.ago.time
+    exit_short_line  = GDAX::MarketData.calculate_exponential_average(exit_short_time)
+    exit_long_line   = GDAX::MarketData.calculate_exponential_average(exit_long_time)
+
+    exit_medium_line = GDAX::MarketData.calculate_exponential_average(240.minutes.ago)
+
+    entry_short_time = entry_short.minutes.ago.time
+    entry_long_time  = entry_long.minutes.ago.time
+    entry_short_line = GDAX::MarketData.calculate_exponential_average(entry_short_time)
+    entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
+
+    market_conditions = {}
+    market_conditions["#{exit_short}mins>240mins"]            = exit_short_line > exit_medium_line
+    market_conditions["240mins>#{exit_long}"]                 = exit_medium_line > exit_long_line
+    market_conditions["#{entry_short}mins>#{entry_long}mins"] = entry_short_line > entry_long_line
+    market_conditions
   end
 
   #=================================================
@@ -75,7 +95,7 @@ class Trader < ActiveRecord::Base
         Contract.place_new_buy_order
         # Contract.place_new_sell_order
       else
-        puts "Volatile market. 30min average: #{ma_30mins}, 4-hour average: #{ma_4hours}, trading range: #{floor.round(2)} - #{ceiling.round(2)}"
+        Rails.logger.info "Volatile market. 30min average: #{ma_30mins}, 4-hour average: #{ma_4hours}, trading range: #{floor.round(2)} - #{ceiling.round(2)}"
       end
 
       # Contract.logarithmic_buy
@@ -83,11 +103,8 @@ class Trader < ActiveRecord::Base
     end
 
     def technical_analysis_orders
-      exit_short_time = exit_short.minutes.ago.time
-      exit_long_time  = exit_long.minutes.ago.time
-      exit_short_line = GDAX::MarketData.calculate_exponential_average(exit_short_time)
-      exit_long_line  = GDAX::MarketData.calculate_exponential_average(exit_long_time)
       algorithm = "enter#{entry_short.to_i}x#{entry_long.to_i}(#{crossover_buffer})~exit#{exit_short.to_i}x#{exit_long.to_i}~#{trading_units}units"
+      @market_conditions ||= market_conditions
 
       if waiting_for_entry?
         # TO DO: if a trendline contract was recently exited and market is trending in the wrong direction, consider not entering a new trendline contract.
@@ -100,52 +117,60 @@ class Trader < ActiveRecord::Base
         entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
 
         # TO DO: place stop orders once market price passes profit margin (multiply buy price * 1.0052 to cover fees)
-        if entry_short_line > (entry_long_line * (1 + crossover_buffer)) && (exit_short_line > exit_long_line)
+        # if entry_short_line > (entry_long_line * (1 + crossover_buffer)) && (exit_short_line > exit_long_line)
+        if @market_conditions.values.all? {|value| value == true }
           size  = trading_units
           price = 1.00 # any number is sufficient since it is a 'market' order
-          puts "Price is increasing... Placing new trendline BUY order."
+          Rails.logger.info "Price is increasing... Placing new trendline BUY order."
           if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
             Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline', algorithm)
           else
-            puts "USD balance not sufficient for trendline BUY order."
+            Rails.logger.info "USD balance not sufficient for trendline BUY order."
           end
-        elsif entry_short_line < (entry_long_line * (1 - crossover_buffer)) && (exit_short_line < exit_long_line)
+        elsif @market_conditions.values.all? {|value| value == false }
           size  = trading_units
           price = 10000.00 # any number is sufficient since it is a 'market' order
-          puts "Price is decreasing... Placing new trendline SELL order."
+          Rails.logger.info "Price is decreasing... Placing new trendline SELL order."
           if Account.gdax_bitcoin_account.available >= (size).to_d
             Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline', algorithm)
           else
-            puts "BTC balance not sufficient for trendline SELL order."
+            Rails.logger.info "BTC balance not sufficient for trendline SELL order."
           end
+        else
+          Rails.logger.info @market_conditions.inspect
         end
-      else # an entry trendline order has been made. check the market conditions to make an exit order.
+      else # an entry trendline order has been made previously. check the market conditions to make an exit order.
         contract = Contract.trendline.unresolved.first # there should only be 1 contract that needs an order
         if Contract.trendline.matched.any?
           Rails.logger.info "There is a matched trendline contract #{contract.id} that needs to update its status."
           return
         end
 
+        exit_short_time = exit_short.minutes.ago.time
+        exit_long_time  = exit_long.minutes.ago.time
+        exit_short_line = GDAX::MarketData.calculate_exponential_average(exit_short_time)
+        exit_long_line  = GDAX::MarketData.calculate_exponential_average(exit_long_time)
+
         if contract.lacking_sell?
           if exit_short_line < exit_long_line
             size  = trading_units # should match contract.buy_order.quantity
             price = 10000.00      # any number is sufficient since it is a 'market' order
-            puts "Price is decreasing... Placing trendline SELL order for contract #{contract.id}."
+            Rails.logger.info "Price is decreasing... Placing trendline SELL order for contract #{contract.id}."
             if Account.gdax_bitcoin_account.available >= (size).to_d
               Order.submit_order('sell', price, size, {type: 'market'}, contract.id, 'trendline', algorithm)
             else
-              puts "BTC balance not sufficient for matching trendline SELL order."
+              Rails.logger.info "BTC balance not sufficient for matching trendline SELL order."
             end
           end
         elsif contract.lacking_buy?
           if exit_short_line > exit_long_line
             size  = trading_units # should match contract.sell_order.quantity
             price = 1.00          # any number is sufficient since it is a 'market' order
-            puts "Price is increasing... Placing trendline BUY order for contract #{contract.id}."
+            Rails.logger.info "Price is increasing... Placing trendline BUY order for contract #{contract.id}."
             if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
               Order.submit_order('buy', price, size, {type: 'market'}, contract.id, 'trendline', algorithm)
             else
-              puts "USD balance not sufficient for matching trendline BUY order."
+              Rails.logger.info "USD balance not sufficient for matching trendline BUY order."
             end
           end
         else
