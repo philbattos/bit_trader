@@ -55,9 +55,12 @@ class Trader < ActiveRecord::Base
     entry_short_line = GDAX::MarketData.calculate_exponential_average(entry_short_time)
     entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
 
+    return if [exit_short_line, exit_medium_line, exit_long_line, entry_short_line, entry_long_line].any? {|x| x.nil? || x == 0}
+
     market_conditions = {}
-    market_conditions["#{exit_short.to_i}mins>240mins"]            = exit_short_line > exit_medium_line
-    market_conditions["240mins>#{exit_long.to_i}"]                 = exit_medium_line > exit_long_line
+    market_conditions["#{exit_short.to_i}mins>240mins"]                 = exit_short_line > exit_medium_line
+    market_conditions["240mins>#{entry_short.to_i}mins"]                = exit_medium_line > entry_short_line
+    market_conditions["#{entry_short.to_i}mins>#{exit_long.to_i}mins"]  = entry_short_line > exit_long_line
     market_conditions["#{entry_short.to_i}mins>#{entry_long.to_i}mins"] = entry_short_line > entry_long_line
     market_conditions
   end
@@ -121,6 +124,7 @@ class Trader < ActiveRecord::Base
           size  = trading_units
           price = 1.00 # any number is sufficient since it is a 'market' order
           Rails.logger.info "Price is increasing... Placing new trendline BUY order."
+          Rails.logger.info "market_conditions: #{market_conditions.inspect}"
           if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
             Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline', algorithm)
           else
@@ -130,6 +134,7 @@ class Trader < ActiveRecord::Base
           size  = trading_units
           price = 10000.00 # any number is sufficient since it is a 'market' order
           Rails.logger.info "Price is decreasing... Placing new trendline SELL order."
+          Rails.logger.info "market_conditions: #{market_conditions.inspect}"
           if Account.gdax_bitcoin_account.available >= (size).to_d
             Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline', algorithm)
           else
