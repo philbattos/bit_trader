@@ -3,6 +3,21 @@
   %br
 
   .row
+    .col-md-3
+      .panel.panel-success
+        .panel-heading Trendline Profit - ALL
+        .panel-body
+          %h1= "#{@trendline_profit_all_count} | $#{@trendline_profit_all_value} | #{@trendline_profit_all_percent}%"
+    .col-md-3
+      .panel.panel-success
+        .panel-heading Trendline Profit - MONTH
+        .panel-body
+          %h1= "#{@trendline_profit_month_count} | $#{@trendline_profit_month_value} | #{@trendline_profit_month_percent}%"
+    .col-md-3
+      .panel.panel-success
+        .panel-heading Trendline Profit - WEEK
+        .panel-body
+          %h1= "#{@trendline_profit_week_count} | $#{@trendline_profit_week_value} | #{@trendline_profit_week_percent}%"
     - @traders.each do |trader|
       .col-md-3
         .panel.panel-info
