@@ -150,9 +150,7 @@ class Trader < ActiveRecord::Base
             # do nothing
           else
             # cancel open buy order and place a new one
-            if open_buy_order && open_buy_order.filled_size == 0.0
-              Order.find_by(gdax_id: open_buy_order.id).cancel_order
-            end
+            Order.find_by(gdax_id: open_buy_order.id).cancel_order if open_buy_order
             if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
               price = GDAX::MarketData.current_bid - 0.01
               size  = trading_units
@@ -167,7 +165,7 @@ class Trader < ActiveRecord::Base
           Rails.logger.info "market_conditions: #{market_conditions.inspect}"
 
           open_sell_order = Order.my_lowest_open_sell_order
-          if open_sell_order && (open_sell_order.price < GDAX::MarketData.current_ask * 1.0001))
+          if open_sell_order && (open_sell_order.price < (GDAX::MarketData.current_ask * 1.0001))
             # do nothing
           else
             # cancel open sell order and place new one
