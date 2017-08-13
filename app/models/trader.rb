@@ -120,25 +120,66 @@ class Trader < ActiveRecord::Base
 
         # TO DO: place stop orders once market price passes profit margin (multiply buy price * 1.0052 to cover fees)
         # if entry_short_line > (entry_long_line * (1 + crossover_buffer)) && (exit_short_line > exit_long_line)
+        # if market_conditions.values.all? {|value| value == true }
+        #   size  = trading_units
+        #   price = 1.00 # any number is sufficient since it is a 'market' order
+        #   Rails.logger.info "Price is increasing... Placing new trendline BUY order."
+        #   Rails.logger.info "market_conditions: #{market_conditions.inspect}"
+        #   if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
+        #     Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline', algorithm)
+        #   else
+        #     Rails.logger.info "USD balance not sufficient for trendline BUY order."
+        #   end
+        # elsif market_conditions.values.all? {|value| value == false }
+        #   size  = trading_units
+        #   price = 10000.00 # any number is sufficient since it is a 'market' order
+        #   Rails.logger.info "Price is decreasing... Placing new trendline SELL order."
+        #   Rails.logger.info "market_conditions: #{market_conditions.inspect}"
+        #   if Account.gdax_bitcoin_account.available >= (size).to_d
+        #     Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline', algorithm)
+        #   else
+        #     Rails.logger.info "BTC balance not sufficient for trendline SELL order."
+        #   end
+        # end
         if market_conditions.values.all? {|value| value == true }
-          size  = trading_units
-          price = 1.00 # any number is sufficient since it is a 'market' order
           Rails.logger.info "Price is increasing... Placing new trendline BUY order."
           Rails.logger.info "market_conditions: #{market_conditions.inspect}"
-          if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
-            Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline', algorithm)
+
+          open_buy_order = Order.my_highest_open_buy_order
+          if open_buy_order && (open_buy_order.price > (GDAX::MarketData.current_bid * 0.9999))
+            # do nothing
           else
-            Rails.logger.info "USD balance not sufficient for trendline BUY order."
+            # cancel open buy order and place a new one
+            if open_buy_order && open_buy_order.filled_size == 0.0
+              Order.find_by(gdax_id: open_buy_order.id).cancel_order
+            end
+            if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
+              price = GDAX::MarketData.current_bid - 0.01
+              size  = trading_units
+              Rails.logger.info "Attempting to place a new buy order at #{price} to avoid fees."
+              Order.submit_order('buy', price, size, {post_only: true}, nil, 'trendline', algorithm)
+            else
+              Rails.logger.info "USD balance not sufficient for trendline BUY order."
+            end
           end
         elsif market_conditions.values.all? {|value| value == false }
-          size  = trading_units
-          price = 10000.00 # any number is sufficient since it is a 'market' order
           Rails.logger.info "Price is decreasing... Placing new trendline SELL order."
           Rails.logger.info "market_conditions: #{market_conditions.inspect}"
-          if Account.gdax_bitcoin_account.available >= (size).to_d
-            Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline', algorithm)
+
+          open_sell_order = Order.my_lowest_open_sell_order
+          if open_sell_order && (open_sell_order.price < GDAX::MarketData.current_ask * 1.0001))
+            # do nothing
           else
-            Rails.logger.info "BTC balance not sufficient for trendline SELL order."
+            # cancel open sell order and place new one
+            Order.find_by(gdax_id: open_sell_order.id).cancel_order if open_sell_order
+            if Account.gdax_bitcoin_account.available >= (size).to_d
+              price = GDAX::MarketData.current_ask + 0.01
+              size  = trading_units
+              Rails.logger.info "Attempting to place a new sell order at #{price} to avoid fees."
+              Order.submit_order('sell', price, size, {post_only: true}, nil, 'trendline', algorithm)
+            else
+              Rails.logger.info "BTC balance not sufficient for trendline SELL order."
+            end
           end
         end
       else # an entry trendline order has been made previously. check the market conditions to make an exit order.
@@ -155,22 +196,22 @@ class Trader < ActiveRecord::Base
 
         if contract.lacking_sell?
           if exit_short_line < exit_long_line
-            size  = trading_units # should match contract.buy_order.quantity
-            price = 10000.00      # any number is sufficient since it is a 'market' order
+            size  = contract.buy_order.gdax_filled_size.to_d # should match contract.buy_order.quantity
+            price = GDAX::MarketData.current_ask + 0.01
             Rails.logger.info "Price is decreasing... Placing trendline SELL order for contract #{contract.id}."
             if Account.gdax_bitcoin_account.available >= (size).to_d
-              Order.submit_order('sell', price, size, {type: 'market'}, contract.id, 'trendline', algorithm)
+              Order.submit_order('sell', price, size, {post_only: true}, contract.id, 'trendline', algorithm)
             else
               Rails.logger.info "BTC balance not sufficient for matching trendline SELL order."
             end
           end
         elsif contract.lacking_buy?
           if exit_short_line > exit_long_line
-            size  = trading_units # should match contract.sell_order.quantity
-            price = 1.00          # any number is sufficient since it is a 'market' order
+            size  = contract.sell_order.gdax_filled_size.to_d # should match contract.sell_order.quantity
+            price = GDAX::MarketData.current_bid - 0.01
             Rails.logger.info "Price is increasing... Placing trendline BUY order for contract #{contract.id}."
             if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
-              Order.submit_order('buy', price, size, {type: 'market'}, contract.id, 'trendline', algorithm)
+              Order.submit_order('buy', price, size, {post_only: true}, contract.id, 'trendline', algorithm)
             else
               Rails.logger.info "USD balance not sufficient for matching trendline BUY order."
             end

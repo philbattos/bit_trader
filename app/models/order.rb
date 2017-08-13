@@ -182,6 +182,16 @@ class Order < ActiveRecord::Base
     GDAX::Connection.new.rest_client.orders(status: 'open')
   end
 
+  def self.my_highest_open_buy_order
+    # find my open buy order that is closest to market price
+    open_orders.select {|o| o.side == 'buy' && o.filled_size == 0.0 }.sort_by(&:price).last
+  end
+
+  def self.my_lowest_open_sell_order
+    # find my open sell order that is closest to market price
+    open_orders.select {|o| o.side == 'sell' && o.filled_size == 0.0 }.sort_by(&:price).first
+  end
+
   def self.calculate_filled_price(response)
     return nil if response.executed_value.nil? || response.filled_size.nil? || response.filled_size.zero?
     response.executed_value / response.filled_size
