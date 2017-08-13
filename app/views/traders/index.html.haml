@@ -7,23 +7,35 @@
       .panel.panel-success
         .panel-heading Trendline Profit - ALL
         .panel-body
-          %h3.text-muted= "#{@trendline_profit_all_count} contracts"
-          %h1= "$#{@trendline_profit_all_value} profit"
-          %h1= "#{@trendline_profit_all_percent}%"
+          %h3.text-muted
+            = @trendline_profit_all_count
+            contracts
+          %h1
+            = number_to_currency @trendline_profit_all_value
+            profit
+          %h1= number_to_percentage @trendline_profit_all_percent
     .col-md-3
       .panel.panel-success
         .panel-heading Trendline Profit - MONTH
         .panel-body
-          %h3.text-muted= "#{@trendline_profit_month_count} contracts"
-          %h1= "$#{@trendline_profit_month_value} profit"
-          %h1= "#{@trendline_profit_month_percent}%"
+          %h3.text-muted
+            = @trendline_profit_month_count
+            contracts
+          %h1
+            = number_to_currency @trendline_profit_month_value
+            profit
+          %h1= number_to_percentage @trendline_profit_month_percent
     .col-md-3
       .panel.panel-success
         .panel-heading Trendline Profit - WEEK
         .panel-body
-          %h3.text-muted= "#{@trendline_profit_week_count} contracts"
-          %h1= "$#{@trendline_profit_week_value} profit"
-          %h1= "#{@trendline_profit_week_percent}%"
+          %h3.text-muted
+            = @trendline_profit_week_count
+            contracts
+          %h1
+            = number_to_currency @trendline_profit_week_value
+            profit
+          %h1= number_to_percentage @trendline_profit_week_percent
     - @traders.each do |trader|
       .col-md-3
         .panel.panel-info
