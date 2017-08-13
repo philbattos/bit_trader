@@ -7,17 +7,17 @@ class TradersController < ApplicationController
 
     @trendline_profit_all_count = Contract.trendline.resolved.count
     @trendline_profit_all_value = Contract.trendline.resolved.sum(:roi).round(2)
-    @trendline_profit_all_percent = (@trendline_profit_all_value / @trendline_profit_all_count).round
+    @trendline_profit_all_percent = (@trendline_profit_all_value / @trendline_profit_all_count).round(2)
 
     contracts_from_last_month = Contract.trendline.resolved.where("created_at > ?", 30.days.ago)
     @trendline_profit_month_count = contracts_from_last_month.count
     @trendline_profit_month_value = contracts_from_last_month.sum(:roi).round(2)
-    @trendline_profit_month_percent = (@trendline_profit_month_value / @trendline_profit_month_count).round
+    @trendline_profit_month_percent = (@trendline_profit_month_value / @trendline_profit_month_count).round(2)
 
     contracts_from_last_week = Contract.trendline.resolved.where("created_at > ?", 7.days.ago)
     @trendline_profit_week_count = contracts_from_last_week.count
     @trendline_profit_week_value = contracts_from_last_week.sum(:roi).round(2)
-    @trendline_profit_week_percent = (@trendline_profit_week_value / @trendline_profit_week_count).round
+    @trendline_profit_week_percent = (@trendline_profit_week_value / @trendline_profit_week_count).round(2)
 
     # @chart1a = Charts::OrdersChart.build_chart
     # @chart1b = Charts::ContractsChart.build_chart
