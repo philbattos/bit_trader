@@ -151,9 +151,9 @@ class Trader < ActiveRecord::Base
           else
             # cancel open buy order and place a new one
             Order.find_by(gdax_id: open_buy_order.id).cancel_order if open_buy_order
+            size = trading_units
             if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
               price = GDAX::MarketData.current_bid - 0.01
-              size  = trading_units
               Rails.logger.info "Attempting to place a new buy order at #{price} to avoid fees."
               Order.submit_order('buy', price, size, {post_only: true}, nil, 'trendline', algorithm)
             else
@@ -170,9 +170,9 @@ class Trader < ActiveRecord::Base
           else
             # cancel open sell order and place new one
             Order.find_by(gdax_id: open_sell_order.id).cancel_order if open_sell_order
+            size = trading_units
             if Account.gdax_bitcoin_account.available >= (size).to_d
               price = GDAX::MarketData.current_ask + 0.01
-              size  = trading_units
               Rails.logger.info "Attempting to place a new sell order at #{price} to avoid fees."
               Order.submit_order('sell', price, size, {post_only: true}, nil, 'trendline', algorithm)
             else
