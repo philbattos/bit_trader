@@ -96,7 +96,7 @@ class Contract < ActiveRecord::Base
 
   def self.resolve_open
     # liquidate_old_contracts
-    populate_empty_contracts
+    # populate_empty_contracts
     match_open_buys
     match_open_sells
   end
