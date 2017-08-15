@@ -244,7 +244,7 @@ class Trader < ActiveRecord::Base
                 Rails.logger.info "Price is decreasing... Placing exit SELL order for contract #{contract.id}."
                 price = current_ask + 0.01
                 size  = contract.buy_order.gdax_filled_size.to_d
-                if Account.gdax_bitcoin_account.available >= (size).to_d
+                if Account.gdax_bitcoin_account.available >= size.to_d
                   place_trendline_sell(price, size, contract.id, algorithm)
                 else
                   Rails.logger.info "BTC balance not sufficient for matching trendline SELL order of #{size}."
@@ -270,10 +270,10 @@ class Trader < ActiveRecord::Base
               Rails.logger.info "Price is increasing... Placing exit BUY order for contract #{contract.id}."
               price = current_bid - 0.01
               size  = contract.sell_order.gdax_filled_size.to_d
-              if Account.gdax_bitcoin_account.available >= (current_ask * size * 1.01)
+              if Account.gdax_usdollar_account.available >= (current_ask * size * 1.01)
                 place_trendline_buy(price, size, contract.id, algorithm)
               else
-                Rails.logger.info "BTC balance not sufficient for matching trendline BUY order of #{size}."
+                Rails.logger.info "USD balance not sufficient for matching trendline BUY order of #{size}."
               end
             else
               # Rails.logger.info "Waiting for market conditions to support an exit BUY... current price: #{current_bid}"
