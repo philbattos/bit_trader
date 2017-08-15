@@ -71,11 +71,11 @@ class Contract < ActiveRecord::Base
   end
 
   def lacking_buy?
-    sell_order && sell_order.done? && buy_order.nil?
+    sell_order.present? && sell_order.done? && buy_order.nil?
   end
 
   def lacking_sell?
-    buy_order && buy_order.done? && sell_order.nil?
+    buy_order.present? && buy_order.done? && sell_order.nil?
   end
 
   def orders
