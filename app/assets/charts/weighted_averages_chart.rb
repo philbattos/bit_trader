@@ -99,10 +99,32 @@ module Charts
     end
 
     def self.find_trendline_trades
-      buy_orders  = BuyOrder.trendline
-      sell_orders = SellOrder.trendline
+      attempted_buy_orders  = BuyOrder.trendline.canceled
+      attempted_sell_orders = SellOrder.trendline.canceled
+      completed_buy_orders  = BuyOrder.trendline.done
+      completed_sell_orders = SellOrder.trendline.done
 
-      sell_lines = sell_orders.map do |order|
+      attempted_sell_lines = attempted_sell_orders.map do |order|
+        {
+          value: order.created_at.to_i * 1000,
+          # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
+          width: 1,
+          color: 'red',
+          dashStyle: 'dot'
+        }
+      end
+
+      attempted_buy_lines = attempted_buy_orders.map do |order|
+        {
+          value: order.created_at.to_i * 1000,
+          # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
+          width: 1,
+          color: 'green',
+          dashStyle: 'dot'
+        }
+      end
+
+      completed_sell_lines = completed_sell_orders.map do |order|
         {
           value: order.created_at.to_i * 1000,
           # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
@@ -112,7 +134,7 @@ module Charts
         }
       end
 
-      buy_lines = buy_orders.map do |order|
+      completed_buy_lines = completed_buy_orders.map do |order|
         {
           value: order.created_at.to_i * 1000,
           # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
@@ -122,7 +144,7 @@ module Charts
         }
       end
 
-      sell_lines + buy_lines
+      attempted_sell_lines + attempted_buy_lines + completed_sell_lines + completed_buy_lines
     end
 
   end

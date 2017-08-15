@@ -250,7 +250,7 @@ class Trader < ActiveRecord::Base
                   Rails.logger.info "BTC balance not sufficient for matching trendline SELL order of #{size}."
                 end
               else
-                Rails.logger.info "Waiting for market conditions to support an exit SELL... current price: #{current_ask}"
+                # Rails.logger.info "Waiting for market conditions to support an exit SELL... current price: #{current_ask}"
               end
             end
           else # buy order is active but not 'done'
@@ -276,7 +276,7 @@ class Trader < ActiveRecord::Base
                 Rails.logger.info "BTC balance not sufficient for matching trendline BUY order of #{size}."
               end
             else
-              Rails.logger.info "Waiting for market conditions to support an exit BUY... current price: #{current_bid}"
+              # Rails.logger.info "Waiting for market conditions to support an exit BUY... current price: #{current_bid}"
             end
           else # contract has a sell order that is active but not 'done'; no buy order
             if contract.sell_order.requested_price < (current_ask * 1.0001)

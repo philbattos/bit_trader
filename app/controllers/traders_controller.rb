@@ -23,7 +23,7 @@ class TradersController < ApplicationController
     # @chart1b = Charts::ContractsChart.build_chart
     @chart2 = Charts::AccountGrowthChart.build_chart
     @chart3 = Charts::ContractsProfitChart.build_chart
-    @chart4 = Charts::OpenContractsChart.build_chart
+    # @chart4 = Charts::OpenContractsChart.build_chart
     @chart5 = Charts::UnresolvedContractsChart.build_chart
     # @chart6 = Charts::AccountValueChart.build_chart
     # @chart7 = Charts::MovingAveragesChart.build_chart
