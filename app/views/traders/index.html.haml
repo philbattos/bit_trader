@@ -11,7 +11,9 @@
             = @trendline_profit_all_count
             contracts
           %h1= number_to_currency @trendline_profit_all_value
-          %h1= number_to_percentage @trendline_profit_all_percent
+          %h1
+            = number_to_currency @trendline_profit_all_percent
+            per
     .col-md-3
       .panel.panel-success
         .panel-heading Trendline Profit - MONTH
@@ -20,7 +22,9 @@
             = @trendline_profit_month_count
             contracts
           %h1= number_to_currency @trendline_profit_month_value
-          %h1= number_to_percentage @trendline_profit_month_percent
+          %h1
+            = number_to_currency @trendline_profit_month_percent
+            per
     .col-md-3
       .panel.panel-success
         .panel-heading Trendline Profit - WEEK
@@ -29,7 +33,9 @@
             = @trendline_profit_week_count
             contracts
           %h1= number_to_currency @trendline_profit_week_value
-          %h1= number_to_percentage @trendline_profit_week_percent
+          %h1
+            = number_to_currency @trendline_profit_week_percent
+            per
     - @traders.each do |trader|
       .col-md-3
         .panel.panel-info
