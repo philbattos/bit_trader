@@ -83,7 +83,7 @@ module GDAX
         LIMIT 1;"
       results = ActiveRecord::Base.connection.execute(sql_query)
 
-      Rails.logger.info "Trend results: #{results.first}"
+      # Rails.logger.info "Trend results: #{results.first}"
 
       current_average = results.first['current_average']
       earlier_average = results.first['earlier_average']
