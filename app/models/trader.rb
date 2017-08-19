@@ -244,7 +244,8 @@ class Trader < ActiveRecord::Base
                 end
               end
             else # contract doesn't have a sell order
-              if exit_short_line < exit_long_line
+              # if exit_short_line < exit_long_line
+              if GDAX::MarketData.current_trend(6.hours.ago, 60) == 'TRENDING DOWN'
                 Rails.logger.info "Price is decreasing... Placing exit SELL order for contract #{contract.id}."
                 price = current_ask + 0.01
                 size  = buy_order.gdax_filled_size.to_d
@@ -273,7 +274,8 @@ class Trader < ActiveRecord::Base
         elsif contract.sell_order
           sell_order = contract.sell_order
           if sell_order.done?
-            if exit_short_line > exit_long_line
+            # if exit_short_line > exit_long_line
+            if GDAX::MarketData.current_trend(6.hours.ago, 60) == 'TRENDING UP'
               Rails.logger.info "Price is increasing... Placing exit BUY order for contract #{contract.id}."
               price = current_bid - 0.01
               size  = sell_order.gdax_filled_size.to_d

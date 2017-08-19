@@ -63,6 +63,43 @@ module GDAX
       results.first['weighted_average'].to_d
     end
 
+    def self.current_trend(date, interval)
+      # NOTE: date should be in format '2017-07-25 17:55:16' or '2017-07-25 17:55:16 +0000' or '2017-07-25 17:55:16 UTC'
+      # NOTE: interval is the number of seconds between the currently calculated moving average and a previous calculation
+      sql_query = "WITH current AS (
+        SELECT ROW_NUMBER() OVER(ORDER BY trade_id) AS current_weight,
+               ROUND(price,2) AS current_price
+        FROM market_data
+        WHERE created_at > (timestamp '#{date}') AND created_at < NOW()
+      ), earlier AS (
+        SELECT ROW_NUMBER() OVER(ORDER BY trade_id) AS earlier_weight,
+               ROUND(price,2) AS earlier_price
+        FROM market_data
+        WHERE created_at > (timestamp '#{date}' - INTERVAL '#{interval} seconds') AND created_at < (NOW() - INTERVAL '#{interval} seconds')
+      )
+        SELECT
+          (SELECT ROUND(SUM(current_price * current_weight) / SUM(current_weight), 2) FROM current) AS current_average,
+          (SELECT ROUND(SUM(earlier_price * earlier_weight) / SUM(earlier_weight), 2) FROM earlier) AS earlier_average
+        LIMIT 1;"
+      results = ActiveRecord::Base.connection.execute(sql_query)
+
+      Rails.logger.info "Trend results: #{results.first}"
+
+      current_average = results.first['current_average']
+      earlier_average = results.first['earlier_average']
+      if current_average == earlier_average
+        # no trend; do nothing
+      elsif current_average > earlier_average
+        # trending up
+        'TRENDING UP'
+      elsif current_average < earlier_average
+        # trending down
+        'TRENDING DOWN'
+      else
+        # WTF?!
+      end
+    end
+
     def self.orderbook
       GDAX::Connection.new.rest_client.orderbook
     rescue Coinbase::Exchange::RateLimitError => rate_limit_error
