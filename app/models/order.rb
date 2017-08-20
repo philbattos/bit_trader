@@ -247,8 +247,8 @@ class Order < ActiveRecord::Base
       fees:                response['fill_fees'],
       status:              response['status'],
       strategy_type:       strategy_type,
-      stop_type:           response['stop'],
-      stop_price:          response['stop_price']
+      stop_type:           stop_type,
+      stop_price:          stop_price
       # custom_id:           response['oid'],
       # currency:            response['currency'],
     )
