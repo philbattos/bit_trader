@@ -2,6 +2,9 @@ class Trader < ActiveRecord::Base
   after_initialize :default_trader
   # NOTE: entry_short and entry_long should always be saved in minutes (not hours)
 
+  STOP_ORDER_MIN = 0.003
+  STOP_ORDER_MAX = 0.005
+
   def self.run
     Trader.find_by(name: 'default').start
   end
@@ -121,29 +124,6 @@ class Trader < ActiveRecord::Base
         entry_short_line = GDAX::MarketData.calculate_exponential_average(entry_short_time)
         entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
 
-        # TO DO: place stop orders once market price passes profit margin (multiply buy price * 1.0052 to cover fees)
-        # if entry_short_line > (entry_long_line * (1 + crossover_buffer)) && (exit_short_line > exit_long_line)
-        # if current_conditions.values.all? {|value| value == true }
-        #   size  = trading_units
-        #   price = 1.00 # any number is sufficient since it is a 'market' order
-        #   Rails.logger.info "Price is increasing... Placing new trendline BUY order."
-        #   Rails.logger.info "current_conditions: #{current_conditions.inspect}"
-        #   if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
-        #     Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline', algorithm)
-        #   else
-        #     Rails.logger.info "USD balance not sufficient for trendline BUY order."
-        #   end
-        # elsif current_conditions.values.all? {|value| value == false }
-        #   size  = trading_units
-        #   price = 10000.00 # any number is sufficient since it is a 'market' order
-        #   Rails.logger.info "Price is decreasing... Placing new trendline SELL order."
-        #   Rails.logger.info "current_conditions: #{current_conditions.inspect}"
-        #   if Account.gdax_bitcoin_account.available >= (size).to_d
-        #     Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline', algorithm)
-        #   else
-        #     Rails.logger.info "BTC balance not sufficient for trendline SELL order."
-        #   end
-        # end
         if current_conditions.values.all? {|value| value == true }
           Rails.logger.info "Price is increasing... Placing new trendline BUY order."
           Rails.logger.info "current_conditions: #{current_conditions.inspect}"
@@ -153,7 +133,8 @@ class Trader < ActiveRecord::Base
             # do nothing
           else
             # cancel open buy order and place a new one
-            Order.find_by(gdax_id: open_buy_order.id).cancel_order if open_buy_order
+            highest_buy_order = Order.find_by(gdax_id: open_buy_order.id)
+            highest_buy_order.cancel_order if highest_buy_order
             size = trading_units
             if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
               price = GDAX::MarketData.current_bid - 0.01
@@ -190,44 +171,13 @@ class Trader < ActiveRecord::Base
         exit_short_line ||= GDAX::MarketData.calculate_exponential_average(exit_short_time)
         exit_long_line  ||= GDAX::MarketData.calculate_exponential_average(exit_long_time)
 
-        # if Contract.trendline.matched.any?
-        #   Rails.logger.info "There is a matched trendline contract #{contract.id} that needs to update its status."
-        #   return
-        # end
-
-        #   if contract.lacking_sell?
-        #     if exit_short_line < exit_long_line
-        #       size  = contract.buy_order.gdax_filled_size.to_d # should match contract.buy_order.quantity
-        #       price = GDAX::MarketData.current_ask + 0.01
-        #       Rails.logger.info "Price is decreasing... Placing trendline SELL order for contract #{contract.id}."
-        #       if Account.gdax_bitcoin_account.available >= (size).to_d
-        #         Order.submit_order('sell', price, size, {post_only: true}, contract.id, 'trendline', algorithm)
-        #       else
-        #         Rails.logger.info "BTC balance not sufficient for matching trendline SELL order."
-        #       end
-        #     end
-        #   elsif contract.lacking_buy?
-        #     if exit_short_line > exit_long_line
-        #       size  = contract.sell_order.gdax_filled_size.to_d # should match contract.sell_order.quantity
-        #       price = GDAX::MarketData.current_bid - 0.01
-        #       Rails.logger.info "Price is increasing... Placing trendline BUY order for contract #{contract.id}."
-        #       if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
-        #         Order.submit_order('buy', price, size, {post_only: true}, contract.id, 'trendline', algorithm)
-        #       else
-        #         Rails.logger.info "USD balance not sufficient for matching trendline BUY order."
-        #       end
-        #     end
-        #   else
-        #     Rails.logger.info "Trendline contract #{contract.id} could not be resolved. Maybe the contract does not have any orders?"
-        #   end
-        # end
-
-        # NOTE: a trendline contract should only have one active order at a time.
-        if contract.buy_order
-          buy_order = contract.buy_order
+        if contract.buy_orders.active.where(stop_type: nil).any?
+          buy_order = contract.buy_orders.active.where(stop_type: nil).first # NOTE: a trendline contract should only have one active order at a time.
           if buy_order.done?
-            if contract.sell_order # if we already have a sell order, we must have previously received a 'sell' signal, so we don't need to check the market conditions again; we should complete a sell order ASAP.
-              sell_order = contract.sell_order
+
+            ##########   Place sell order   ##########
+            if contract.sell_orders.active.where(stop_type: nil).any? # if we already have a sell order, we must have previously received a 'sell' signal, so we don't need to check the market conditions again; we should complete a sell order ASAP.
+              sell_order = contract.sell_orders.active.where(stop_type: nil).first
               if sell_order.done?
                 Rails.logger.info "The contract #{contract.id} has a buy and sell order marked as 'done'. Waiting for its status to be updated."
               else # contract has a sell order but it is not 'done'
@@ -243,10 +193,11 @@ class Trader < ActiveRecord::Base
                   end
                 end
               end
-            else # contract doesn't have a sell order
+            else # contract doesn't have a normal sell order; it might have a stop order
               # if exit_short_line < exit_long_line
               if GDAX::MarketData.current_trend(8.hours.ago, 60) == 'TRENDING DOWN'
                 Rails.logger.info "Price is decreasing... Placing exit SELL order for contract #{contract.id}."
+                # TODO: cancel any stop orders
                 price = current_ask + 0.01
                 size  = buy_order.gdax_filled_size.to_d
                 if Account.gdax_bitcoin_account.available >= size.to_d
@@ -258,25 +209,39 @@ class Trader < ActiveRecord::Base
                 # Rails.logger.info "Waiting for market conditions to support an exit SELL... current price: #{current_ask}"
               end
             end
+
+            ##########   Place stop order   ##########
+            stop_order_price = buy_order.filled_price * (1.0 + STOP_ORDER_MAX)
+            if contract.sell_orders.active.stop_orders.any?
+              # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
+              # there is an active stop order; do nothing
+            elsif current_ask > stop_order_price
+              return if contract.resolvable # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
+              size = buy_order.gdax_filled_size.to_d
+              limit_price = buy_order.filled_price * (1.0 + STOP_ORDER_MIN)
+              place_stop_sell(limit_price, stop_order_price, size, contract.id, algorithm)
+            end
+
           else # buy order is active but not 'done'
             if buy_order.requested_price > (current_bid * 0.9999)
               Rails.logger.info "The contract #{contract.id} has an active buy order with a price of #{buy_order.requested_price.round(2)}, which is within .01\% of the market price #{current_bid.round(2)}."
             else # contract's buy order is out of range; it needs to be canceled and replaced
               Rails.logger.info "The contract #{contract.id} has an active buy order with a price of #{buy_order.requested_price.round(2)}, which is higher than the market #{current_bid.round(2)}. Canceling buy order #{buy_order.id}."
+              size = buy_order.quantity
               if buy_order.cancel_order
                 price = current_bid - 0.01
-                size  = contract.sell_order ? contract.sell_order.gdax_filled_size.to_d : 0.20
                 Rails.logger.info "Buy order #{buy_order.id} successfully canceled. Placing new BUY order for #{size} BTC at $#{price}."
                 place_trendline_buy(price, size, contract.id, algorithm)
               end
             end
           end
-        elsif contract.sell_order
-          sell_order = contract.sell_order
+        elsif contract.sell_orders.active.where(stop_type: nil).any?
+          sell_order = contract.sell_orders.active.where(stop_type: nil).first
           if sell_order.done?
             # if exit_short_line > exit_long_line
             if GDAX::MarketData.current_trend(8.hours.ago, 60) == 'TRENDING UP'
               Rails.logger.info "Price is increasing... Placing exit BUY order for contract #{contract.id}."
+              # TODO: cancel any stop orders
               price = current_bid - 0.01
               size  = sell_order.gdax_filled_size.to_d
               if Account.gdax_usdollar_account.available >= (current_ask * size * 1.01)
@@ -287,14 +252,27 @@ class Trader < ActiveRecord::Base
             else
               # Rails.logger.info "Waiting for market conditions to support an exit BUY... current price: #{current_bid}"
             end
+
+            ##########   Place stop order   ##########
+            stop_order_price = sell_order.filled_price * (1.0 - STOP_ORDER_MAX)
+            if contract.sell_orders.active.stop_orders.any?
+              # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
+              # there is an active stop order; do nothing
+            elsif current_ask > stop_order_price
+              return if contract.resolvable # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
+              size = sell_order.gdax_filled_size.to_d
+              limit_price = sell_order.filled_price * (1.0 - STOP_ORDER_MIN)
+              place_stop_sell(limit_price, stop_order_price, size, contract.id, algorithm)
+            end
+
           else # contract has a sell order that is active but not 'done'; no buy order
             if sell_order.requested_price < (current_ask * 1.0001)
               Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is within .01\% of the market price #{current_ask.round(2)}."
             else # contract's sell order is out of range; it needs to be canceled and replaced
               Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is higher than the market #{current_ask.round(2)}. Canceling sell order #{sell_order.id}."
+              size = sell_order.quantity
               if sell_order.cancel_order
                 price = current_ask + 0.01
-                size  = 0.20
                 Rails.logger.info "Sell order #{sell_order.id} successfully canceled. Placing new SELL order for #{size} BTC at $#{price}."
                 place_trendline_sell(price, size, contract.id, algorithm)
               end
@@ -319,6 +297,16 @@ class Trader < ActiveRecord::Base
     def place_trendline_sell(price, size, contract_id, algorithm)
       Rails.logger.info "Attempting to place a new sell order for contract #{contract_id} to avoid fees: #{size} BTC at #{price} USD."
       Order.submit_order('sell', price, size, {post_only: true}, contract_id, 'trendline', algorithm)
+    end
+
+    def place_stop_buy(limit_price, stop_price, size, contract_id, algorithm)
+      Rails.logger.info "Attempting to place a new STOP buy (entry) order for contract #{contract_id}: #{size} BTC between #{limit_price}-#{stop_price} USD."
+      Order.submit_order('buy', limit_price, size, {stop: 'entry', stop_price: stop_price}, contract_id, 'trendline', algorithm)
+    end
+
+    def place_stop_sell(limit_price, stop_price, size, contract_id, algorithm)
+      Rails.logger.info "Attempting to place a new STOP sell (loss) order for contract #{contract_id}: #{size} BTC between #{limit_price}-#{stop_price} USD."
+      Order.submit_order('sell', limit_price, size, {stop: 'loss', stop_price: stop_price}, contract_id, 'trendline', algorithm)
     end
 
 end

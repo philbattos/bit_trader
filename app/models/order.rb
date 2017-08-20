@@ -19,6 +19,7 @@ class Order < ActiveRecord::Base
   scope :canceled,       -> { where(status: 'not-found') }
   scope :done,           -> { where(status: 'done') }
   scope :retired,        -> { where(status: 'retired') }
+  scope :stop_orders,    -> { where.not(stop_type: nil) }
   scope :liquidatable,   -> { done.where.not(requested_price: Metric.three_day_range) }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
@@ -242,6 +243,8 @@ class Order < ActiveRecord::Base
       fees:                response['fill_fees'],
       status:              response['status'],
       strategy_type:       strategy_type,
+      stop_type:           response['stop'],
+      stop_price:          response['stop_price']
       # custom_id:           response['oid'],
       # currency:            response['currency'],
     )
@@ -271,6 +274,10 @@ class Order < ActiveRecord::Base
 
   def retired?
     status == 'retired'
+  end
+
+  def stop_order?
+    stop_type.present?
   end
 
   def check_gdax_status

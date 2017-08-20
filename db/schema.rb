@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170806061619) do
+ActiveRecord::Schema.define(version: 20170819224635) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -150,6 +150,8 @@ ActiveRecord::Schema.define(version: 20170806061619) do
     t.string   "strategy_type"
     t.decimal  "requested_price"
     t.decimal  "executed_value"
+    t.string   "stop_type"
+    t.decimal  "stop_price"
     t.index ["contract_id"], name: "index_orders_on_contract_id", using: :btree
     t.index ["executed_value"], name: "index_orders_on_executed_value", using: :btree
     t.index ["fees"], name: "index_orders_on_fees", using: :btree

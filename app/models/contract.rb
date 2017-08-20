@@ -87,11 +87,11 @@ class Contract < ActiveRecord::Base
   end
 
   def buy_order
-    buy_orders.find_by(status: Order::ACTIVE_STATUSES) # NOTE: there should be only one active buy order per contract
+    buy_orders.find_by(status: Order::ACTIVE_STATUSES)
   end
 
   def sell_order
-    sell_orders.find_by(status: Order::ACTIVE_STATUSES) # NOTE: there should be only one active sell order per contract
+    sell_orders.find_by(status: Order::ACTIVE_STATUSES)
   end
 
   def self.resolve_open
@@ -345,7 +345,10 @@ class Contract < ActiveRecord::Base
 
   def self.mark_as_done
     contract = resolvable.sample # for now, we are only checking the status of a random contract since we don't know which contracts will complete first
-    contract.mark_done if contract
+    if contract
+      contract.mark_done
+      contract.orders.unresolved.each {|o| o.cancel_order } # cancel any open orders (ex. stop orders) on the resolved contract
+    end
   end
 
   def self.mark_as_liquidate
@@ -363,7 +366,9 @@ class Contract < ActiveRecord::Base
     update(
       status: 'done',
       roi: calculate_roi,
-      completion_date: Time.now
+      completion_date: Time.now,
+      gdax_buy_order_id: buy_orders.done.first.gdax_id,
+      gdax_sell_order_id: sell_orders.done.first.gdax_id
     )
   end
 
