@@ -219,7 +219,11 @@ class Order < ActiveRecord::Base
     contract = Contract.create_with(strategy_type: strategy_type, algorithm: algorithm).find_or_create_by(id: contract_id)
     contract.update(gdax_buy_order_id: response.id)  if order_type == 'buy'
     contract.update(gdax_sell_order_id: response.id) if order_type == 'sell'
-    price = response.keys.include?('price') ? response['price'] : nil # NOTE: market orders do not include 'price' in response
+
+    price      = response.keys.include?('price') ? response['price'] : nil           # NOTE: market orders do not include 'price' in response
+    stop_type  = response.keys.include?('stop') ? response['stop'] : nil             # NOTE: orders do not always include 'stop' in response
+    stop_price = response.keys.include?('stop_price') ? response['stop_price'] : nil # NOTE: orders do not always include 'stop_price' in response
+
     contract.orders.create(
       # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
       type:                lookup_class_type[order_type],
