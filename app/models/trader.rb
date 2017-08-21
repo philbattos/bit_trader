@@ -115,6 +115,7 @@ class Trader < ActiveRecord::Base
       algorithm          ||= "enter#{entry_short.to_i}x#{entry_long.to_i}(#{crossover_buffer})~exit#{exit_short.to_i}x#{exit_long.to_i}~#{trading_units}units"
 
       if waiting_for_entry?
+        # TO DO: don't place a new order immediately after a stop order is filled because that means that the market has changed direction
         # TO DO: if a trendline contract was recently exited and market is trending in the wrong direction, consider not entering a new trendline contract.
 
         entry_short_time = entry_short.minutes.ago.time
@@ -195,7 +196,7 @@ class Trader < ActiveRecord::Base
               end
             else # contract doesn't have a normal sell order; it might have a stop order
               # if exit_short_line < exit_long_line
-              if GDAX::MarketData.current_trend(8.hours.ago, 60) == 'TRENDING DOWN'
+              if GDAX::MarketData.current_trend(8.hours.ago, 150) == 'TRENDING DOWN'
                 Rails.logger.info "Price is decreasing... Placing exit SELL order for contract #{contract.id}."
                 # TODO: cancel any stop orders
                 price = current_ask + 0.01
@@ -239,7 +240,7 @@ class Trader < ActiveRecord::Base
           sell_order = contract.sell_orders.active.where(stop_type: nil).first
           if sell_order.done?
             # if exit_short_line > exit_long_line
-            if GDAX::MarketData.current_trend(8.hours.ago, 60) == 'TRENDING UP'
+            if GDAX::MarketData.current_trend(8.hours.ago, 150) == 'TRENDING UP'
               Rails.logger.info "Price is increasing... Placing exit BUY order for contract #{contract.id}."
               # TODO: cancel any stop orders
               price = current_bid - 0.01
