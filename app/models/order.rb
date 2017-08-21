@@ -35,7 +35,7 @@ class Order < ActiveRecord::Base
   #-------------------------------------------------
   CLOSED_STATUSES    = %w[ done rejected not-found retired ]
   PURCHASED_STATUSES = %w[ done open ]
-  ACTIVE_STATUSES    = %w[ done open pending ]
+  ACTIVE_STATUSES    = %w[ done open pending active ]
   INACTIVE_STATUSES  = %w[ rejected not-found ] << nil # nil should be considered an "inactive" status
   ORDER_SIZE         = 0.01
   MARGIN             = 0.01
