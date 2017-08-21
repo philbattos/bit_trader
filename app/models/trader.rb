@@ -185,7 +185,7 @@ class Trader < ActiveRecord::Base
                   Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is within .01\% of the market price #{current_ask.round(2)}."
                 else # contract's sell order is out of range; it needs to be canceled and replaced
                   Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is higher than the market #{current_ask.round(2)}. Canceling sell order #{sell_order.id}."
-                  if sell_order.cancel_order
+                  if sell_order.cancel_order # TODO: cancel order unless it has been partially filled
                     price = current_ask + 0.01
                     size  = buy_order.gdax_filled_size.to_d
                     Rails.logger.info "Sell order #{sell_order.id} successfully canceled. Placing new SELL order for #{size} BTC at $#{price}."
@@ -216,7 +216,7 @@ class Trader < ActiveRecord::Base
               # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
               # there is an active stop order; do nothing
             elsif current_ask > stop_order_price
-              return if contract.resolvable # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
+              return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
               size = buy_order.gdax_filled_size.to_d
               limit_price = buy_order.filled_price * (1.0 + STOP_ORDER_MIN)
               place_stop_sell(limit_price, stop_order_price, size, contract.id, algorithm)
@@ -228,7 +228,7 @@ class Trader < ActiveRecord::Base
             else # contract's buy order is out of range; it needs to be canceled and replaced
               Rails.logger.info "The contract #{contract.id} has an active buy order with a price of #{buy_order.requested_price.round(2)}, which is higher than the market #{current_bid.round(2)}. Canceling buy order #{buy_order.id}."
               size = buy_order.quantity
-              if buy_order.cancel_order
+              if buy_order.cancel_order # TODO: cancel order unless it has been partially filled
                 price = current_bid - 0.01
                 Rails.logger.info "Buy order #{buy_order.id} successfully canceled. Placing new BUY order for #{size} BTC at $#{price}."
                 place_trendline_buy(price, size, contract.id, algorithm)
@@ -259,7 +259,7 @@ class Trader < ActiveRecord::Base
               # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
               # there is an active stop order; do nothing
             elsif current_ask > stop_order_price
-              return if contract.resolvable # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
+              return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
               size = sell_order.gdax_filled_size.to_d
               limit_price = sell_order.filled_price * (1.0 - STOP_ORDER_MIN)
               place_stop_sell(limit_price, stop_order_price, size, contract.id, algorithm)
@@ -271,7 +271,7 @@ class Trader < ActiveRecord::Base
             else # contract's sell order is out of range; it needs to be canceled and replaced
               Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is higher than the market #{current_ask.round(2)}. Canceling sell order #{sell_order.id}."
               size = sell_order.quantity
-              if sell_order.cancel_order
+              if sell_order.cancel_order # TODO: cancel order unless it has been partially filled
                 price = current_ask + 0.01
                 Rails.logger.info "Sell order #{sell_order.id} successfully canceled. Placing new SELL order for #{size} BTC at $#{price}."
                 place_trendline_sell(price, size, contract.id, algorithm)

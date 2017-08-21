@@ -62,6 +62,10 @@ class Contract < ActiveRecord::Base
     buy_order.done? && sell_order.done?
   end
 
+  def resolvable?
+    matched? && complete?
+  end
+
   def retired?
     status == 'retired'
   end
