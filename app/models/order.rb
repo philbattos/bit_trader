@@ -179,6 +179,7 @@ class Order < ActiveRecord::Base
     GDAX::Connection.new.rest_client.order(id)
   rescue Coinbase::Exchange::NotFoundError => not_found_error
     Rails.logger.warn "GDAX order #{id} could not be found: #{not_found_error}."
+    nil
   end
 
   def self.open_orders
