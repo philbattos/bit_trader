@@ -61,9 +61,9 @@ class Trader < ActiveRecord::Base
 
     case six_hour_trend
     when 'TRENDING UP'
-      trend_6hour = true
+      trend_8hour = true
     when 'TRENDING DOWN'
-      trend_6hour = false
+      trend_8hour = false
     end
 
     return if [exit_short_line, exit_medium_line, exit_long_line, entry_short_line, entry_long_line].any? {|x| x.nil? || x == 0}
