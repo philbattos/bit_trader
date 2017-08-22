@@ -57,9 +57,9 @@ class Trader < ActiveRecord::Base
     entry_long_time  = entry_long.minutes.ago.time
     entry_short_line = GDAX::MarketData.calculate_exponential_average(entry_short_time)
     entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
-    six_hour_trend   = GDAX::MarketData.current_trend(8.hours.ago, 150)
+    eight_hour_trend = GDAX::MarketData.current_trend(8.hours.ago, 150)
 
-    case six_hour_trend
+    case eight_hour_trend
     when 'TRENDING UP'
       trend_8hour = true
     when 'TRENDING DOWN'
@@ -118,15 +118,14 @@ class Trader < ActiveRecord::Base
     end
 
     def technical_analysis_orders
+      # TODO: prevent partially filled orders from being canceled
+
       current_conditions ||= market_conditions
       current_ask        ||= GDAX::MarketData.current_ask
       current_bid        ||= GDAX::MarketData.current_bid
       algorithm          ||= "enter#{entry_short.to_i}x#{entry_long.to_i}(#{crossover_buffer})~exit#{exit_short.to_i}x#{exit_long.to_i}~#{trading_units}units"
 
       if waiting_for_entry?
-        # TO DO: don't place a new order immediately after a stop order is filled because that means that the market has changed direction
-        # TO DO: if a trendline contract was recently exited and market is trending in the wrong direction, consider not entering a new trendline contract.
-
         entry_short_time = entry_short.minutes.ago.time
         entry_long_time  = entry_long.minutes.ago.time
 
@@ -204,10 +203,8 @@ class Trader < ActiveRecord::Base
                 end
               end
             else # contract doesn't have a normal sell order; it might have a stop order
-              # if exit_short_line < exit_long_line
               if GDAX::MarketData.current_trend(8.hours.ago, 150) == 'TRENDING DOWN'
                 Rails.logger.info "Price is decreasing... Placing exit SELL order for contract #{contract.id}."
-                # TODO: cancel any stop orders
                 price = current_ask + 0.01
                 size  = buy_order.gdax_filled_size.to_d
                 if Account.gdax_bitcoin_account.available >= size.to_d
@@ -248,10 +245,8 @@ class Trader < ActiveRecord::Base
         elsif contract.sell_orders.active.where(stop_type: nil).any?
           sell_order = contract.sell_orders.active.where(stop_type: nil).first
           if sell_order.done?
-            # if exit_short_line > exit_long_line
             if GDAX::MarketData.current_trend(8.hours.ago, 150) == 'TRENDING UP'
               Rails.logger.info "Price is increasing... Placing exit BUY order for contract #{contract.id}."
-              # TODO: cancel any stop orders
               price = current_bid - 0.01
               size  = sell_order.gdax_filled_size.to_d
               if Account.gdax_usdollar_account.available >= (current_ask * size * 1.01)
