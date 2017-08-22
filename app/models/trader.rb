@@ -222,7 +222,7 @@ class Trader < ActiveRecord::Base
             if contract.sell_orders.active.stop_orders.any?
               # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
               # there is an active stop order; do nothing
-            elsif current_ask > stop_order_price
+            elsif current_ask > (stop_order_price * 1.0005)
               return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
               size = buy_order.gdax_filled_size.to_d
               limit_price = (buy_order.filled_price * (1.0 + STOP_ORDER_MIN)).round(2)
@@ -263,7 +263,7 @@ class Trader < ActiveRecord::Base
             if contract.buy_orders.active.stop_orders.any?
               # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
               # there is an active stop order; do nothing
-            elsif current_ask < stop_order_price
+            elsif current_ask < (stop_order_price * 0.9995)
               return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
               size = sell_order.gdax_filled_size.to_d
               limit_price = (sell_order.filled_price * (1.0 - STOP_ORDER_MIN)).round(2)
