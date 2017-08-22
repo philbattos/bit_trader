@@ -79,20 +79,15 @@ class Order < ActiveRecord::Base
     end
     response
   rescue Coinbase::Exchange::BadRequestError => gdax_error
-    Rails.logger.info "GDAX error (order submit): #{gdax_error}"
-    nil
+    Rails.logger.info "GDAX error (order submit): #{gdax_error}"; nil
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    Rails.logger.info "GDAX rate limit error (order submit): #{rate_limit_error}"
-    nil
+    Rails.logger.info "GDAX rate limit error (order submit): #{rate_limit_error}"; nil
   rescue Net::ReadTimeout => timeout_error
-    Rails.logger.info "GDAX timeout error (order submit): #{timeout_error}"
-    nil
+    Rails.logger.info "GDAX timeout error (order submit): #{timeout_error}"; nil
   rescue OpenSSL::SSL::SSLErrorWaitReadable => ssl_error
-    Rails.logger.info "GDAX SSL error (order submit): #{ssl_error}"
-    nil
+    Rails.logger.info "GDAX SSL error (order submit): #{ssl_error}"; nil
   rescue Coinbase::Exchange::InternalServerError => server_error
-    Rails.logger.info "GDAX server error (order submit): #{server_error}"
-    nil
+    Rails.logger.info "GDAX server error (order submit): #{server_error}"; nil
   end
 
   def self.place_buy(bid, contract_id=nil)
@@ -256,8 +251,9 @@ class Order < ActiveRecord::Base
       # currency:            response['currency'],
     )
   rescue => error
-    Rails.logger.info "Error when storing order: #{error.inspect}"
-    Rails.logger.info "response: #{response.inspect}"
+    Rails.logger.warn "Error when storing order: #{error.inspect}"
+    Rails.logger.warn "response: #{response.inspect}"
+    nil
   end
 
   def self.lookup_class_type
@@ -294,7 +290,7 @@ class Order < ActiveRecord::Base
   def update_order
     response = check_gdax_status
     if response && response.status != self.gdax_status
-      puts "Updating status of #{self.type} #{self.id} from #{self.gdax_status} to #{response.status}"
+      Rails.logger.info "Updating status of #{self.type} #{self.id} from #{self.gdax_status} to #{response.status}"
       price = response.keys.include?('price') ? response.price : nil # NOTE: market orders do not include 'price' in response
       # NOTE: Coinbase-exchange gem automatically converts numeric response values into decimals
       self.update(
@@ -312,26 +308,27 @@ class Order < ActiveRecord::Base
       )
     end
   rescue Coinbase::Exchange::BadRequestError => request_error
-    puts "GDAX couldn't check/update status for order #{self.gdax_id}"
+    Rails.logger.warn "GDAX couldn't check/update status for order #{self.gdax_id}"; nil
   rescue Coinbase::Exchange::NotFoundError => not_found_error
     # this happens after an order has been canceled so we want to update the order's status
     self.update(gdax_status: 'not-found', status: 'not-found')
-    puts "GDAX couldn't find order #{self.gdax_id}: #{not_found_error}"
-    puts "Updated order #{self.id} with status 'not-found'"
+    Rails.logger.warn "GDAX couldn't find order #{self.gdax_id}: #{not_found_error}"
+    Rails.logger.warn "Updated order #{self.id} with status 'not-found'"
+    nil
   rescue Coinbase::Exchange::RateLimitError => rate_limit_error
-    puts "GDAX rate limit error (update order status): #{rate_limit_error}"
+    Rails.logger.warn "GDAX rate limit error (update order status): #{rate_limit_error}"; nil
   end
 
   def cancel_order
     cancellation = GDAX::Connection.new.rest_client.cancel(self.gdax_id)
     self.update(gdax_status: 'not-found', status: 'not-found') if cancellation == {}
   rescue Coinbase::Exchange::BadRequestError => request_error
-    puts "GDAX couldn't cancel order #{request_error}"
+    Rails.logger.warn "GDAX couldn't cancel order #{request_error}"; nil
   rescue Coinbase::Exchange::NotFoundError => not_found_error
     self.update(gdax_status: 'not-found', status: 'not-found')
-    puts "GDAX couldn't find/cancel order: #{not_found_error}"
+    Rails.logger.warn "GDAX couldn't find/cancel order: #{not_found_error}"; nil
   rescue StandardError => error
-    puts "Order cancellation error: #{error.inspect}"
+    Rails.logger.warn "Order cancellation error: #{error.inspect}"; nil
   end
 
   #=================================================
