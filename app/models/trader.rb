@@ -195,9 +195,9 @@ class Trader < ActiveRecord::Base
                   Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is within .01\% of the market price #{current_ask.round(2)}."
                 else # contract's sell order is out of range; it needs to be canceled and replaced
                   Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is higher than the market #{current_ask.round(2)}. Canceling sell order #{sell_order.id}."
+                  size = buy_order.gdax_filled_size.to_d
                   if sell_order.cancel_order # TODO: cancel order unless it has been partially filled
                     price = current_ask + 0.01
-                    size  = buy_order.gdax_filled_size.to_d
                     Rails.logger.info "Sell order #{sell_order.id} successfully canceled. Placing new SELL order for #{size} BTC at $#{price}."
                     place_trendline_sell(price, size, contract.id, algorithm)
                   end
