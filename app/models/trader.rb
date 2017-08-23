@@ -57,7 +57,23 @@ class Trader < ActiveRecord::Base
     entry_long_time  = entry_long.minutes.ago.time
     entry_short_line = GDAX::MarketData.calculate_exponential_average(entry_short_time)
     entry_long_line  = GDAX::MarketData.calculate_exponential_average(entry_long_time)
+    four_hour_trend  = GDAX::MarketData.current_trend(4.hours.ago, 150)
+    six_hour_trend   = GDAX::MarketData.current_trend(6.hours.ago, 150)
     eight_hour_trend = GDAX::MarketData.current_trend(8.hours.ago, 150)
+
+    case four_hour_trend
+    when 'TRENDING UP'
+      trend_4hour = true
+    when 'TRENDING DOWN'
+      trend_4hour = false
+    end
+
+    case six_hour_trend
+    when 'TRENDING UP'
+      trend_6hour = true
+    when 'TRENDING DOWN'
+      trend_6hour = false
+    end
 
     case eight_hour_trend
     when 'TRENDING UP'
@@ -73,6 +89,8 @@ class Trader < ActiveRecord::Base
     market_conditions["240mins>#{entry_short.to_i}mins"]                = exit_medium_line > entry_short_line
     market_conditions["#{entry_short.to_i}mins>#{exit_long.to_i}mins"]  = entry_short_line > exit_long_line
     market_conditions["#{entry_short.to_i}mins>#{entry_long.to_i}mins"] = entry_short_line > entry_long_line
+    market_conditions["4hour_trend"]                                    = trend_4hour
+    market_conditions["6hour_trend"]                                    = trend_6hour
     market_conditions["8hour_trend"]                                    = trend_8hour
     market_conditions
   end
