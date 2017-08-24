@@ -126,7 +126,7 @@ module Charts
 
       completed_sell_lines = completed_sell_orders.map do |order|
         {
-          value: order.created_at.to_i * 1000,
+          value: (order.stop_order? ? order.updated_at.to_i : order.created_at.to_i) * 1000,
           # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
           width: 1,
           color: 'red',
@@ -136,7 +136,7 @@ module Charts
 
       completed_buy_lines = completed_buy_orders.map do |order|
         {
-          value: order.created_at.to_i * 1000,
+          value: (order.stop_order? ? order.updated_at.to_i : order.created_at.to_i) * 1000,
           # value: Time.zone.parse(order.gdax_created_at).to_i * 1000,
           width: 1,
           color: 'green',
