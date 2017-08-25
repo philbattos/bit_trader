@@ -26,8 +26,7 @@ module Charts
         f.series(
           name: 'ROI',
           type: 'spline',
-          # we are removing metrics with ID 23334-23337 because they contain inaccurate ROI data and skew the results
-          data: Metric.where("id > 19400").where.not(id: 23334..23337).order(:id).pluck(:created_at, :trendline_roi_percent).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+          data: Metric.where("id > 19400").order(:id).pluck(:created_at, :trendline_roi_percent).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
           yAxis: 1
         )
 
