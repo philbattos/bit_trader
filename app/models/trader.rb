@@ -138,10 +138,52 @@ class Trader < ActiveRecord::Base
     def technical_analysis_orders
       # TODO: prevent partially filled orders from being canceled
 
-      current_conditions ||= market_conditions
-      current_ask        ||= GDAX::MarketData.current_ask
-      current_bid        ||= GDAX::MarketData.current_bid
-      algorithm          ||= "enter#{entry_short.to_i}x#{entry_long.to_i}(#{crossover_buffer})~exit#{exit_short.to_i}x#{exit_long.to_i}~#{trading_units}units"
+      current_conditions  ||= market_conditions
+      current_ask         ||= GDAX::MarketData.current_ask
+      current_bid         ||= GDAX::MarketData.current_bid
+      algorithm           ||= "enter#{entry_short.to_i}x#{entry_long.to_i}(#{crossover_buffer})~exit#{exit_short.to_i}x#{exit_long.to_i}~#{trading_units}units"
+      crossover_algorithm ||= 'ema_crossover_750_2500_minutes'
+
+      # 13hour-43hour crossover algorithm
+      ema_crossover_contracts = Contract.ema_cross_750_2500_min.unresolved
+      ema750  ||= GDAX::MarketData.calculate_exponential_average(750.minutes.ago.time)
+      ema2500 ||= GDAX::MarketData.calculate_exponential_average(2500.minutes.ago.time)
+
+      if ema_crossover_contracts.none?
+        if ema750 > (ema2500 * 1.0025)
+          price = 1.00 # any number is sufficient since it is a 'market' order
+          size  = 0.015
+          Rails.logger.info "EMA 750min (#{ema750.round(2)}) has crossed above EMA 2500min (#{ema2500.round(2)})... Placing new market BUY order."
+          Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline', crossover_algorithm)
+        elsif ema750 < (ema2500 * 0.9975)
+          price = 10000.00 # any number is sufficient since it is a 'market' order
+          size  = 0.015
+          Rails.logger.info "EMA 750min (#{ema750.round(2)}) has crossed under EMA 2500min (#{ema2500.round(2)})... Placing new market SELL order."
+          Order.submit_order('sell', price, size, {type: 'market'}, nil, 'trendline', crossover_algorithm)
+        else # ema lines are too close
+          # do nothing
+        end
+      else
+        ema_contract = ema_crossover_contracts.first
+        if ema_contract.buy_order.done? && ema_contract.sell_order.nil?
+          if ema750 < (ema2500 * 1.0025)
+            price = 10000.00 # any number is sufficient since it is a 'market' order
+            size  = 0.015
+            Rails.logger.info "EMA 750min (#{ema750.round(2)}) is approaching EMA 2500min (#{ema2500.round(2)})... Placing new market SELL order to fulfill contract #{ema_contract.id}."
+            Order.submit_order('sell', price, size, {type: 'market'}, ema_contract.id, 'trendline', crossover_algorithm)
+          end
+
+        elsif ema_contract.sell_order.done? && ema_contract.buy_order.nil?
+          if ema750 > (ema2500 * 0.9975)
+            price = 1.00 # any number is sufficient since it is a 'market' order
+            size  = 0.015
+            Rails.logger.info "EMA 750min (#{ema750.round(2)}) is approaching EMA 2500min (#{ema2500.round(2)})... Placing new market BUY order to fulfill contract #{ema_contract.id}."
+            Order.submit_order('buy', price, size, {type: 'market'}, ema_contract.id, 'trendline', crossover_algorithm)
+          end
+        else # something is weird
+          Rails.logger.info "ERROR: There is something wrong with EMA contract #{ema_contract.id} or its orders."
+        end
+      end
 
       if waiting_for_entry?
         entry_short_time = entry_short.minutes.ago.time

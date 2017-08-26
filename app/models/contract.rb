@@ -5,35 +5,36 @@ class Contract < ActiveRecord::Base
   has_many :sell_orders, class_name: 'SellOrder', foreign_key: 'contract_id', dependent: :restrict_with_exception
 
   # NOTE: consider querying contracts based on presence of gdax_order_ids
-  scope :retired,               -> { where(status: 'retired') }
-  scope :liquidate,             -> { where(status: 'liquidate') }
-  scope :trendline,             -> { where(strategy_type: 'trendline') }
-  scope :market_maker,          -> { where(strategy_type: 'market-maker') }
-  scope :adjust_balance,        -> { where(strategy_type: 'adjust-balance') }
-  scope :active,                -> { where.not(id: retired).where.not(id: adjust_balance) }
-  scope :with_buy_orders,       -> { active.where(id: BuyOrder.select(:contract_id).distinct) }
-  scope :with_sell_orders,      -> { active.where(id: SellOrder.select(:contract_id).distinct) }
-  scope :without_buy_orders,    -> { active.where.not(id: with_buy_orders) }
-  scope :without_sell_orders,   -> { active.where.not(id: with_sell_orders) }
-  scope :with_active_buy,       -> { active.where(id: BuyOrder.active.select(:contract_id).distinct) }
-  scope :with_active_sell,      -> { active.where(id: SellOrder.active.select(:contract_id).distinct) }
-  scope :without_active_buy,    -> { active.where.not(id: with_active_buy) }
-  scope :without_active_sell,   -> { active.where.not(id: with_active_sell) }
-  scope :with_buy_without_sell, -> { with_active_buy.without_active_sell }
-  scope :with_sell_without_buy, -> { with_active_sell.without_active_buy }
-  scope :without_active_order,  -> { without_active_buy.without_active_sell } # this happens when an order is created and then canceled before it can be matched with another order
-  scope :resolved,              -> { active.where(status: ['done']) }
-  scope :unresolved,            -> { active.where.not(id: resolved) }
-  scope :resolvable,            -> { matched.complete }
-  scope :liquidatable,          -> { unresolved.where.not(id: liquidate).where("created_at < ?", 1.day.ago).where(id: Order.liquidatable.select(:contract_id)).distinct }
-  # scope :liquidatable_sell,     -> { unresolved.where.not(id: liquidate).joins(:buy_orders).where("contracts.created_at < ?", 1.day.ago).where("orders.status = 'done' AND orders.requested_price NOT BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
-  # scope :liquidatable_buy,      -> { unresolved.where.not(id: liquidate).joins(:sell_orders).where("contracts.created_at < ?", 1.day.ago).where("orders.status = 'done' AND orders.requested_price NOT BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
-  # scope :liquidatable_all,      -> { unresolved.where.not(id: liquidate).joins(:buy_orders, :sell_orders).where("contracts.created_at < ?", 1.day.ago).where.not("orders.status = 'done' AND orders.requested_price BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
-  scope :matched,               -> { unresolved.with_active_buy.with_active_sell }
-  scope :complete,              -> { active.where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
-  scope :incomplete,            -> { active.where.not(id: complete) }
-  # scope :matched_and_complete,  -> { matched.complete }
-  scope :since_july2017,        -> { where("id > 56100") } # in July 2017, we changed the market-maker and trendline algorithms; before then, the ROI on contracts is unreliable.
+  scope :retired,                -> { where(status: 'retired') }
+  scope :liquidate,              -> { where(status: 'liquidate') }
+  scope :trendline,              -> { where(strategy_type: 'trendline') }
+  scope :market_maker,           -> { where(strategy_type: 'market-maker') }
+  scope :adjust_balance,         -> { where(strategy_type: 'adjust-balance') }
+  scope :active,                 -> { where.not(id: retired).where.not(id: adjust_balance) }
+  scope :with_buy_orders,        -> { active.where(id: BuyOrder.select(:contract_id).distinct) }
+  scope :with_sell_orders,       -> { active.where(id: SellOrder.select(:contract_id).distinct) }
+  scope :without_buy_orders,     -> { active.where.not(id: with_buy_orders) }
+  scope :without_sell_orders,    -> { active.where.not(id: with_sell_orders) }
+  scope :with_active_buy,        -> { active.where(id: BuyOrder.active.select(:contract_id).distinct) }
+  scope :with_active_sell,       -> { active.where(id: SellOrder.active.select(:contract_id).distinct) }
+  scope :without_active_buy,     -> { active.where.not(id: with_active_buy) }
+  scope :without_active_sell,    -> { active.where.not(id: with_active_sell) }
+  scope :with_buy_without_sell,  -> { with_active_buy.without_active_sell }
+  scope :with_sell_without_buy,  -> { with_active_sell.without_active_buy }
+  scope :without_active_order,   -> { without_active_buy.without_active_sell } # this happens when an order is created and then canceled before it can be matched with another order
+  scope :resolved,               -> { active.where(status: ['done']) }
+  scope :unresolved,             -> { active.where.not(id: resolved) }
+  scope :resolvable,             -> { matched.complete }
+  scope :liquidatable,           -> { unresolved.where.not(id: liquidate).where("created_at < ?", 1.day.ago).where(id: Order.liquidatable.select(:contract_id)).distinct }
+  # scope :liquidatable_sell,      -> { unresolved.where.not(id: liquidate).joins(:buy_orders).where("contracts.created_at < ?", 1.day.ago).where("orders.status = 'done' AND orders.requested_price NOT BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
+  # scope :liquidatable_buy,       -> { unresolved.where.not(id: liquidate).joins(:sell_orders).where("contracts.created_at < ?", 1.day.ago).where("orders.status = 'done' AND orders.requested_price NOT BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
+  # scope :liquidatable_all,       -> { unresolved.where.not(id: liquidate).joins(:buy_orders, :sell_orders).where("contracts.created_at < ?", 1.day.ago).where.not("orders.status = 'done' AND orders.requested_price BETWEEN ? AND ?", Metric.seven_day_range.first, Metric.seven_day_range.last).distinct }
+  scope :matched,                -> { unresolved.with_active_buy.with_active_sell }
+  scope :complete,               -> { active.where(id: BuyOrder.done.select(:contract_id).distinct).where(id: SellOrder.done.select(:contract_id).distinct) }
+  scope :incomplete,             -> { active.where.not(id: complete) }
+  # scope :matched_and_complete,   -> { matched.complete }
+  scope :since_july2017,         -> { where("id > 56100") } # in July 2017, we changed the market-maker and trendline algorithms; before then, the ROI on contracts is unreliable.
+  scope :ema_cross_750_2500_min, -> { trendline.where(algorithm: 'ema_crossover_750_2500_minutes') }
 
   # unresolved == with_buy_without_sell + with_sell_without_buy + matched
 
