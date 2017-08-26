@@ -239,7 +239,7 @@ class Trader < ActiveRecord::Base
           end
         end
       else # an entry trendline order has been made previously. check the market conditions to make an exit order.
-        contract        = Contract.trendline.unresolved.first # there should only be 1 contract that needs an order
+        contract        = Contract.trendline.non_ema_crossover.unresolved.first # there should only be 1 contract that needs an order
         exit_short_time = exit_short.minutes.ago.time
         exit_long_time  = exit_long.minutes.ago.time
         exit_short_line ||= GDAX::MarketData.calculate_exponential_average(exit_short_time)
@@ -356,7 +356,7 @@ class Trader < ActiveRecord::Base
     end
 
     def waiting_for_entry?
-      Contract.trendline.unresolved.empty?
+      Contract.trendline.non_ema_crossover.unresolved.empty?
     end
 
     def place_trendline_buy(price, size, contract_id, algorithm)

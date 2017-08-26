@@ -35,6 +35,7 @@ class Contract < ActiveRecord::Base
   # scope :matched_and_complete,   -> { matched.complete }
   scope :since_july2017,         -> { where("id > 56100") } # in July 2017, we changed the market-maker and trendline algorithms; before then, the ROI on contracts is unreliable.
   scope :ema_cross_750_2500_min, -> { trendline.where(algorithm: 'ema_crossover_750_2500_minutes') }
+  scope :non_ema_crossover,      -> { where.not(id: ema_crossover_750_2500_minutes) }
 
   # unresolved == with_buy_without_sell + with_sell_without_buy + matched
 
