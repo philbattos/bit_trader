@@ -137,6 +137,7 @@ class Trader < ActiveRecord::Base
 
     def technical_analysis_orders
       # TODO: prevent partially filled orders from being canceled
+      # TODO: figure out why so many contracts are getting changed to 'retired'
 
       current_conditions  ||= market_conditions
       current_ask         ||= GDAX::MarketData.current_ask
@@ -165,7 +166,7 @@ class Trader < ActiveRecord::Base
         end
       else
         ema_contract = ema_crossover_contracts.first
-        if ema_contract.buy_order.done? && ema_contract.sell_order.nil?
+        if ema_contract.buy_order.try(:done?) && ema_contract.sell_order.nil?
           if ema750 < (ema2500 * 1.0025)
             price = 10000.00 # any number is sufficient since it is a 'market' order
             size  = 0.15
@@ -173,7 +174,7 @@ class Trader < ActiveRecord::Base
             Order.submit_order('sell', price, size, {type: 'market'}, ema_contract.id, 'trendline', crossover_algorithm)
           end
 
-        elsif ema_contract.sell_order.done? && ema_contract.buy_order.nil?
+        elsif ema_contract.sell_order.try(:done?) && ema_contract.buy_order.nil?
           if ema750 > (ema2500 * 0.9975)
             price = 1.00 # any number is sufficient since it is a 'market' order
             size  = 0.15
