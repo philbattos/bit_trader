@@ -89,4 +89,15 @@ class Metric < ActiveRecord::Base
     end
   end
 
+  def self.fix_skewed_roi(metric_id)
+    Metric.where('id > ?', metric_id).each do |m|
+      contracts             = Contract.where('created_at < ?', m.created_at)
+      total_roi             = contracts.resolved.sum(:roi)
+      roi_percent           = total_roi / contracts.resolved.count
+      trendline_roi         = contracts.trendline.resolved.sum(:roi)
+      trendline_roi_percent = trendline_roi / contracts.trendline.resolved.count
+      m.update(total_roi: total_roi, roi_percent: roi_percent, trendline_roi: trendline_roi, trendline_roi_percent: trendline_roi_percent)
+    end
+  end
+
 end
