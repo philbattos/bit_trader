@@ -99,10 +99,12 @@ module Charts
     end
 
     def self.find_trendline_trades
-      attempted_buy_orders  = BuyOrder.trendline.canceled
-      attempted_sell_orders = SellOrder.trendline.canceled
-      completed_buy_orders  = BuyOrder.trendline.done
-      completed_sell_orders = SellOrder.trendline.done
+      attempted_buy_orders      = BuyOrder.trendline.canceled
+      attempted_sell_orders     = SellOrder.trendline.canceled
+      completed_buy_orders      = BuyOrder.trendline.done
+      completed_sell_orders     = SellOrder.trendline.done
+      ema_crossover_buy_orders  = BuyOrder.trendline.ema_crossover
+      ema_crossover_sell_orders = SellOrder.trendline.ema_crossover
 
       attempted_sell_lines = attempted_sell_orders.map do |order|
         {
@@ -144,7 +146,25 @@ module Charts
         }
       end
 
-      attempted_sell_lines + attempted_buy_lines + completed_sell_lines + completed_buy_lines
+      ema_buy_lines = ema_crossover_buy_orders.map do |order|
+        {
+          value: order.created_at.to_i * 1000,
+          width: 1,
+          color: 'blue',
+          dashStyle: 'longdash'
+        }
+      end
+
+      ema_sell_lines = ema_crossover_sell_orders.map do |order|
+        {
+          value: order.created_at.to_i * 1000,
+          width: 1,
+          color: 'orange',
+          dashStyle: 'longdash'
+        }
+      end
+
+      attempted_sell_lines + attempted_buy_lines + completed_sell_lines + completed_buy_lines + ema_buy_lines + ema_sell_lines
     end
 
   end

@@ -21,6 +21,7 @@ class Order < ActiveRecord::Base
   scope :retired,        -> { where(status: 'retired') }
   scope :stop_orders,    -> { where.not(stop_type: nil) }
   scope :liquidatable,   -> { done.where.not(requested_price: Metric.three_day_range) }
+  scope :ema_crossover,  -> { where(contract_id: Contract.ema_cross_750_2500_min) }
   # NOTE: unfilled orders that are canceled are given a status of 'done' and deleted from GDAX
   #       partially filled orders that are canceled are given a status of 'done' and a done_reason of 'canceled'
 
