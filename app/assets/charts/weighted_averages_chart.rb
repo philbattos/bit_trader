@@ -151,7 +151,7 @@ module Charts
           value: order.created_at.to_i * 1000,
           width: 1,
           color: 'blue',
-          dashStyle: 'dash'
+          dashStyle: 'LongDashDotDot'
         }
       end
 
@@ -160,7 +160,7 @@ module Charts
           value: order.created_at.to_i * 1000,
           width: 1,
           color: 'orange',
-          dashStyle: 'dash'
+          dashStyle: 'LongDashDotDot'
         }
       end
 
