@@ -149,18 +149,18 @@ module Charts
       ema_buy_lines = ema_crossover_buy_orders.map do |order|
         {
           value: order.created_at.to_i * 1000,
-          width: 1,
-          color: 'blue',
-          dashStyle: 'LongDashDotDot'
+          width: 2,
+          color: 'yellow',
+          dashStyle: 'dot'
         }
       end
 
       ema_sell_lines = ema_crossover_sell_orders.map do |order|
         {
           value: order.created_at.to_i * 1000,
-          width: 1,
-          color: 'orange',
-          dashStyle: 'LongDashDotDot'
+          width: 2,
+          color: 'purple',
+          dashStyle: 'dot'
         }
       end
 
