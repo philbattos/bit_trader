@@ -181,6 +181,7 @@ class Trader < ActiveRecord::Base
           end
         else
           ema_contract = ema_crossover_contracts.first
+          return unless ema_contract.created_at < 5.minutes.ago # wait 5 minutes after contract is created to prevent placing multiple orders when EMA lines are fluttering near each other
           if ema_contract.buy_order.try(:done?) && ema_contract.sell_order.nil?
             if ema750 < (ema2500 * 1.0025)
               price = 10000.00 # any number is sufficient since it is a 'market' order
