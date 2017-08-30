@@ -61,6 +61,8 @@ class Trader < ActiveRecord::Base
     four_hour_trend  = GDAX::MarketData.current_trend(4.hours.ago, 150)
     six_hour_trend   = GDAX::MarketData.current_trend(6.hours.ago, 150)
     eight_hour_trend = GDAX::MarketData.current_trend(8.hours.ago, 150)
+    breakthrough     = true  if GDAX::MarketData.new_high_price?(8.hours.ago)
+    breakthrough     = false if GDAX::MarketData.new_low_price?(8.hours.ago)
 
     case one_hour_trend
     when 'TRENDING UP'
@@ -101,6 +103,7 @@ class Trader < ActiveRecord::Base
     market_conditions["4hour_trend"]                                    = trend_4hour
     market_conditions["6hour_trend"]                                    = trend_6hour
     market_conditions["8hour_trend"]                                    = trend_8hour
+    market_conditions["breakthrough"]                                   = breakthrough
     market_conditions
   end
 
