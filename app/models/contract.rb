@@ -405,12 +405,18 @@ class Contract < ActiveRecord::Base
                        fees: response.fill_fees)
     end
 
-    profit = (sell_order.executed_value - sell_order.fees)
-    cost   = (buy_order.executed_value + buy_order.fees)
+    calculated_roi = nil
+    while calculated_roi.nil?
+      profit = sell_order.executed_value - sell_order.fees
+      cost   = buy_order.executed_value + buy_order.fees
 
-    Rails.logger.warn "ERROR: ROI couldn't be calculated correctly for contract #{self.id}. profit: #{profit}; cost: #{cost}" if profit == 0 || cost == 0
+      if profit == 0.0 || cost == 0.0
+        Rails.logger.warn "ERROR: ROI can't be accurately calculated for contract #{self.id}: profit: #{profit}, cost: #{cost}"
+        next
+      end
 
-    profit - cost
+      calculated_roi = profit - cost
+    end
   end
 
   def self.missing_price(type)
