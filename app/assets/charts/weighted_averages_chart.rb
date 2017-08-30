@@ -150,8 +150,8 @@ module Charts
         {
           value: order.created_at.to_i * 1000,
           width: 2,
-          color: 'yellow',
-          dashStyle: 'dot'
+          color: 'green',
+          dashStyle: 'dash'
         }
       end
 
@@ -159,8 +159,8 @@ module Charts
         {
           value: order.created_at.to_i * 1000,
           width: 2,
-          color: 'purple',
-          dashStyle: 'dot'
+          color: 'red',
+          dashStyle: 'dash'
         }
       end
 
