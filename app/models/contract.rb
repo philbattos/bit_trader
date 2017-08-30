@@ -417,6 +417,8 @@ class Contract < ActiveRecord::Base
 
       calculated_roi = profit - cost
     end
+
+    calculated_roi
   end
 
   def self.missing_price(type)
