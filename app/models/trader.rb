@@ -61,6 +61,7 @@ class Trader < ActiveRecord::Base
     four_hour_trend  = GDAX::MarketData.current_trend(4.hours.ago, 300)
     six_hour_trend   = GDAX::MarketData.current_trend(6.hours.ago, 300)
     eight_hour_trend = GDAX::MarketData.current_trend(8.hours.ago, 300)
+    ten_hour_trend   = GDAX::MarketData.current_trend(10.hours.ago, 300)
     breakthrough     = true  if GDAX::MarketData.new_high_price?(8.hours.ago)
     breakthrough     = false if GDAX::MarketData.new_low_price?(8.hours.ago)
 
@@ -92,6 +93,13 @@ class Trader < ActiveRecord::Base
       trend_8hour = false
     end
 
+    case ten_hour_trend
+    when 'TRENDING UP'
+      trend_10hour = true
+    when 'TRENDING DOWN'
+      trend_10hour = false
+    end
+
     return if [exit_short_line, exit_medium_line, exit_long_line, entry_short_line, entry_long_line].any? {|x| x.nil? || x == 0}
 
     market_conditions = {}
@@ -103,6 +111,7 @@ class Trader < ActiveRecord::Base
     market_conditions["4hour_trend"]                                    = trend_4hour
     market_conditions["6hour_trend"]                                    = trend_6hour
     market_conditions["8hour_trend"]                                    = trend_8hour
+    market_conditions["10hour_trend"]                                   = trend_10hour
     market_conditions["breakthrough"]                                   = breakthrough
     market_conditions
   end
@@ -281,7 +290,7 @@ class Trader < ActiveRecord::Base
                 end
               end
             else # contract doesn't have a normal sell order; it might have a stop order
-              if GDAX::MarketData.current_trend(8.hours.ago, 300) == 'TRENDING DOWN'
+              if GDAX::MarketData.current_trend(10.hours.ago, 300) == 'TRENDING DOWN'
                 Rails.logger.info "Price is decreasing... Placing exit SELL order for contract #{contract.id}."
                 price = current_ask + 0.01
                 size  = buy_order.gdax_filled_size.to_d
@@ -296,16 +305,16 @@ class Trader < ActiveRecord::Base
             end
 
             ##########   Place stop order   ##########
-            stop_order_price = (buy_order.filled_price * (1.0 + STOP_ORDER_MAX)).round(2)
-            if contract.sell_orders.active.stop_orders.any?
-              # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
-              # there is an active stop order; do nothing
-            elsif current_ask > (stop_order_price * 1.0005)
-              return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
-              size = buy_order.gdax_filled_size.to_d
-              limit_price = (buy_order.filled_price * (1.0 + STOP_ORDER_MIN)).round(2)
-              place_stop_sell(limit_price, stop_order_price, size, contract.id, algorithm)
-            end
+            # stop_order_price = (buy_order.filled_price * (1.0 + STOP_ORDER_MAX)).round(2)
+            # if contract.sell_orders.active.stop_orders.any?
+            #   # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
+            #   # there is an active stop order; do nothing
+            # elsif current_ask > (stop_order_price * 1.0005)
+            #   return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
+            #   size = buy_order.gdax_filled_size.to_d
+            #   limit_price = (buy_order.filled_price * (1.0 + STOP_ORDER_MIN)).round(2)
+            #   place_stop_sell(limit_price, stop_order_price, size, contract.id, algorithm)
+            # end
 
           else # buy order is active but not 'done'
             if buy_order.requested_price > (current_bid * 0.9999)
@@ -323,7 +332,7 @@ class Trader < ActiveRecord::Base
         elsif contract.sell_orders.active.where(stop_type: nil).any?
           sell_order = contract.sell_orders.active.where(stop_type: nil).first
           if sell_order.done?
-            if GDAX::MarketData.current_trend(8.hours.ago, 300) == 'TRENDING UP'
+            if GDAX::MarketData.current_trend(10.hours.ago, 300) == 'TRENDING UP'
               Rails.logger.info "Price is increasing... Placing exit BUY order for contract #{contract.id}."
               price = current_bid - 0.01
               size  = sell_order.gdax_filled_size.to_d
@@ -337,16 +346,16 @@ class Trader < ActiveRecord::Base
             end
 
             ##########   Place stop order   ##########
-            stop_order_price = (sell_order.filled_price * (1.0 - STOP_ORDER_MAX)).round(2)
-            if contract.buy_orders.active.stop_orders.any?
-              # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
-              # there is an active stop order; do nothing
-            elsif current_ask < (stop_order_price * 0.9995)
-              return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
-              size = sell_order.gdax_filled_size.to_d
-              limit_price = (sell_order.filled_price * (1.0 - STOP_ORDER_MIN)).round(2)
-              place_stop_buy(limit_price, stop_order_price, size, contract.id, algorithm)
-            end
+            # stop_order_price = (sell_order.filled_price * (1.0 - STOP_ORDER_MAX)).round(2)
+            # if contract.buy_orders.active.stop_orders.any?
+            #   # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
+            #   # there is an active stop order; do nothing
+            # elsif current_ask < (stop_order_price * 0.9995)
+            #   return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
+            #   size = sell_order.gdax_filled_size.to_d
+            #   limit_price = (sell_order.filled_price * (1.0 - STOP_ORDER_MIN)).round(2)
+            #   place_stop_buy(limit_price, stop_order_price, size, contract.id, algorithm)
+            # end
 
           else # contract has a sell order that is active but not 'done'; no buy order
             if sell_order.requested_price < (current_ask * 1.0001)
