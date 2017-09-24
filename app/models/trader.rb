@@ -29,6 +29,9 @@ class Trader < ActiveRecord::Base
         if json['message'] == 'request timestamp expired'
           Rails.logger.info "Timestamp expiration error. Restarting Trader"
           Trader.new.start
+        elsif json['message'] == 'Internal server error'
+          Rails.logger.info "GDAX internal server error. Restarting Trader"
+          Trader.new.start
         else
           Rails.logger.info "Unrecognized Trader error"
           Rails.logger.info "e: #{e.message.inspect}"
