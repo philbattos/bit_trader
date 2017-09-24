@@ -19,3 +19,6 @@
 
 # Ignore secrets
 .env
+
+# Ignore RubyMine configs
+.idea/*
