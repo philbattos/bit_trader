@@ -18,11 +18,11 @@ module GDAX
     end
 
     def self.new_high_price?(time)
-      last_saved_trade.price >= (trades_since(time).maximum(:price) * 0.997)
+      last_saved_trade.price >= (trades_since(time).maximum(:price) * 0.999)
     end
 
     def self.new_low_price?(time)
-      last_saved_trade.price <= (trades_since(time).minimum(:price) * 1.003)
+      last_saved_trade.price <= (trades_since(time).minimum(:price) * 1.001)
     end
 
     def self.last_saved_trade
