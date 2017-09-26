@@ -9,7 +9,8 @@ module Charts
 
         f.xAxis(
           type: 'datetime',
-          plotLines: find_trendline_trades
+          plotLines: find_trendline_trades,
+          className: 'real-orders-plotlines'
         )
 
         f.yAxis(
