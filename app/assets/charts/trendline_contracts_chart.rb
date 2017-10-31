@@ -2,6 +2,7 @@ module Charts
   class TrendlineContractsChart
 
     def self.build_chart
+      oldest_metric = Metric.last.id - 13000
       LazyHighCharts::HighChart.new('graph') do |f|
         f.title(text: "Trendline Contracts")
         f.subtitle(text: "Trendline Values")
@@ -25,7 +26,7 @@ module Charts
         f.series(
           name: 'Bitcoin Price',
           type: 'spline',
-          data: Metric.where("id > 19400").order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
+          data: Metric.where("id > ?", oldest_metric).order(:id).pluck(:created_at, :bitcoin_price).map {|m| [m.first.to_i * 1000, m.last.to_f.round(2)] },
           yAxis: 1
         )
 

@@ -244,24 +244,24 @@ class Trader < ActiveRecord::Base
             end
           end
         elsif current_conditions.values.all? {|value| value == false }
-          Rails.logger.info "Price is decreasing... Placing new trendline SELL order."
-          Rails.logger.info "current_conditions: #{current_conditions.inspect}"
+          # Rails.logger.info "Price is decreasing... Placing new trendline SELL order."
+          # Rails.logger.info "current_conditions: #{current_conditions.inspect}"
 
-          open_sell_order = Order.my_lowest_open_sell_order
-          if open_sell_order && (open_sell_order.price < (GDAX::MarketData.current_ask * 1.0001))
-            # do nothing
-          else
-            # cancel open sell order and place new one
-            Order.find_by(gdax_id: open_sell_order.id).cancel_order if open_sell_order
-            size = trading_units
-            if Account.gdax_bitcoin_account.available >= (size).to_d
-              price = GDAX::MarketData.current_ask + 0.01
-              Rails.logger.info "Attempting to place a new sell order at #{price} to avoid fees."
-              Order.submit_order('sell', price, size, {post_only: true}, nil, 'trendline', algorithm)
-            else
-              Rails.logger.info "BTC balance not sufficient for trendline SELL order."
-            end
-          end
+          # open_sell_order = Order.my_lowest_open_sell_order
+          # if open_sell_order && (open_sell_order.price < (GDAX::MarketData.current_ask * 1.0001))
+          #   # do nothing
+          # else
+          #   # cancel open sell order and place new one
+          #   Order.find_by(gdax_id: open_sell_order.id).cancel_order if open_sell_order
+          #   size = trading_units
+          #   if Account.gdax_bitcoin_account.available >= (size).to_d
+          #     price = GDAX::MarketData.current_ask + 0.01
+          #     Rails.logger.info "Attempting to place a new sell order at #{price} to avoid fees."
+          #     Order.submit_order('sell', price, size, {post_only: true}, nil, 'trendline', algorithm)
+          #   else
+          #     Rails.logger.info "BTC balance not sufficient for trendline SELL order."
+          #   end
+          # end
         end
       else # an entry trendline order has been made previously. check the market conditions to make an exit order.
         contract        = Contract.trendline.non_ema_crossover.unresolved.first # there should only be 1 contract that needs an order
