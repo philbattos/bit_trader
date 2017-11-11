@@ -361,20 +361,21 @@ class Contract < ActiveRecord::Base
     contract = liquidatable.sample
 
     if contract
-      puts "Updating status of #{contract.strategy_type} contract #{contract.id} from #{contract.status} to liquidate"
+      Rails.logger.info "Updating status of #{contract.strategy_type} contract #{contract.id} from #{contract.status} to liquidate"
       contract.update(status: 'liquidate')
     end
   end
 
   def mark_done
-    puts "Updating status of #{self.strategy_type} contract #{self.id} from #{self.status} to done"
+    Rails.logger.info "Updating status of #{self.strategy_type} contract #{self.id} from #{self.status} to done"
 
     update(
       status: 'done',
       roi: calculate_roi,
       completion_date: Time.now,
       gdax_buy_order_id: buy_orders.done.first.gdax_id,
-      gdax_sell_order_id: sell_orders.done.first.gdax_id
+      gdax_sell_order_id: sell_orders.done.first.gdax_id,
+      btc_quantity: calculate_btc_quantity
     )
   end
 
@@ -419,6 +420,10 @@ class Contract < ActiveRecord::Base
     end
 
     calculated_roi
+  end
+
+  def calculate_btc_quantity
+    buy_order.quantity if buy_order.quantity == sell_order.quantity
   end
 
   def self.missing_price(type)
