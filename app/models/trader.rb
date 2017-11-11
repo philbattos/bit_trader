@@ -179,12 +179,12 @@ class Trader < ActiveRecord::Base
         Rails.logger.info "EMA-750 is #{ema750}; EMA-2500 is #{ema2500}. Skipping EMA crossover algorithm."
       else
         if ema_crossover_contracts.none?
-          if ema750 > (ema2500 * 1.0025)
+          if ema750 > (ema2500 * 1.001)
             price = 1.00 # any number is sufficient since it is a 'market' order
             size  = 0.25
             Rails.logger.info "EMA 750min (#{ema750.round(2)}) has crossed above EMA 2500min (#{ema2500.round(2)})... Placing new market BUY order."
             Order.submit_order('buy', price, size, {type: 'market'}, nil, 'trendline', crossover_algorithm)
-          elsif ema750 < (ema2500 * 0.9975)
+          elsif ema750 < (ema2500 * 0.999)
             price = 10000.00 # any number is sufficient since it is a 'market' order
             size  = 0.25
             Rails.logger.info "EMA 750min (#{ema750.round(2)}) has crossed under EMA 2500min (#{ema2500.round(2)})... Placing new market SELL order."
@@ -196,7 +196,7 @@ class Trader < ActiveRecord::Base
           ema_contract = ema_crossover_contracts.first
           return unless ema_contract.created_at < 5.minutes.ago # wait 5 minutes after contract is created to prevent placing multiple orders when EMA lines are fluttering near each other
           if ema_contract.buy_order.try(:done?) && ema_contract.sell_order.nil?
-            if ema750 < (ema2500 * 1.0025)
+            if ema750 < (ema2500 * 1.001)
               price = 10000.00 # any number is sufficient since it is a 'market' order
               size  = ema_contract.btc_quantity
               Rails.logger.info "EMA 750min (#{ema750.round(2)}) is approaching EMA 2500min (#{ema2500.round(2)})... Placing new market SELL order to fulfill contract #{ema_contract.id}."
@@ -204,7 +204,7 @@ class Trader < ActiveRecord::Base
             end
 
           elsif ema_contract.sell_order.try(:done?) && ema_contract.buy_order.nil?
-            if ema750 > (ema2500 * 0.9975)
+            if ema750 > (ema2500 * 0.999)
               price = 1.00 # any number is sufficient since it is a 'market' order
               size  = ema_contract.btc_quantity
               Rails.logger.info "EMA 750min (#{ema750.round(2)}) is approaching EMA 2500min (#{ema2500.round(2)})... Placing new market BUY order to fulfill contract #{ema_contract.id}."
