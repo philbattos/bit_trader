@@ -2,8 +2,9 @@ class Trader < ActiveRecord::Base
   after_initialize :default_trader
   # NOTE: entry_short and entry_long should always be saved in minutes (not hours)
 
-  STOP_ORDER_MIN = 0.003
-  STOP_ORDER_MAX = 0.0045
+  # STOP_ORDER_MIN = 0.003
+  # STOP_ORDER_MAX = 0.0045
+  STOP_ORDER_PERCENT = 0.02
 
   def self.run
     Trader.find_by(name: 'default').start
@@ -308,22 +309,30 @@ class Trader < ActiveRecord::Base
             end
 
             ##########   Place stop order   ##########
-            # stop_order_price = (buy_order.filled_price * (1.0 + STOP_ORDER_MAX)).round(2)
-            # if contract.sell_orders.active.stop_orders.any?
-            #   # if GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
-            #   # there is an active stop order; do nothing
-            # elsif current_ask > (stop_order_price * 1.0005)
-            #   return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
-            #   size = buy_order.gdax_filled_size.to_d
-            #   limit_price = (buy_order.filled_price * (1.0 + STOP_ORDER_MIN)).round(2)
-            #   place_stop_sell(limit_price, stop_order_price, size, contract.id, algorithm)
-            # end
+            stop_order_floor         = (buy_order.filled_price * (1.0 - STOP_ORDER_MAX)).round(2)
+            current_stop_order_price = (current_ask * (1.0 - STOP_ORDER_PERCENT)).round(2)
+
+            if contract.sell_orders.active.stop_orders.any? # GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
+              return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
+              active_stop_order = contract.sell_orders.active.stop_order.first # there should only be one active stop order
+              if current_stop_order_price > (active_stop_order.stop_price * 0.0003)
+                size = active_stop_order.quantity
+                if active_stop_order.cancel_order
+                  Rails.logger.info "Stop order #{active_stop_order.id} successfully canceled. Placing new SELL STOP order for #{size} BTC at $#{current_stop_order_price}."
+                  place_trendline_buy(current_stop_order_price, size, contract.id, algorithm)
+                end
+              end
+            else
+              return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
+              size = buy_order.gdax_filled_size.to_d
+              place_stop_sell(stop_order_floor, stop_order_floor, size, contract.id, algorithm) # NOTE: the stop_order_price is the market price that will trigger the order; the limit_price is the price that it will be sold for
+            end
 
           else # buy order is active but not 'done'
             if buy_order.requested_price > (current_bid * 0.9999)
               Rails.logger.info "The contract #{contract.id} has an active buy order with a price of #{buy_order.requested_price.round(2)}, which is within .01\% of the market price #{current_bid.round(2)}."
             else # contract's buy order is out of range; it needs to be canceled and replaced
-              Rails.logger.info "The contract #{contract.id} has an active buy order with a price of #{buy_order.requested_price.round(2)}, which is higher than the market #{current_bid.round(2)}. Canceling buy order #{buy_order.id}."
+              Rails.logger.info "The contract #{contract.id} has an active buy order with a price of #{buy_order.requested_price.round(2)}, which is lower than the market #{current_bid.round(2)}. Canceling buy order #{buy_order.id}."
               size = buy_order.quantity
               if buy_order.cancel_order # TODO: cancel order unless it has been partially filled
                 price = current_bid - 0.01
