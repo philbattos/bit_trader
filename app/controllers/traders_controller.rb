@@ -33,6 +33,7 @@ class TradersController < ApplicationController
     @ema_750_2500_profit_week_value = ema_contracts_from_last_week.sum(:roi)
     @ema_750_2500_profit_week_percent = (@ema_750_2500_profit_week_value / @ema_750_2500_profit_week_count)
 
+    @ema_750_2500_profit_per_btc_unit = @ema_750_2500_profit_all_percent * 0.667
 
     # @chart1a = Charts::OrdersChart.build_chart
     # @chart1b = Charts::ContractsChart.build_chart

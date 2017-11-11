@@ -63,8 +63,8 @@
           %h3.text-muted
             = @ema_750_2500_profit_all_count
             EMA contracts
-          %h1= number_to_currency @ema_750_2500_profit_all_value
-          %h1
+          %h2= number_to_currency @ema_750_2500_profit_all_value
+          %h2
             = number_to_currency @ema_750_2500_profit_all_percent
             per
     .col-md-3
@@ -74,8 +74,8 @@
           %h3.text-muted
             = @ema_750_2500_profit_month_count
             EMA contracts
-          %h1= number_to_currency @ema_750_2500_profit_month_value
-          %h1
+          %h2= number_to_currency @ema_750_2500_profit_month_value
+          %h2
             = number_to_currency @ema_750_2500_profit_month_percent
             per
     .col-md-3
@@ -85,10 +85,21 @@
           %h3.text-muted
             = @ema_750_2500_profit_week_count
             EMA contracts
-          %h1= number_to_currency @ema_750_2500_profit_week_value
-          %h1
+          %h2= number_to_currency @ema_750_2500_profit_week_value
+          %h2
             = number_to_currency @ema_750_2500_profit_week_percent
             per
+    .col-md-3
+      .panel.panel-warning
+        .panel-heading EMA 750/2500min Profit - AVERAGE
+        .panel-body
+          %h3.text-muted
+            = @ema_750_2500_profit_all_count
+            EMA contracts
+          %h2= number_to_currency @ema_750_2500_profit_all_value
+          %h2
+            = number_to_currency @ema_750_2500_profit_profit_per_btc_unit
+            per .01 BTC
 
   %h3 Charts
   = high_chart_globals(@chart_settings)

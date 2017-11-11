@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20170819224635) do
+ActiveRecord::Schema.define(version: 20171111055421) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -36,6 +36,7 @@ ActiveRecord::Schema.define(version: 20170819224635) do
     t.datetime "updated_at",                                  null: false
     t.string   "strategy_type"
     t.string   "algorithm"
+    t.decimal  "btc_quantity"
     t.index ["roi"], name: "index_contracts_on_roi", using: :btree
     t.index ["status"], name: "index_contracts_on_status", using: :btree
     t.index ["strategy_type"], name: "index_contracts_on_strategy_type", using: :btree
