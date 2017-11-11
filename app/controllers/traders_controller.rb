@@ -19,6 +19,21 @@ class TradersController < ApplicationController
     @trendline_profit_week_value = contracts_from_last_week.sum(:roi)
     @trendline_profit_week_percent = (@trendline_profit_week_value / @trendline_profit_week_count)
 
+    @ema_750_2500_profit_all_count = Contract.ema_cross_750_2500_min.resolved.count
+    @ema_750_2500_profit_all_value = Contract.ema_cross_750_2500_min.resolved.sum(:roi)
+    @ema_750_2500_profit_all_percent = (@ema_750_2500_profit_all_value / @ema_750_2500_profit_all_count)
+
+    ema_contracts_from_last_month = Contract.ema_cross_750_2500_min.resolved.where("created_at > ?", 30.days.ago)
+    @ema_750_2500_profit_month_count = ema_contracts_from_last_month.count
+    @ema_750_2500_profit_month_value = ema_contracts_from_last_month.sum(:roi)
+    @ema_750_2500_profit_month_percent = (@ema_750_2500_profit_month_value / @ema_750_2500_profit_month_count)
+
+    ema_contracts_from_last_week = Contract.ema_cross_750_2500_min.resolved.where("created_at > ?", 7.days.ago)
+    @ema_750_2500_profit_week_count = ema_contracts_from_last_week.count
+    @ema_750_2500_profit_week_value = ema_contracts_from_last_week.sum(:roi)
+    @ema_750_2500_profit_week_percent = (@ema_750_2500_profit_week_value / @ema_750_2500_profit_week_count)
+
+
     # @chart1a = Charts::OrdersChart.build_chart
     # @chart1b = Charts::ContractsChart.build_chart
     # @chart4 = Charts::OpenContractsChart.build_chart

@@ -55,6 +55,40 @@
             %li
               Trendline:
               = trader.is_trendline ? "YES" : "NO"
+  .row
+    .col-md-3
+      .panel.panel-warning
+        .panel-heading EMA 750/2500min Profit - ALL
+        .panel-body
+          %h3.text-muted
+            = @ema_750_2500_profit_all_count
+            EMA contracts
+          %h1= number_to_currency @ema_750_2500_profit_all_value
+          %h1
+            = number_to_currency @ema_750_2500_profit_all_percent
+            per
+    .col-md-3
+      .panel.panel-warning
+        .panel-heading EMA 750/2500min Profit - MONTH
+        .panel-body
+          %h3.text-muted
+            = @ema_750_2500_profit_month_count
+            EMA contracts
+          %h1= number_to_currency @ema_750_2500_profit_month_value
+          %h1
+            = number_to_currency @ema_750_2500_profit_month_percent
+            per
+    .col-md-3
+      .panel.panel-warning
+        .panel-heading EMA 750/2500min Profit - WEEK
+        .panel-body
+          %h3.text-muted
+            = @ema_750_2500_profit_week_count
+            EMA contracts
+          %h1= number_to_currency @ema_750_2500_profit_week_value
+          %h1
+            = number_to_currency @ema_750_2500_profit_week_percent
+            per
 
   %h3 Charts
   = high_chart_globals(@chart_settings)
