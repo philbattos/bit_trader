@@ -21,7 +21,7 @@ class TradersController < ApplicationController
 
     @ema_750_2500_profit_all_count = Contract.ema_cross_750_2500_min.resolved.count
     @ema_750_2500_profit_all_value = Contract.ema_cross_750_2500_min.resolved.sum(:roi)
-    @ema_750_2500_profit_all_percent = (@ema_750_2500_profit_all_value / @ema_750_2500_profit_all_count)
+    @ema_750_2500_profit_all_percent = (@ema_750_2500_profit_all_value / @ema_750_2500_profit_all_count).to_d
 
     ema_contracts_from_last_month = Contract.ema_cross_750_2500_min.resolved.where("created_at > ?", 30.days.ago)
     @ema_750_2500_profit_month_count = ema_contracts_from_last_month.count
