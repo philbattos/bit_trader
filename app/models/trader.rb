@@ -309,7 +309,7 @@ class Trader < ActiveRecord::Base
             end
 
             ##########   Place stop order   ##########
-            stop_order_floor         = (buy_order.filled_price * (1.0 - STOP_ORDER_MAX)).round(2)
+            stop_order_floor         = (buy_order.filled_price * (1.0 - STOP_ORDER_PERCENT)).round(2)
             current_stop_order_price = (current_ask * (1.0 - STOP_ORDER_PERCENT)).round(2)
 
             if contract.sell_orders.active.stop_orders.any? # GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
