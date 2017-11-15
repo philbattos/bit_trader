@@ -316,7 +316,7 @@ class Trader < ActiveRecord::Base
               return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
               active_stop_order = contract.sell_orders.active.stop_orders.first # there should only be one active stop order
               if current_stop_order_price > (active_stop_order.stop_price * (1 + 0.0005))
-                size = active_stop_order.quantity
+                size = active_stop_order.gdax_size.to_d
                 if size == 0.0
                   Rails.logger.info "Active stop order quantity is 0. Stop order #{active_stop_order.id} NOT canceled."
                 elsif active_stop_order.cancel_order
