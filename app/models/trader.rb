@@ -315,7 +315,7 @@ class Trader < ActiveRecord::Base
             if contract.sell_orders.active.stop_orders.any? # GDAX::Connection.new.rest_client.orders(status: 'open').select {|o| o.type == 'limit' && o.stop == 'entry' && o.side == 'sell' }.any?
               return if contract.resolvable? # this handles an edge case where the stop order has filled and been updated to 'done' but the contract hasn't yet been updated
               active_stop_order = contract.sell_orders.active.stop_orders.first # there should only be one active stop order
-              if current_stop_order_price > (active_stop_order.stop_price * 0.0003)
+              if current_stop_order_price > (active_stop_order.stop_price * (1 + 0.0005))
                 size = active_stop_order.quantity
                 if active_stop_order.cancel_order
                   Rails.logger.info "Stop order #{active_stop_order.id} successfully canceled. Placing new SELL STOP order for #{size} BTC at $#{current_stop_order_price}."
