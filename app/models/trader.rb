@@ -317,8 +317,9 @@ class Trader < ActiveRecord::Base
               active_stop_order = contract.sell_orders.active.stop_orders.first # there should only be one active stop order
               if current_stop_order_price > (active_stop_order.stop_price * (1 + 0.0005))
                 size = active_stop_order.quantity
-                return "Active stop order quantity is 0. Stop order #{active_stop_order.id} NOT canceled." if size == 0.0
-                if active_stop_order.cancel_order
+                if size == 0.0
+                  Rails.logger.info "Active stop order quantity is 0. Stop order #{active_stop_order.id} NOT canceled."
+                elsif active_stop_order.cancel_order
                   Rails.logger.info "Stop order #{active_stop_order.id} successfully canceled. Placing new SELL STOP order for #{size} BTC at $#{current_stop_order_price}."
                   place_trendline_buy(current_stop_order_price, size, contract.id, algorithm)
                 end
