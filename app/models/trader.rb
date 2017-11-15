@@ -321,7 +321,7 @@ class Trader < ActiveRecord::Base
                   Rails.logger.info "Active stop order quantity is 0. Stop order #{active_stop_order.id} NOT canceled."
                 elsif active_stop_order.cancel_order
                   Rails.logger.info "Stop order #{active_stop_order.id} successfully canceled. Placing new SELL STOP order for #{size} BTC at $#{current_stop_order_price}."
-                  place_trendline_buy(current_stop_order_price, size, contract.id, algorithm)
+                  # place_trendline_buy(current_stop_order_price, size, contract.id, algorithm)
                 end
               end
             else
