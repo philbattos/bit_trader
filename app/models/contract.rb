@@ -373,8 +373,8 @@ class Contract < ActiveRecord::Base
       status: 'done',
       roi: calculate_roi,
       completion_date: Time.now,
-      gdax_buy_order_id: buy_orders.done.first.gdax_id,
-      gdax_sell_order_id: sell_orders.done.first.gdax_id,
+      gdax_buy_order_id: buy_order.gdax_id,
+      gdax_sell_order_id: sell_order.gdax_id,
       btc_quantity: calculate_btc_quantity
     )
   end
