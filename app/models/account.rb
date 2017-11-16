@@ -12,6 +12,10 @@ class Account < ActiveRecord::Base
     GDAX::Connection.new.rest_client.account("af65a8e8-5e33-4baf-928a-d02155793d43")
   end
 
+  def self.total_value
+    gdax_usdollar_account.balance + (gdax_bitcoin_account.balance * GDAX::MarketData.last_trade.price)
+  end
+
   def self.balance_adjustment
     return if Order.open_orders.any? {|o| o.time_in_force == "GTT" }
 
@@ -29,6 +33,10 @@ class Account < ActiveRecord::Base
     else
       # BTC account and USD account are balanced
     end
+  end
+
+  def self.account_vs_market_ratio
+    total_value / GDAX::MarketData.last_trade.price
   end
 
   #=================================================
