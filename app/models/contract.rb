@@ -93,11 +93,11 @@ class Contract < ActiveRecord::Base
   end
 
   def buy_order
-    buy_orders.find_by(status: Order::ACTIVE_STATUSES)
+    buy_orders.done.first || buy_orders.find_by(status: Order::ACTIVE_STATUSES)
   end
 
   def sell_order
-    sell_orders.find_by(status: Order::ACTIVE_STATUSES)
+    sell_orders.done.first || sell_orders.find_by(status: Order::ACTIVE_STATUSES)
   end
 
   def self.resolve_open
