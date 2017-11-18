@@ -229,15 +229,26 @@ class Trader < ActiveRecord::Base
           Rails.logger.info "current_conditions: #{current_conditions.inspect}"
 
           open_buy_order = Order.my_highest_open_buy_order
-          if open_buy_order && (open_buy_order.price > (GDAX::MarketData.current_bid * 0.9999))
-            # do nothing
-          else
-            # cancel open buy order and place a new one
-            highest_buy_order = Order.find_by(gdax_id: open_buy_order.id)
-            highest_buy_order.cancel_order if highest_buy_order
+          if open_buy_order
+            if (open_buy_order.price > (GDAX::MarketData.current_bid * 0.9999))
+              # do nothing; there is a pending buy-order close to the current market price
+            else
+              # cancel open buy order and place a new one
+              highest_buy_order = Order.find_by(gdax_id: open_buy_order.id)
+              highest_buy_order.cancel_order if highest_buy_order
+              size = trading_units # this value is stored in the Trader.new object
+              if Account.gdax_usdollar_account.available >= (current_ask * size * 1.01)
+                price = current_bid
+                Rails.logger.info "Attempting to place a new buy order at #{price} to avoid fees."
+                Order.submit_order('buy', price, size, {post_only: true}, nil, 'trendline', algorithm)
+              else
+                Rails.logger.info "USD balance not sufficient for trendline BUY order."
+              end
+            end
+          else # place new buy order
             size = trading_units # this value is stored in the Trader.new object
             if Account.gdax_usdollar_account.available >= (GDAX::MarketData.current_ask * size * 1.01)
-              price = GDAX::MarketData.current_bid - 0.01
+              price = GDAX::MarketData.current_bid
               Rails.logger.info "Attempting to place a new buy order at #{price} to avoid fees."
               Order.submit_order('buy', price, size, {post_only: true}, nil, 'trendline', algorithm)
             else
@@ -256,7 +267,7 @@ class Trader < ActiveRecord::Base
           #   Order.find_by(gdax_id: open_sell_order.id).cancel_order if open_sell_order
           #   size = trading_units
           #   if Account.gdax_bitcoin_account.available >= (size).to_d
-          #     price = GDAX::MarketData.current_ask + 0.01
+          #     price = GDAX::MarketData.current_ask
           #     Rails.logger.info "Attempting to place a new sell order at #{price} to avoid fees."
           #     Order.submit_order('sell', price, size, {post_only: true}, nil, 'trendline', algorithm)
           #   else
@@ -287,7 +298,7 @@ class Trader < ActiveRecord::Base
                   Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is higher than the market #{current_ask.round(2)}. Canceling sell order #{sell_order.id}."
                   size = buy_order.gdax_filled_size.to_d
                   if sell_order.cancel_order # TODO: cancel order unless it has been partially filled
-                    price = current_ask + 0.01
+                    price = current_ask
                     Rails.logger.info "Sell order #{sell_order.id} successfully canceled. Placing new SELL order for #{size} BTC at $#{price}."
                     place_trendline_sell(price, size, contract.id, algorithm)
                   end
@@ -296,7 +307,7 @@ class Trader < ActiveRecord::Base
             else # contract doesn't have a normal sell order; it might have a stop order
               if GDAX::MarketData.current_trend(10.hours.ago, 300) == 'TRENDING DOWN'
                 Rails.logger.info "Price is decreasing... Placing exit SELL order for contract #{contract.id}."
-                price = current_ask + 0.01
+                price = current_ask
                 size  = buy_order.gdax_filled_size.to_d
                 if Account.gdax_bitcoin_account.available >= size.to_d
                   place_trendline_sell(price, size, contract.id, algorithm)
@@ -337,7 +348,7 @@ class Trader < ActiveRecord::Base
               Rails.logger.info "The contract #{contract.id} has an active buy order with a price of #{buy_order.requested_price.round(2)}, which is lower than the market #{current_bid.round(2)}. Canceling buy order #{buy_order.id}."
               size = buy_order.quantity
               if buy_order.cancel_order # TODO: cancel order unless it has been partially filled
-                price = current_bid - 0.01
+                price = current_bid
                 Rails.logger.info "Buy order #{buy_order.id} successfully canceled. Placing new BUY order for #{size} BTC at $#{price}."
                 place_trendline_buy(price, size, contract.id, algorithm)
               end
@@ -348,7 +359,7 @@ class Trader < ActiveRecord::Base
           if sell_order.done?
             if GDAX::MarketData.current_trend(10.hours.ago, 300) == 'TRENDING UP'
               Rails.logger.info "Price is increasing... Placing exit BUY order for contract #{contract.id}."
-              price = current_bid - 0.01
+              price = current_bid
               size  = sell_order.gdax_filled_size.to_d
               if Account.gdax_usdollar_account.available >= (current_ask * size * 1.01)
                 place_trendline_buy(price, size, contract.id, algorithm)
@@ -378,7 +389,7 @@ class Trader < ActiveRecord::Base
               Rails.logger.info "The contract #{contract.id} has an active sell order with a price of #{sell_order.requested_price.round(2)}, which is higher than the market #{current_ask.round(2)}. Canceling sell order #{sell_order.id}."
               size = sell_order.quantity
               if sell_order.cancel_order # TODO: cancel order unless it has been partially filled
-                price = current_ask + 0.01
+                price = current_ask
                 Rails.logger.info "Sell order #{sell_order.id} successfully canceled. Placing new SELL order for #{size} BTC at $#{price}."
                 place_trendline_sell(price, size, contract.id, algorithm)
               end

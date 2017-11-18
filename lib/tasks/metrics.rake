@@ -15,9 +15,11 @@ task metrics: :environment do
 
   account_value        = Account.total_value
   account_vs_market    = Account.account_vs_market_ratio
-  account_market_index = account_vs_market * GDAX::MarketData.last_trade.price
+  market_price         = GDAX::MarketData.last_trade.price
+  account_market_index = account_vs_market * market_price
   Rails.logger.info "Account Value: #{account_value.round(5)}"
   Rails.logger.info "Account Value vs Market ratio: #{account_vs_market.round(5)}"
+  Rails.logger.info "Market price: #{market_price.round(5)}"
   Rails.logger.info "Account-Market index: #{account_market_index.round(5)}"
 
   orders_without_executed_value = Order.done.where(executed_value: nil)
