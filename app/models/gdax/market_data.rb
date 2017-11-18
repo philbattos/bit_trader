@@ -116,6 +116,9 @@ module GDAX
     rescue Coinbase::Exchange::APIError => api_error
       puts "GDAX API error (orderbook): #{api_error}"
       empty_orderbook
+    rescue Net::ReadTimeout => timeout_error
+      Rails.logger.info "GDAX timeout error (in MarketData.orderbook): #{timeout_error}"
+      empty_orderbook
     end
 
     def self.last_trade

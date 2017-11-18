@@ -128,7 +128,7 @@ class Trader < ActiveRecord::Base
       update_unresolved_order
       Contract.update_status # updates random 'done' contract; updates random liquidatable contract
       # Contract.market_maker.resolve_open
-      Contract.resolve_open # liquidates old contracts; populates empty contracts with a buy order; matches open orders
+      # Contract.resolve_open # liquidates old contracts; populates empty contracts with a buy order; matches open orders
       # Order.cancel_stale_orders
     end
 

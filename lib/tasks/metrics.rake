@@ -13,8 +13,12 @@ task metrics: :environment do
   # Moved from data-integrity task to prevent two tasks from running at the same time
   Rails.logger.info "============================================================="
 
-  account_vs_market = Account.account_vs_market_ratio
+  account_value        = Account.total_value
+  account_vs_market    = Account.account_vs_market_ratio
+  account_market_index = account_vs_market * GDAX::MarketData.last_trade.price
+  Rails.logger.info "Account Value: #{account_value.round(5)}"
   Rails.logger.info "Account Value vs Market ratio: #{account_vs_market.round(5)}"
+  Rails.logger.info "Account-Market index: #{account_market_index.round(5)}"
 
   orders_without_executed_value = Order.done.where(executed_value: nil)
   Rails.logger.info "These orders do not have an executed_value: #{orders_without_executed_value.count}"
