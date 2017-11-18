@@ -215,7 +215,8 @@ class Order < ActiveRecord::Base
 
   def self.store_order(response, order_type, contract_id, strategy_type, algorithm)
     Rails.logger.info "Storing order #{response['id']}"
-    contract = Contract.create_with(strategy_type: strategy_type, btc_quantity: response['size'], algorithm: algorithm).find_or_create_by(id: contract_id)
+    size = response['size']
+    contract = Contract.create_with(strategy_type: strategy_type, btc_quantity: size, algorithm: algorithm).find_or_create_by(id: contract_id)
     contract.update(gdax_buy_order_id: response.id)  if order_type == 'buy'
     contract.update(gdax_sell_order_id: response.id) if order_type == 'sell'
 
@@ -228,7 +229,7 @@ class Order < ActiveRecord::Base
       type:                lookup_class_type[order_type],
       gdax_id:             response['id'],
       gdax_price:          price,
-      gdax_size:           response['size'],
+      gdax_size:           size,
       gdax_product_id:     response['product_id'],
       gdax_side:           response['side'],
       gdax_stp:            response['stp'],
@@ -240,7 +241,7 @@ class Order < ActiveRecord::Base
       gdax_executed_value: response['executed_value'],
       gdax_status:         response['status'],
       gdax_settled:        response['settled'],
-      quantity:            response['size'],
+      quantity:            size,
       requested_price:     price,
       executed_value:      response['executed_value'],
       fees:                response['fill_fees'],
